@@ -22,7 +22,7 @@ jobs:
 
       - name: Accept Android SDK Licenses
         run: |
-          yes | sdkmanager --licenses
+          yes | sdkmanager --licenses || true
 
       - name: Install Android SDK
         run: |
@@ -30,11 +30,11 @@ jobs:
 
       - name: Create Android project
         run: |
-          mkdir -p app/src/main/java/com/irfan/htmltoapk
+          mkdir -p app/src/main/java/com/irfan/cricketlive
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
-          cp Apkbuilder_Pro_Phase3.html app/src/main/assets/index.html
+          cp "Cricket live final backup 4x.html" app/src/main/assets/index.html
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -53,7 +53,7 @@ jobs:
               }
           }
 
-          rootProject.name = "HTMLToAPKBuilder"
+          rootProject.name = "CricketLive"
           include(":app")
           EOF
 
@@ -74,22 +74,22 @@ jobs:
           }
 
           android {
-              namespace 'com.irfan.htmltoapk'
+              namespace 'com.irfan.cricketlive'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.irfan.htmltoapk'
+                  applicationId 'com.irfan.cricketlive'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '2.0'
               }
           }
           EOF
 
           cat > app/src/main/res/values/strings.xml <<'EOF'
           <resources>
-              <string name="app_name">HTML to APK Builder</string>
+              <string name="app_name">Cricket Live</string>
           </resources>
           EOF
 
@@ -133,8 +133,8 @@ jobs:
           </manifest>
           EOF
 
-          cat > app/src/main/java/com/irfan/htmltoapk/MainActivity.java <<'EOF'
-          package com.irfan.htmltoapk;
+          cat > app/src/main/java/com/irfan/cricketlive/MainActivity.java <<'EOF'
+          package com.irfan.cricketlive;
 
           import android.app.Activity;
           import android.os.Bundle;
@@ -186,8 +186,13 @@ jobs:
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon
 
+      - name: Rename APK
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             app/build/outputs/apk/debug/Cricket-Live-v2.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HTML-to-APK-Debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Cricket-Live-APK-v2
+          path: app/build/outputs/apk/debug/Cricket-Live-v2.apk
