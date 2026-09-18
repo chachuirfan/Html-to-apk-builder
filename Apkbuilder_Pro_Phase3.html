@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#071116">
+<title>HTML → APK Builder Pro — Made by Irfan Aslam</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#05090d;--panel:#0b141b;--panel2:#101d25;--line:#20313a;--text:#eef9fb;--muted:#8da3ac;--a:#13d7a0;--b:#18a7ff;--danger:#ff5573;--shadow:0 20px 70px #000b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#0b3b3b,#061015 42%,#04070a 78%);color:var(--text);font-family:Inter,Segoe UI,Tahoma,sans-serif;min-height:100vh}.wrap{max-width:1180px;margin:auto;padding:18px}.top{position:sticky;top:0;z-index:30;background:#05090dec;backdrop-filter:blur(16px);border-bottom:1px solid #ffffff0c;margin:-18px -18px 18px;padding:13px 18px}.topin{max-width:1180px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{display:flex;align-items:center;gap:10px}.logo{width:43px;height:43px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--a),var(--b));color:#00120d;font-weight:1000;box-shadow:0 10px 35px #13d7a033}.brand b{font-size:16px}.brand small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.pill{border:1px solid #ffffff12;background:#ffffff06;border-radius:999px;padding:7px 11px;color:#b9cbd1;font-size:10px}.hero{padding:14px 2px}.hero h1{font-size:clamp(27px,5vw,45px);margin:0 0 8px;letter-spacing:-1.3px}.hero h1 span{color:var(--a)}.hero p{margin:0;color:var(--muted);line-height:1.8;max-width:850px}.mode{display:flex;gap:8px;margin:15px 0;flex-wrap:wrap}.mode button,.mini{background:#0b171e;border:1px solid var(--line);color:#bdd0d6;border-radius:10px;padding:9px 13px;font-weight:800;cursor:pointer}.mode button.active{background:#0b2d28;border-color:#13d7a077;color:#72f2d1}.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}.card{background:linear-gradient(180deg,#0c151c,#091016);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}.head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.head b{font-size:13px}.head span{font-size:10px;color:var(--muted)}.body{padding:15px}.sec{padding:15px;border:1px solid #ffffff0c;background:#ffffff03;border-radius:14px;margin-bottom:12px}.sec:last-child{margin-bottom:0}.sec h3{font-size:12px;margin:0 0 12px}.fields{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.three{grid-template-columns:repeat(3,1fr)}label.field{display:block}.field label,.label{display:block;color:#9eb2ba;font-size:10px;margin-bottom:6px}.field input,.field select{width:100%;background:#061016;border:1px solid #20323b;color:#eef9fb;border-radius:10px;padding:10px 11px;outline:none}.field input:focus,.field select:focus{border-color:#13d7a088;box-shadow:0 0 0 3px #13d7a012}.drop{border:1px dashed #31505b;background:#061016;border-radius:13px;padding:15px;text-align:center;color:#94aab2}.drop strong{display:block;color:#e8f6f8;margin-bottom:4px}.drop input{margin-top:8px;width:100%}.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.check{display:flex;align-items:center;gap:7px;background:#061016;border:1px solid #172930;border-radius:10px;padding:9px;font-size:11px;color:#c8d8dc}.check input{accent-color:var(--a)}.advanced{display:none}.advanced.on{display:block}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#061016;border:1px solid #172930;border-radius:10px;padding:10px;margin-bottom:8px}.row:last-child{margin-bottom:0}.row b{font-size:11px}.row small{display:block;color:#73878f;font-size:9px;margin-top:3px}.switch{width:42px;height:23px;position:relative;flex:none}.switch input{display:none}.slider{position:absolute;inset:0;background:#24343c;border-radius:99px;cursor:pointer}.slider:before{content:"";position:absolute;width:17px;height:17px;left:3px;top:3px;background:#9db0b7;border-radius:50%;transition:.2s}.switch input:checked+.slider{background:#087b63}.switch input:checked+.slider:before{transform:translateX(19px);background:#fff}.preview{position:sticky;top:85px}.phone{max-width:340px;margin:auto;border:7px solid #151f24;border-radius:30px;background:#020607;overflow:hidden;box-shadow:0 25px 70px #000b}.phonebar{height:25px;background:#050a0d;display:grid;place-items:center;color:#4e6871;font-size:8px}.screen{min-height:450px;padding:17px;background:radial-gradient(circle at 50% 0,#103430,#071014 47%,#040708);display:flex;flex-direction:column}.appicon{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--a),var(--b));display:grid;place-items:center;color:#00120d;font-size:27px;font-weight:1000;margin:13px auto}.screen h2{text-align:center;font-size:18px;margin:5px 0}.screen p{text-align:center;color:#81969e;font-size:10px;margin:0 0 16px}.status{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}.status i{font-style:normal;font-size:8px;padding:5px 8px;border-radius:999px;background:#0b2520;color:#6fe6c8}.pbtn{border:1px solid #ffffff12;background:#ffffff07;border-radius:10px;padding:10px;margin-top:7px;font-size:10px;text-align:center;color:#cce0e5}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.primary,.secondary{border:0;border-radius:11px;padding:12px;font-weight:900;cursor:pointer}.primary{background:linear-gradient(135deg,var(--a),var(--b));color:#00110d}.secondary{background:#0b171e;border:1px solid var(--line);color:#cfe0e5}.output{margin-top:16px;display:none}.output.show{display:block}.tabs{display:flex;gap:6px;overflow:auto;padding:10px;border-bottom:1px solid var(--line)}.tab{white-space:nowrap;border:1px solid var(--line);background:#061016;color:#8fa6ae;padding:8px 10px;border-radius:9px;cursor:pointer;font-size:10px}.tab.active{color:#75f0d0;border-color:#13d7a055;background:#0a2520}.code{display:none;margin:12px;background:#03080b;border:1px solid #16262d;border-radius:12px;padding:12px;color:#b9d2d9;font:10px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow:auto;max-height:390px;direction:ltr;text-align:left}.code.active{display:block}.notice{margin-top:12px;border:1px solid #31505b;background:#07141a;border-radius:12px;padding:11px;color:#a9bdc3;font-size:10px;line-height:1.7}.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,20px);background:#0e1b22;border:1px solid #29404a;color:#e8f7fa;padding:10px 14px;border-radius:11px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:60;font-size:11px}.toast.show{opacity:1;transform:translate(-50%,0)}.footer{text-align:center;color:#5f737b;font-size:10px;padding:25px}@media(max-width:850px){.grid{grid-template-columns:1fr}.preview{position:static}}@media(max-width:560px){.fields,.three,.checks{grid-template-columns:1fr}.wrap{padding:12px}.top{margin:-12px -12px 12px;padding:12px}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin"><div class="brand"><div class="logo">IA</div><div><b>HTML → APK Builder Pro</b><small>Made by Irfan Aslam</small></div></div><div class="pill">PHASE 3 • PROJECT + BUILD READY</div></div></header>
+<main class="wrap">
+<section class="hero"><h1>HTML کو <span>Android APK Project</span> میں تبدیل کریں</h1><p>اپنی single HTML فائل یا ZIP website منتخب کریں، app settings دیں، پھر مکمل Android Studio project ZIP بنائیں۔ Project میں WebView، permissions، file upload، camera/mic، downloads، external links اور release-signing کی بنیاد شامل ہے۔</p></section>
+<div class="mode"><button id="simpleBtn" class="active">⚡ Simple Mode</button><button id="advancedBtn">⚙ Advanced Settings</button></div>
+<div class="grid">
+<div class="card"><div class="head"><b>Project Configuration</b><span id="progress">Ready</span></div><div class="body">
+<div class="sec"><h3>📦 1. Website / Project</h3><div class="drop"><strong>HTML یا ZIP منتخب کریں</strong><span>Single .html/.htm یا مکمل website .zip</span><input type="file" id="projectFile" accept=".html,.htm,.zip"></div><div class="notice">ZIP کے اندر index.html ہو تو اسے app کے assets میں رکھا جائے گا۔ CSS/JS/images بھی ساتھ package ہوں گے۔ RAR intentionally شامل نہیں کیا گیا کیونکہ browser میں reliable RAR extraction نہیں ہوتی۔</div></div>
+<div class="sec"><h3>🏷 2. App Identity</h3><div class="fields"><div class="field"><label>App Name</label><input id="appName" value="Irfan Web App"></div><div class="field"><label>Package Name</label><input id="packageName" value="com.irfan.webapp"></div></div><div class="fields three" style="margin-top:10px"><div class="field"><label>Version Name</label><input id="versionName" value="1.0"></div><div class="field"><label>Version Code</label><input id="versionCode" type="number" value="1" min="1"></div><div class="field"><label>Min Android</label><select id="minSdk"><option value="23">Android 6.0 • API 23</option><option value="26">Android 8.0 • API 26</option><option value="28">Android 9 • API 28</option></select></div></div></div>
+<div class="sec"><h3>🎨 3. Appearance</h3><div class="fields"><div class="field"><label>Orientation</label><select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option><option value="fullSensor">Auto Rotate</option></select></div><div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></div></div><div class="fields" style="margin-top:10px"><div class="field"><label>Status Bar</label><select id="statusBar"><option value="dark">Dark</option><option value="light">Light Icons</option></select></div><div class="field"><label>Navigation Bar</label><select id="navBar"><option value="dark">Dark</option><option value="light">Light</option></select></div></div><div class="drop" style="margin-top:10px"><strong>🖼 App Icon</strong><span>PNG/JPG/WebP — PNG recommended</span><input type="file" id="appIcon" accept="image/png,image/jpeg,image/webp"></div></div>
+<div class="sec"><h3>🔐 4. Permissions & Features</h3><div class="checks"><label class="check"><input type="checkbox" id="internet" checked> Internet / Firebase</label><label class="check"><input type="checkbox" id="camera"> Camera</label><label class="check"><input type="checkbox" id="mic"> Microphone</label><label class="check"><input type="checkbox" id="files" checked> File Upload</label><label class="check"><input type="checkbox" id="media" checked> Audio / Video</label><label class="check"><input type="checkbox" id="download" checked> Download Manager</label></div></div>
+<div id="advanced" class="advanced">
+<div class="sec"><h3>🧠 5. WebView Controls</h3>
+<div class="row"><div><b>JavaScript</b><small>Firebase, buttons اور dynamic web apps</small></div><label class="switch"><input id="js" type="checkbox" checked><span class="slider"></span></label></div>
+<div class="row"><div><b>DOM / Local Storage</b><small>LocalStorage اور web data</small></div><label class="switch"><input id="dom" type="checkbox" checked><span class="slider"></span></label></div>
+<div class="row"><div><b>Database Storage</b><small>WebView database support</small></div><label class="switch"><input id="db" type="checkbox" checked><span class="slider"></span></label></div>
+<div class="row"><div><b>Autoplay Media</b><small>Audio/video user gesture کے بغیر</small></div><label class="switch"><input id="autoplay" type="checkbox"><span class="slider"></span></label></div>
+<div class="row"><div><b>External Links</b><small>http/https links Android browser میں</small></div><label class="switch"><input id="external" type="checkbox"><span class="slider"></span></label></div>
+<div class="row"><div><b>Back Handling</b><small>WebView history پہلے، پھر app exit</small></div><label class="switch"><input id="back" type="checkbox" checked><span class="slider"></span></label></div>
+<div class="row"><div><b>Allow HTTP / Cleartext</b><small>صرف legacy HTTP websites کے لیے</small></div><label class="switch"><input id="cleartext" type="checkbox"><span class="slider"></span></label></div>
+</div>
+<div class="sec"><h3>🚀 6. Build & Release</h3><div class="fields"><div class="field"><label>Build Type</label><select id="variant"><option value="debug">Debug APK</option><option value="release">Release APK project</option></select></div><div class="field"><label>AGP</label><select id="agp"><option value="8.13.2">8.13.2</option><option value="8.7.3">8.7.3</option></select></div></div><div class="notice"><b>اہم:</b> یہ browser آپ کے فون پر Gradle compiler خود نہیں چلاتا۔ یہ حقیقی Android Studio project ZIP بناتا ہے۔ ZIP کو Android Studio/Gradle environment میں کھول کر APK build کیا جا سکتا ہے۔ Release signing کے لیے اپنی private keystore استعمال کریں؛ password یا private key builder میں محفوظ نہیں کی جاتی۔</div></div>
+</div>
+<div class="actions"><button class="primary" id="generateBtn">✨ Generate Android Project</button><button class="secondary" id="resetBtn">↺ Reset</button></div>
+</div></div>
+<div class="preview"><div class="card"><div class="head"><b>📱 Live Preview</b><span id="previewPackage">com.irfan.webapp</span></div><div class="body"><div class="phone"><div class="phonebar">●　●　●</div><div class="screen"><div class="appicon" id="iconPreview">IA</div><h2 id="namePreview">Irfan Web App</h2><p>Android WebView</p><div class="status"><i id="pOrientation">Portrait</i><i id="pInternet">Internet</i><i id="pFiles">Files</i></div><div class="pbtn">🌐 Your HTML Website</div><div class="pbtn">⚡ JavaScript / Firebase</div><div class="pbtn">📁 File Upload / Media</div><div style="flex:1"></div><small style="text-align:center;color:#4d646c">Made by Irfan Aslam</small></div></div></div></div></div>
+</div>
+<div class="output card" id="output"><div class="head"><b>✅ Generated Project</b><span id="fileCount">0 files</span></div><div class="tabs" id="tabs"></div><div id="codes"></div><div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:9px"><button class="primary" id="zipBtn">⬇ Download Project ZIP</button><button class="secondary" id="copyBtn">📋 Copy Selected</button></div><div class="body"><div class="notice"><b>APK بنانے کا آخری مرحلہ:</b> ZIP extract کریں → Android Studio میں project کھولیں → Gradle Sync → <b>Build APK(s)</b>۔ Release کے لیے <b>Generate Signed Bundle / APK</b> میں اپنی keystore استعمال کریں۔ SHA-1/SHA-256 بھی اسی اپنی keystore سے حاصل ہوں گے۔</div></div></div>
+<div class="footer">HTML → APK Builder Pro • Made by Irfan Aslam</div>
+</main><div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);let filesMap={},selected='settings.gradle',binaryMap={};
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>e.classList.remove('show'),2600)}
+$('simpleBtn').onclick=()=>{$('simpleBtn').classList.add('active');$('advancedBtn').classList.remove('active');$('advanced').classList.remove('on')};
+$('advancedBtn').onclick=()=>{$('advancedBtn').classList.add('active');$('simpleBtn').classList.remove('active');$('advanced').classList.add('on')};
+function validPkg(p){return /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(p)}
+function xml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
+function gradleEsc(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+function collect(){return {app:$('appName').value.trim()||'Irfan Web App',pkg:$('packageName').value.trim(),ver:$('versionName').value.trim()||'1.0',vc:Math.max(1,parseInt($('versionCode').value,10)||1),min:$('minSdk').value,ori:$('orientation').value,theme:$('theme').value,status:$('statusBar').value,nav:$('navBar').value,internet:$('internet').checked,camera:$('camera').checked,mic:$('mic').checked,files:$('files').checked,media:$('media').checked,download:$('download').checked,js:$('js').checked,dom:$('dom').checked,db:$('db').checked,autoplay:$('autoplay').checked,external:$('external').checked,back:$('back').checked,cleartext:$('cleartext').checked,variant:$('variant').value,agp:$('agp').value}}
+function makeProject(c){
+if(!validPkg(c.pkg))throw new Error('Package Name درست دیں، مثال: com.irfan.myapp');
+const perms=[];if(c.internet){perms.push('<uses-permission android:name="android.permission.INTERNET" />','<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />')}if(c.camera)perms.push('<uses-permission android:name="android.permission.CAMERA" />');if(c.mic)perms.push('<uses-permission android:name="android.permission.RECORD_AUDIO" />');
+const manifest=`<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    ${perms.join('\n    ')}
+    <application android:allowBackup="true" android:supportsRtl="true" android:usesCleartextTraffic="${c.cleartext}" android:label="${xml(c.app)}" android:icon="@drawable/ic_launcher" android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity" android:screenOrientation="${c.ori}" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity>
+    </application>
+</manifest>`;
+const java=`package ${c.pkg};
+
+import android.Manifest;
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
+import android.webkit.PermissionRequest;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.ArrayList;
+import java.util.Map;
+
+public class MainActivity extends AppCompatActivity {
+    private WebView webView;
+    private ValueCallback<Uri[]> fileCallback;
+    private PermissionRequest pendingRequest;
+    private ActivityResultLauncher<String[]> permissionLauncher;
+
+    @Override protected void onCreate(Bundle state) {
+        super.onCreate(state);
+        setContentView(R.layout.activity_main);
+        webView=findViewById(R.id.webView);
+        android.webkit.WebSettings s=webView.getSettings();
+        s.setJavaScriptEnabled(${c.js});
+        s.setDomStorageEnabled(${c.dom});
+        s.setDatabaseEnabled(${c.db});
+        s.setAllowFileAccess(true);
+        s.setAllowContentAccess(true);
+        s.setMediaPlaybackRequiresUserGesture(${!c.autoplay});
+        s.setBuiltInZoomControls(false);
+        s.setDisplayZoomControls(false);
+        permissionLauncher=registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result->{
+            if(pendingRequest==null)return;
+            boolean ok=true; for(Boolean v:result.values()) if(!Boolean.TRUE.equals(v)) ok=false;
+            PermissionRequest r=pendingRequest; pendingRequest=null;
+            if(ok) r.grant(r.getResources()); else r.deny();
+        });
+        webView.setWebViewClient(new WebViewClient(){
+            @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r){
+                String u=r.getUrl().toString();
+                ${c.external?'if(u.startsWith("http://")||u.startsWith("https://")){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(u)));return true;}catch(Exception ignored){}}':''}
+                return false;
+            }
+        });
+        webView.setWebChromeClient(new WebChromeClient(){
+            @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams params){
+                if(fileCallback!=null)fileCallback.onReceiveValue(null); fileCallback=cb;
+                try{startActivityForResult(params.createIntent(),1001);return true;}catch(Exception e){fileCallback=null;return false;}
+            }
+            @Override public void onPermissionRequest(PermissionRequest r){
+                runOnUiThread(()->handleWebPermission(r));
+            }
+            @Override public void onPermissionRequestCanceled(PermissionRequest r){if(pendingRequest==r)pendingRequest=null;}
+        });
+        ${c.download?'webView.setDownloadListener((url,userAgent,contentDisposition,mimeType,contentLength)->{try{DownloadManager.Request req=new DownloadManager.Request(Uri.parse(url));req.setMimeType(mimeType);req.addRequestHeader("User-Agent",userAgent);String cookie=CookieManager.getInstance().getCookie(url);if(cookie!=null)req.addRequestHeader("Cookie",cookie);req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,Uri.parse(url).getLastPathSegment());((DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(req);}catch(Exception ignored){}});':''}
+        webView.loadUrl("file:///android_asset/index.html");
+    }
+    private void handleWebPermission(PermissionRequest r){
+        ArrayList<String> need=new ArrayList<>();
+        for(String x:r.getResources()){
+            if(x.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE) && ${c.camera} && checkSelfPermission(Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)need.add(Manifest.permission.CAMERA);
+            if(x.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE) && ${c.mic} && checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)need.add(Manifest.permission.RECORD_AUDIO);
+        }
+        if(need.isEmpty()){
+            boolean allowed=true; for(String x:r.getResources()) if((x.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)&&!${c.camera})||(x.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)&&!${c.mic}))allowed=false;
+            if(allowed)r.grant(r.getResources());else r.deny();
+        }else{pendingRequest=r;permissionLauncher.launch(need.toArray(new String[0]));}
+    }
+    @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){super.onActivityResult(requestCode,resultCode,data);if(requestCode==1001&&fileCallback!=null){Uri[] r=WebChromeClient.FileChooserParams.parseResult(resultCode,data);fileCallback.onReceiveValue(r);fileCallback=null;}}
+    @Override public void onBackPressed(){${c.back?'if(webView.canGoBack()){webView.goBack();return;}':''}super.onBackPressed();}
+}`;
+const layout=`<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+<WebView android:id="@+id/webView" android:layout_width="match_parent" android:layout_height="match_parent" />
+</FrameLayout>`;
+const themeParent=c.theme==='light'?'Theme.AppCompat.Light.NoActionBar':c.theme==='system'?'Theme.AppCompat.DayNight.NoActionBar':'Theme.AppCompat.NoActionBar';
+const styles=`<resources>
+<style name="AppTheme" parent="${themeParent}">
+<item name="android:fontFamily">sans</item>
+<item name="android:windowActionModeOverlay">true</item>
+<item name="android:statusBarColor">${c.status==='light'?'#FFFFFF':'#071116'}</item>
+<item name="android:navigationBarColor">${c.nav==='light'?'#FFFFFF':'#05090D'}</item>
+<item name="android:windowLightStatusBar">${c.status==='light'}</item>
+<item name="android:windowLightNavigationBar">${c.nav==='light'}</item>
+</style></resources>`;
+const colors='<resources><color name="black">#000000</color><color name="white">#FFFFFF</color></resources>';
+const strings=`<resources><string name="app_name">${xml(c.app)}</string></resources>`;
+const root=`plugins { id 'com.android.application' version '${c.agp}' apply false }`;
+const settings=`pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }\ndependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }\nrootProject.name='HTMLToAPK_${gradleEsc(c.app)}'\ninclude(':app')`;
+const props='org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.nonTransitiveRClass=true\nandroid.nonFinalResIds=false';
+const appGradle=`plugins { id 'com.android.application' }
+
+android { namespace '${c.pkg}' compileSdk 35
+    defaultConfig { applicationId '${c.pkg}' minSdk ${c.min} targetSdk 35 versionCode ${c.vc} versionName '${gradleEsc(c.ver)}' }
+}
+
+dependencies { implementation 'androidx.appcompat:appcompat:1.7.1' implementation 'androidx.activity:activity:1.10.1' implementation 'androidx.core:core:1.16.0' }`;
+const proguard='# Add project-specific R8/ProGuard rules here if needed.\n';
+const readme=`# ${c.app}\n\nGenerated by HTML → APK Builder Pro — Made by Irfan Aslam\n\nPackage: ${c.pkg}\nVersion: ${c.ver} (${c.vc})\nMin SDK: ${c.min}\n\n## Build Debug APK\n1. Extract this ZIP.\n2. Open the project folder in Android Studio.\n3. Let Gradle sync.\n4. Use Build → Build APK(s).\n5. Debug APK normally appears at app/build/outputs/apk/debug/app-debug.apk\n\n## Build Signed Release\nUse Android Studio → Build → Generate Signed Bundle / APK → APK. Select or create YOUR OWN keystore. Never share your private keystore or password with this builder. Release APK normally appears at app/build/outputs/apk/release/app-release.apk.\n\n## SHA-1 / SHA-256\nThese fingerprints belong to YOUR signing certificate. In Android Studio/terminal use keytool on your own keystore, or use Gradle signingReport.\n\n## Important\nThis browser builder creates a real Android Studio/Gradle project. It does not secretly compile or sign an APK inside the browser. A machine/server with Android SDK + Gradle is required for the actual APK compilation.`;
+filesMap={'settings.gradle':settings,'build.gradle':root,'gradle.properties':props,'app/build.gradle':appGradle,'app/proguard-rules.pro':proguard,'app/src/main/AndroidManifest.xml':manifest,['app/src/main/java/'+c.pkg.replace(/\./g,'/')+'/MainActivity.java']:java,'app/src/main/res/layout/activity_main.xml':layout,'app/src/main/res/values/colors.xml':colors,'app/src/main/res/values/styles.xml':styles,'app/src/main/res/values/strings.xml':strings,'README.md':readme};binaryMap={};
+return filesMap;
+}
+async function addWebsite(f){
+if(!f)throw new Error('پہلے HTML یا ZIP منتخب کریں');
+if(/\.html?$/i.test(f.name)){filesMap['app/src/main/assets/index.html']=await f.text();return}
+if(!/\.zip$/i.test(f.name))throw new Error('صرف HTML یا ZIP فائل استعمال کریں');
+const z=await JSZip.loadAsync(f);let foundIndex=null;
+for(const name of Object.keys(z.files)){const ent=z.files[name];if(ent.dir)continue;const clean=name.replace(/^\/+/, '').replace(/\\/g,'/');const target='app/src/main/assets/'+clean;binaryMap[target]=await ent.async('uint8array');if(clean.toLowerCase().endsWith('/index.html')||clean.toLowerCase()==='index.html')foundIndex=target}
+if(!foundIndex)throw new Error('ZIP میں index.html نہیں ملی');
+// If index is nested, copy it to the asset root so the generated app launches directly.
+if(foundIndex!=='app/src/main/assets/index.html')binaryMap['app/src/main/assets/index.html']=binaryMap[foundIndex];
+}
+function render(){const names=Object.keys(filesMap);$('fileCount').textContent=names.length+' text files + '+Object.keys(binaryMap).length+' assets';$('tabs').innerHTML=names.map((n,i)=>`<button class="tab ${i===0?'active':''}" data-file="${encodeURIComponent(n)}">${n.split('/').pop()}</button>`).join('');$('codes').innerHTML=names.map((n,i)=>`<div class="code ${i===0?'active':''}" id="code${i}">${escapeHtml(filesMap[n])}</div>`).join('');document.querySelectorAll('.tab').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.code').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('code'+i).classList.add('active');selected=decodeURIComponent(b.dataset.file)});$('output').classList.add('show')}
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+$('generateBtn').onclick=async()=>{try{const c=collect();filesMap=makeProject(c);binaryMap={};await addWebsite($('projectFile').files[0]);const icon=$('appIcon').files[0];if(icon){binaryMap['app/src/main/res/drawable/ic_launcher.'+(icon.type==='image/png'?'png':'jpg')]=new Uint8Array(await icon.arrayBuffer());const old=filesMap['app/src/main/AndroidManifest.xml'];filesMap['app/src/main/AndroidManifest.xml']=old.replace('@drawable/ic_launcher','@drawable/ic_launcher')}render();$('progress').textContent='Generated ✓';toast('مکمل Android Studio project تیار ہے')}catch(e){toast(e.message||'Generation error')}};
+$('zipBtn').onclick=async()=>{try{if(!Object.keys(filesMap).length)return toast('پہلے Generate کریں');const z=new JSZip();for(const [p,v] of Object.entries(filesMap))z.file(p,v);for(const [p,v] of Object.entries(binaryMap))z.file(p,v);const blob=await z.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='HTML_to_APK_'+(($('appName').value.trim()||'Project').replace(/[^a-z0-9_-]+/gi,'_'))+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast('Project ZIP download شروع ہو گیا')}catch(e){toast('ZIP error: '+e.message)}};
+$('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(filesMap[selected]||'');toast('Selected file copy ہو گئی')}catch(e){toast('Copy اجازت نہیں ملی')}};
+$('resetBtn').onclick=()=>location.reload();
+$('appName').oninput=e=>$('namePreview').textContent=e.target.value||'Irfan Web App';$('packageName').oninput=e=>$('previewPackage').textContent=e.target.value||'com.irfan.webapp';$('orientation').onchange=e=>$('pOrientation').textContent=e.target.options[e.target.selectedIndex].text.replace('Auto Rotate','Auto');$('internet').onchange=e=>$('pInternet').style.display=e.target.checked?'inline-block':'none';$('files').onchange=e=>$('pFiles').style.display=e.target.checked?'inline-block':'none';$('appIcon').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('iconPreview').style.backgroundImage=`url(${r.result})`;$('iconPreview').style.backgroundSize='cover';$('iconPreview').textContent=''};r.readAsDataURL(f)};
+</script>
+</body></html>
