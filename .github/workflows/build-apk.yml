@@ -18,11 +18,10 @@ jobs:
           java-version: '17'
 
       - name: Setup Android
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK
-        run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: 'true'
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Create Android Project
         run: |
@@ -119,6 +118,7 @@ jobs:
 
                   </activity>
               </application>
+
           </manifest>
           EOF
 
@@ -155,12 +155,12 @@ jobs:
           }
           EOF
 
-      - name: Build APK
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
 
-      - name: Assemble APK
+      - name: Build APK
         run: gradle assembleDebug --no-daemon
 
       - name: Upload Cricket APK
