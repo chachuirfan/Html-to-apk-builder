@@ -1,0 +1,2592 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRICKET LOVERS ULTIMATE PRO - ADVANCED</title>
+<style>
+:root {
+--bg-color: #080d1a;
+--card-bg: rgba(19, 29, 49, 0.95);
+--input-bg: #1c2942;
+--accent-green: #10b981;
+--accent-gold: #f59e0b;
+--accent-blue: #3b82f6;
+--accent-purple: #8b5cf6;
+--danger-red: #ef4444;
+--text-main: #ffffff;
+--text-muted: #94a3b8;
+--border-color: #2a3d61;
+}
+
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background-color: var(--bg-color);
+color: var(--text-main);
+margin: 0;
+padding: 10px;
+direction: ltr;
+user-select: none;
+-webkit-user-select: none;
+}
+
+.container { max-width: 480px; margin: 0 auto; box-sizing: border-box; }
+
+.rainbow-header {
+background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+background-size: 400% 400%;
+animation: rainbowAnimation 10s ease infinite;
+border-radius: 16px;
+padding: 20px;
+text-align: center;
+box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+margin-bottom: 15px;
+border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+@keyframes rainbowAnimation {
+0% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+100% { background-position: 0% 50%; }
+}
+
+.brand-title-large {
+font-size: 2.2rem;
+font-weight: 900;
+color: #ffffff;
+text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px #ffffff;
+letter-spacing: 2px;
+margin: 0;
+}
+
+.made-by-author {
+font-size: 1.1rem;
+font-weight: 800;
+margin-top: 8px;
+background: linear-gradient(135deg, #00ffff, #ff00ff, #ffff00, #00ff00);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+letter-spacing: 1px;
+}
+
+.top-banners-row {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+margin-bottom: 15px;
+}
+
+.check-update-banner {
+background: linear-gradient(135deg, #3b82f6, #10b981, #f59e0b);
+border: 2px solid #ffffff;
+border-radius: 10px;
+padding: 8px;
+text-align: left;
+box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+cursor: pointer;
+transition: transform 0.2s;
+}
+.check-update-banner:hover { transform: scale(1.02); }
+
+.get-live-score-banner {
+background: linear-gradient(135deg, #059669, #10b981);
+border: 2px solid #34d399;
+border-radius: 10px;
+padding: 8px;
+text-align: left;
+box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+cursor: pointer;
+transition: transform 0.2s;
+}
+.get-live-score-banner:hover { transform: scale(1.02); }
+
+.login-portal-card {
+background: var(--card-bg);
+border: 2px solid var(--accent-gold);
+border-radius: 16px;
+padding: 15px;
+margin-bottom: 15px;
+box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+box-sizing: border-box;
+}
+
+.card {
+background: var(--card-bg);
+border-radius: 16px;
+padding: 16px;
+border: 1px solid var(--border-color);
+box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+margin-bottom: 15px;
+box-sizing: border-box;
+}
+
+.grid-2 {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+margin-bottom: 10px;
+}
+
+label {
+display: block;
+font-size: 0.8rem;
+color: var(--accent-gold);
+margin-bottom: 4px;
+font-weight: bold;
+}
+
+input, select {
+width: 100%;
+background: var(--input-bg);
+border: 1px solid var(--border-color);
+border-radius: 8px;
+padding: 10px;
+color: white;
+font-size: 0.85rem;
+box-sizing: border-box;
+outline: none;
+}
+
+.player-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+max-height: 150px;
+overflow-y: auto;
+padding-right: 4px;
+margin-bottom: 12px;
+box-sizing: border-box;
+}
+
+.btn {
+width: 100%;
+padding: 12px;
+border-radius: 10px;
+border: none;
+font-weight: bold;
+font-size: 0.9rem;
+cursor: pointer;
+margin-top: 8px;
+box-sizing: border-box;
+}
+
+.btn-start { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.btn-admin { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+.btn-saved { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; }
+.btn-stats { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+.btn-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; }
+.btn-share { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+.btn-backup { background: linear-gradient(135deg, #ec4899, #831843); color: white; }
+.btn-restore { background: linear-gradient(135deg, #6366f1, #312e81); color: white; }
+.btn-cloud { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; }
+.whatsapp-btn { background: linear-gradient(135deg, #25D366, #128C7E); color: white; }
+
+#liveBoard { display: none; }
+
+.score-header {
+text-align: center;
+background: radial-gradient(circle, #1e293b, #0f172a);
+border: 2px solid var(--accent-gold);
+border-radius: 16px;
+padding: 15px;
+margin-bottom: 15px;
+}
+
+.score-display {
+font-size: 3.5rem;
+font-weight: 900;
+color: var(--accent-green);
+font-family: monospace;
+margin: 5px 0;
+}
+
+.highlight-striker {
+background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(185, 28, 28, 0.5));
+border: 2px solid var(--danger-red) !important;
+border-radius: 10px;
+padding: 8px 12px;
+margin-bottom: 6px;
+color: #ffffff;
+font-weight: bold;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.highlight-non-striker {
+background: rgba(30, 41, 59, 0.8);
+border: 1px solid var(--border-color);
+border-radius: 10px;
+padding: 8px 12px;
+margin-bottom: 6px;
+color: var(--text-muted);
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.keypad {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 8px;
+}
+
+.key {
+padding: 14px;
+border-radius: 8px;
+border: none;
+background: var(--input-bg);
+color: white;
+font-weight: bold;
+font-size: 1.1rem;
+cursor: pointer;
+}
+
+.key-wicket { background: var(--danger-red); grid-column: span 2; color: white; }
+.key-extra { background: var(--accent-gold); color: black; }
+
+.modal {
+display: none;
+position: fixed;
+top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(0,0,0,0.85);
+backdrop-filter: blur(6px);
+justify-content: center;
+align-items: center;
+z-index: 2000;
+box-sizing: border-box;
+}
+
+.modal-body {
+background: var(--card-bg);
+border: 2px solid var(--accent-gold);
+border-radius: 16px;
+width: 95%;
+max-width: 460px;
+padding: 20px;
+box-sizing: border-box;
+max-height: 90vh;
+overflow-y: auto;
+}
+
+.close-btn {
+background: var(--danger-red);
+color: white;
+border: None;
+padding: 6px 12px;
+border-radius: 6px;
+float: right;
+cursor: pointer;
+font-weight: bold;
+font-size: 0.9rem;
+}
+
+/* Chat Box Fixes */
+.chat-container {
+display: flex;
+flex-direction: column;
+gap: 8px;
+box-sizing: border-box;
+width: 100%;
+}
+
+.chat-messages {
+background: var(--input-bg);
+border: 1px solid var(--border-color);
+border-radius: 8px;
+height: 140px;
+overflow-y: auto;
+padding: 8px;
+font-size: 0.8rem;
+box-sizing: border-box;
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+
+.chat-message-bubble {
+background: rgba(255, 255, 255, 0.05);
+padding: 6px 8px;
+border-radius: 6px;
+word-break: break-word;
+}
+
+.chat-input-row {
+display: flex;
+gap: 6px;
+align-items: center;
+width: 100%;
+box-sizing: border-box;
+}
+
+.chat-input-row input {
+flex: 1;
+padding: 8px;
+font-size: 0.8rem;
+}
+
+.mic-btn {
+background: var(--input-bg);
+border: 1px solid var(--border-color);
+border-radius: 8px;
+color: white;
+padding: 8px 10px;
+cursor: pointer;
+font-size: 0.9rem;
+}
+
+/* TV Style Match Summary Card */
+.tv-match-card {
+background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.95)), url('https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=600&q=80');
+background-size: cover;
+background-blend-mode: overlay;
+border: 2px solid var(--accent-gold);
+border-radius: 14px;
+padding: 14px;
+margin-bottom: 14px;
+box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+backdrop-filter: blur(3px);
+box-sizing: border-box;
+}
+
+.tv-team-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background: rgba(16, 185, 129, 0.25);
+border: 1px solid var(--accent-green);
+padding: 10px 12px;
+border-radius: 8px;
+font-weight: bold;
+font-size: 0.95rem;
+color: #fff;
+margin-bottom: 8px;
+box-sizing: border-box;
+}
+
+.fireworks-container {
+position: relative;
+width: 100%;
+height: 60px;
+margin-bottom: 10px;
+overflow: hidden;
+box-sizing: border-box;
+}
+.firework-particle {
+position: absolute;
+width: 6px;
+height: 6px;
+background-color: var(--accent-gold);
+border-radius: 50%;
+animation: fireworkAnim 1s ease-out infinite;
+}
+@keyframes fireworkAnim {
+0% { transform: translate(0, 50px) scale(1); opacity: 1; }
+100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+.bottom-nav-tabs {
+display: grid;
+grid-template-columns: repeat(5, 1fr);
+gap: 4px;
+margin-top: 12px;
+background: var(--input-bg);
+padding: 6px;
+border-radius: 12px;
+border: 1px solid var(--border-color);
+box-sizing: border-box;
+}
+.nav-tab-btn {
+background: transparent;
+color: var(--text-muted);
+border: none;
+font-size: 0.65rem;
+font-weight: bold;
+padding: 8px 2px;
+border-radius: 8px;
+cursor: pointer;
+text-align: center;
+transition: all 0.2s;
+box-sizing: border-box;
+}
+.nav-tab-btn.active {
+background: var(--accent-blue);
+color: white;
+box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+}
+
+/* ===== FULL MATCH SUMMARY ===== */
+.match-summary-full{font-size:.78rem;color:#fff}
+.summary-meta{background:rgba(59,130,246,.12);border:1px solid var(--accent-blue);padding:9px;border-radius:9px;margin-bottom:10px}
+.summary-section{border:1px solid var(--border-color);border-radius:10px;padding:9px;margin:8px 0;background:rgba(15,23,42,.75)}
+.summary-section h4{margin:0 0 7px;color:var(--accent-gold);font-size:.82rem}
+.summary-table{width:100%;border-collapse:collapse;font-size:.7rem}
+.summary-table th,.summary-table td{border:1px solid var(--border-color);padding:5px 4px;text-align:center}
+.summary-table th{color:var(--accent-gold);background:rgba(245,158,11,.08)}
+.summary-table td:first-child,.summary-table th:first-child{text-align:left}
+.summary-share-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.summary-card-title{font-weight:900;color:var(--accent-green);font-size:1rem;text-align:center;margin-bottom:7px}
+.saved-match-item{padding:9px;margin-bottom:7px;background:var(--input-bg);border:1px solid var(--border-color);border-radius:9px}
+.saved-match-item button{width:100%;margin-top:5px;padding:7px;border:0;border-radius:7px;font-weight:bold;cursor:pointer}
+
+
+/* ===== OPTIONAL SINGLE CAPTAIN VS POSTER - ADDITIVE FEATURE ===== */
+.captain-poster-settings{margin-top:12px;padding:12px;border:1px solid rgba(245,158,11,.35);border-radius:14px;background:linear-gradient(145deg,rgba(19,29,49,.96),rgba(8,13,26,.96));box-shadow:0 8px 22px rgba(0,0,0,.28)}
+.captain-poster-settings h4{margin:0 0 4px;color:#fbbf24;font-size:.9rem}
+.captain-poster-settings .cps-note{font-size:.68rem;color:#94a3b8;line-height:1.4;margin-bottom:9px}
+.cps-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cps-grid label{font-size:.68rem}
+.cps-grid input{padding:8px;font-size:.75rem}
+.cps-file-row{margin-top:8px}
+.cps-file-row input[type=file]{padding:7px}
+.cps-preview{display:none;margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid #2a3d61;background:#080d1a}
+.cps-preview img{width:100%;display:block;max-height:180px;object-fit:cover}
+.cps-actions{display:flex;gap:7px;margin-top:8px}
+.cps-btn{flex:1;border:0;border-radius:8px;padding:8px;font-size:.72rem;font-weight:800;cursor:pointer}
+.cps-generate{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
+.cps-clear{background:#1c2942;color:#fff}
+#captainPosterSummaryCard{display:none;margin:10px 0;padding:8px;border:1px solid #f59e0b;border-radius:12px;background:#111827;text-align:center}
+#captainPosterSummaryCard img{width:100%;border-radius:9px;display:block}
+#captainPosterSummaryCard .cps-summary-title{color:#fbbf24;font-weight:900;font-size:.78rem;margin-bottom:6px}
+
+
+/* ===== Congratulations popup visual polish only ===== */
+#matchResultModal .modal-body{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(245,158,11,.28),transparent 42%),
+    linear-gradient(145deg,#101827,#0b1220 55%,#07151a);
+  border:2px solid rgba(245,158,11,.9)!important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 20px 70px rgba(0,0,0,.75),0 0 45px rgba(245,158,11,.18);
+  animation:cpsPop .42s cubic-bezier(.2,.8,.2,1);
+}
+#matchResultModal .modal-body:before{
+  content:"";
+  position:absolute;inset:-45%;
+  background:conic-gradient(from 0deg,transparent,rgba(16,185,129,.10),transparent,rgba(245,158,11,.12),transparent);
+  animation:cpsSpin 7s linear infinite;
+  pointer-events:none;
+}
+#matchResultModal #resultHeading,#matchResultModal #resultMessageText,#matchResultModal .summary-share-row,#matchResultModal .btn{
+  position:relative;z-index:1;
+}
+#matchResultModal #resultHeading{
+  font-size:1.35rem!important;
+  letter-spacing:.5px;
+  text-shadow:0 0 12px rgba(245,158,11,.7),0 2px 10px rgba(0,0,0,.8);
+  animation:cpsGlow 1.6s ease-in-out infinite alternate;
+}
+@keyframes cpsPop{from{transform:scale(.86);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes cpsGlow{from{filter:drop-shadow(0 0 2px rgba(245,158,11,.3))}to{filter:drop-shadow(0 0 12px rgba(245,158,11,.75))}}
+@keyframes cpsSpin{to{transform:rotate(360deg)}}
+
+
+
+/* ===== GUEST CHAT USERNAME POPUP - ADDITIVE ONLY ===== */
+#guestUsernameModal .modal-body{max-width:390px;text-align:center}
+#guestUsernameModal input{margin-top:8px}
+.guest-chat-name-btn{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer;width:100%;margin-top:10px}
+.guest-chat-name-note{font-size:.7rem;color:var(--text-muted);line-height:1.4;margin-top:5px}
+
+.mic-btn.mic-recording{
+background:linear-gradient(135deg,#ef4444,#b91c1c)!important;
+border-color:#fca5a5!important;
+box-shadow:0 0 0 2px rgba(239,68,68,.18),0 0 14px rgba(239,68,68,.45);
+animation:voiceMicPulse 1s ease-in-out infinite;
+}
+@keyframes voiceMicPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+</style>
+
+<style>
+.live-score-popup-body{max-height:92vh!important;overflow-y:auto!important}
+.popup-meta{font-size:.78rem;color:var(--text-muted);margin-top:4px}
+.popup-current-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:12px;text-align:left}
+.popup-current-grid>div{background:rgba(15,23,42,.72);border:1px solid var(--border-color);border-radius:9px;padding:8px}
+.popup-current-grid small{display:block;color:var(--accent-gold);font-size:.65rem;margin-bottom:3px}
+.popup-current-grid strong{display:block;color:#fff;font-size:.76rem;word-break:break-word}
+.popup-detail-section{margin-top:12px;background:rgba(15,23,42,.72);border:1px solid var(--border-color);border-radius:10px;padding:9px;text-align:left}
+.popup-detail-section h4{margin:0 0 7px;color:var(--accent-gold);font-size:.82rem}
+.popup-stat-row{display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid rgba(148,163,184,.14);font-size:.7rem}
+.popup-stat-row:last-child{border-bottom:0}
+.popup-stat-row b{color:#fff;min-width:90px}
+.popup-stat-row span{color:var(--text-muted);text-align:right}
+@media(max-width:560px){.popup-current-grid{grid-template-columns:1fr}.popup-stat-row{flex-direction:column;gap:3px}.popup-stat-row span{text-align:left}}
+</style>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
+<script>
+(function(){
+  function restoreSetupNames(){
+    var a = document.getElementById("teamA");
+    var b = document.getElementById("teamB");
+    var sa = localStorage.getItem("savedTeamA");
+    var sb = localStorage.getItem("savedTeamB");
+    if (a && sa !== null) a.value = sa;
+    if (b && sb !== null) b.value = sb;
+  }
+  document.addEventListener("DOMContentLoaded", function(){
+    restoreSetupNames();
+    ["teamA","teamB"].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){
+        el.addEventListener("input", function(){ if(typeof saveInputsState==="function") saveInputsState(); });
+        el.addEventListener("change", function(){ if(typeof saveInputsState==="function") saveInputsState(); });
+      }
+    });
+  });
+})();
+</script>
+
+</head>
+<body oncontextmenu="return false;">
+
+<div class="container">
+
+<div class="rainbow-header">
+<h1 class="brand-title-large">🏏 CRICKET LOVERS 🏏</h1>
+<div class="made-by-author">Made by Irfan Aslam</div>
+</div>
+
+<div class="top-banners-row">
+<div class="check-update-banner" onclick="checkForAppUpdate()">
+<h3 style="margin:0; font-size: 0.8rem; color: #ffffff;">🔄 Check Update</h3>
+</div>
+
+<div class="get-live-score-banner" onclick="openGetLiveScoreModal()">
+<h3 style="margin:0; font-size: 0.8rem; color: #ffffff;">⚡ Live Score</h3>
+</div>
+</div>
+
+<!-- SCORER & ADMIN TOP ROW -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+<div class="login-portal-card" id="scorerAuthCard" style="border-color: var(--accent-green); margin-bottom: 0; padding: 10px;">
+<h3 style="color: var(--accent-green); margin-top:0; font-size: 0.8rem;">🔒 Scorer Access</h3>
+<p style="font-size:0.6rem; color:var(--text-muted); margin:0 0 6px 0;">Enter password to unlock controls.</p>
+<div id="scorerLoginForm">
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<input type="password" id="scorerPasswordInput" placeholder="Password" style="padding: 6px; font-size: 0.75rem;">
+<button class="btn btn-start" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="unlockScorerMode()">Unlock</button>
+</div>
+</div>
+<div id="scorerStatusPanel" style="display:none;">
+<p style="color: var(--accent-green); font-size:0.7rem; margin:0 0 4px 0;">Status: Unlocked 🟢</p>
+<div style="margin-bottom: 6px; padding: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); border-radius: 6px;">
+<label style="color: var(--accent-green); margin-bottom: 2px; font-size: 0.65rem;">📡 Live Control:</label>
+<button id="scorerLiveToggleBtn" class="btn btn-start" style="margin-top:0; padding:6px; font-size: 0.7rem;" onclick="toggleScorerLiveBroadcast()">🟢 Go Live (ON)</button>
+</div>
+<button class="btn btn-danger" style="margin-top:0; padding:4px; font-size:0.65rem;" onclick="lockScorerMode()">Lock</button>
+</div>
+</div>
+
+<div class="login-portal-card" id="adminCardContainer" style="border-color: var(--accent-gold); margin-bottom: 0; padding: 10px;">
+<h3 style="color: var(--accent-gold); margin-top:0; font-size: 0.8rem;">👑 Master Admin</h3>
+<div id="adminLoginForm">
+<div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px;">
+<input type="password" id="inlineAdminPass" placeholder="Admin Pass" style="padding: 6px; font-size: 0.75rem;">
+<button class="btn btn-admin" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="loginAdminInline()">Login</button>
+</div>
+</div>
+<div id="adminControlPanel" style="display:none;">
+<p style="color: var(--accent-green); font-size:0.7rem; margin:0 0 6px 0;">Status: Admin 👑</p>
+<button class="btn btn-start" style="margin-top:0; margin-bottom:6px; padding: 6px; font-size: 0.65rem;" onclick="openOldMatchEntryModal()">➕ Add Old Match</button>
+<button class="btn btn-saved" style="margin-top:0; margin-bottom:6px; padding: 6px; font-size: 0.65rem;" onclick="openChangePasswordModal()">🔑 Password</button>
+<div style="margin-bottom: 6px; padding: 6px; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--accent-gold); border-radius: 6px;">
+<label style="color: var(--accent-gold); margin-bottom: 2px; font-size: 0.65rem;">📡 Broadcast:</label>
+<button id="adminLiveToggleBtn" class="btn btn-start" style="margin-top:0; padding: 6px; font-size: 0.7rem;" onclick="toggleAdminLiveBroadcast()">🟢 Live (ON)</button>
+</div>
+<button class="btn btn-saved" style="margin-top:0; margin-bottom:6px; padding: 6px; font-size: 0.65rem;" onclick="viewRegisteredUsersByAdmin()">👥 Users</button>
+<button class="btn btn-danger" style="margin-top:0; padding: 6px; font-size: 0.65rem;" onclick="logoutAdmin()">Logout</button>
+</div>
+</div>
+</div>
+
+<!-- USER REGISTRATION SECTION -->
+<div style="display: flex; justify-content: center; margin-bottom: 15px;">
+<div class="login-portal-card" id="userCardContainer" style="border-color: var(--accent-blue); width: 100%; margin-bottom: 0; padding: 10px;">
+<h3 style="color: var(--accent-blue); margin-top:0; font-size: 0.8rem; text-align: center;">👤 User Account</h3>
+<div id="userLoginForm">
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<input type="email" id="inlineUserEmail" placeholder="Gmail / Username" style="padding: 6px; font-size: 0.75rem;">
+<input type="password" id="inlineUserPass" placeholder="Password" style="padding: 6px; font-size: 0.75rem;">
+<div style="display: flex; gap: 6px;">
+<button class="btn btn-start" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="registerUserInline()">Register</button>
+<button class="btn btn-admin" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="loginUserInline()">Login</button>
+</div>
+</div>
+</div>
+<div id="userControlPanel" style="display:none;">
+<p id="userLoggedEmailDisplay" style="color: var(--accent-green); font-size:0.7rem; margin:0 0 6px 0; text-align:center;"></p>
+<button class="btn btn-danger" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="logoutUser()">Logout</button>
+</div>
+</div>
+</div>
+
+<!-- BACKUP & RESTORE -->
+<div class="card" style="padding: 12px; margin-bottom: 15px;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+<button class="btn btn-backup" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="exportAppDataToFile()">📥 Save File</button>
+<button class="btn btn-restore" style="margin-top:0; padding: 6px; font-size: 0.75rem;" onclick="triggerFileInput()">📤 Restore</button>
+</div>
+<button class="btn btn-cloud" style="margin-top:0; padding: 8px; font-size: 0.75rem; width: 100%; display: block; text-align: center;" onclick="syncWithPublicCloudAPI()">☁️ Public Cloud API</button>
+<input type="file" id="importFileField" style="display:none;" accept=".json" onchange="importAppDataFromFile(event)">
+</div>
+
+<!-- LIVE CHAT BOX -->
+<div class="card" style="border-color: var(--accent-blue);">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<h3 style="color: var(--accent-blue); margin:0; font-size: 0.9rem;">💬 Live Match Chat & Voice</h3>
+<select id="chatLanguageSelect" style="width: 110px; padding: 4px; font-size: 0.7rem;" onchange="updateChatPlaceholder();">
+<option value="en">English</option>
+<option value="ur">اردو</option>
+<option value="hi">हिंदी</option>
+<option value="ar">العربية</option>
+</select>
+</div>
+<div class="chat-container">
+<div class="chat-messages" id="chatMessagesBox">
+<div class="chat-message-bubble" data-msg-id="sys1"><b>System:</b> Welcome to live match chat!</div>
+</div>
+<div class="chat-input-row">
+<input type="text" id="chatInputMessage" placeholder="Type message..." onkeypress="handleChatKeyPress(event)">
+<button type="button" class="mic-btn" id="micRecordBtn" title="Record Voice Note" onclick="handleMicButtonClick(event)">🎤</button>
+<span id="voiceRecordStatus" style="display:none;font-size:.68rem;color:var(--accent-green);align-self:center;white-space:nowrap;">● Recording…</span>
+<button class="btn btn-share" style="margin-top:0; width: 65px; padding: 6px; font-size: 0.75rem;" onclick="sendChatMessage()">Send</button>
+</div>
+</div>
+</div>
+
+<!-- SETUP FORM -->
+<div class="card" id="setupForm">
+<div class="grid-2">
+<div>
+<label>Batting Team:</label>
+<input type="text" id="teamA" value="Team A" oninput="saveInputsState()">
+</div>
+<div>
+<label>Bowling Team:</label>
+<input type="text" id="teamB" value="Team B" oninput="saveInputsState()">
+</div>
+</div>
+
+<div class="grid-2">
+<div>
+<label>Team A Players:</label>
+<select id="teamAPlayerCount" onchange="generatePlayerInputs()"></select>
+</div>
+<div>
+<label>Team B Players:</label>
+<select id="teamBPlayerCount" onchange="generatePlayerInputs()"></select>
+</div>
+</div>
+
+<div class="grid-2">
+<div>
+<label>Total Overs:</label>
+<input type="number" id="totalOvers" value="2" min="1" max="100">
+</div>
+<div>
+<label>Format:</label>
+<select id="matchFormat" onchange="handleFormatChange()">
+<option value="T2" selected>T2 Match (2 Overs)</option>
+<option value="T3">T3 Match (3 Overs)</option>
+<option value="T4">T4 Match (4 Overs)</option>
+<option value="T5">T5 Match (5 Overs)</option>
+<option value="T6">T6 Match (6 Overs)</option>
+<option value="T7">T7 Match (7 Overs)</option>
+<option value="T8">T8 Match (8 Overs)</option>
+<option value="T9">T9 Match (9 Overs)</option>
+<option value="T10">T10 Match (10 Overs)</option>
+<option value="Test / Custom">Test / Custom</option>
+</select>
+</div>
+</div>
+
+<label style="margin-top:8px;">Team A Players Names:</label>
+<div class="player-grid" id="teamAPlayersContainer"></div>
+
+<label style="margin-top:8px;">Team B Players Names:</label>
+<div class="player-grid" id="teamBPlayersContainer"></div>
+
+
+<!-- ===== OPTIONAL SINGLE CAPTAIN VS POSTER ===== -->
+<div class="card captain-poster-settings" id="captainPosterSettings">
+  <h4>🏏 Captain VS Poster (Optional)</h4>
+  <div class="cps-note">
+    اگر چاہیں تو ایک تیار شدہ Captain VS تصویر یہاں upload کریں۔ میچ کھیلنے کے لیے یہ ضروری نہیں ہے۔
+    نام صرف poster/summary میں دکھائے جائیں گے۔
+  </div>
+  <div class="cps-grid">
+    <div>
+      <label>Captain A Name</label>
+      <input type="text" id="captainAName" placeholder="Captain A">
+    </div>
+    <div>
+      <label>Captain B Name</label>
+      <input type="text" id="captainBName" placeholder="Captain B">
+    </div>
+  </div>
+  <div class="cps-file-row">
+    <label>One Captain VS Photo</label>
+    <input type="file" id="captainVsPhoto" accept="image/*">
+  </div>
+  <div class="cps-preview" id="captainVsPreview">
+    <img id="captainVsPreviewImg" alt="Captain VS Poster Preview">
+  </div>
+  <div class="cps-actions">
+    <button type="button" class="cps-btn cps-generate" onclick="saveCaptainPosterSettings()">💾 Save Captain Poster</button>
+    <button type="button" class="cps-btn cps-clear" onclick="clearCaptainPosterSettings()">🗑️ Clear</button>
+  </div>
+</div>
+<!-- ===== END OPTIONAL SINGLE CAPTAIN VS POSTER ===== -->
+
+<button class="btn btn-start" onclick="checkScorerAuthBeforeAction('start')">START NEW MATCH 🚀</button>
+<button class="btn btn-saved" onclick="openSavedMatches()">📁 VIEW SAVED MATCHES</button>
+<button class="btn btn-stats" onclick="openPlayerStatsModal()">⭐ PLAYER STATS</button>
+<button class="btn btn-admin" style="background: linear-gradient(135deg, #ec4899, #be185d);" onclick="openTeamLeaderboardModal()">🏆 TEAM LEADERBOARD</button>
+
+<div class="bottom-nav-tabs">
+<button class="nav-tab-btn active" onclick="switchMainTab('setup')">🏠 Setup</button>
+<button class="nav-tab-btn" onclick="openSavedMatches()">📁 Saved</button>
+<button class="nav-tab-btn" onclick="openPlayerStatsModal()">⭐ Stats</button>
+<button class="nav-tab-btn" onclick="openTeamLeaderboardModal()">🏆 Teams</button>
+<button class="nav-tab-btn" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981;" onclick="openAllMatchesSummaryTab()">📋 All</button>
+</div>
+</div>
+
+<!-- LIVE SCOREBOARD PANEL -->
+<div id="liveBoard">
+<div class="score-header">
+<div style="color: var(--accent-gold); font-weight: bold;" id="liveMatchTitle">Team A VS Team B</div>
+<div style="color:var(--accent-purple); font-size:0.8rem; font-weight:bold;" id="liveFormatDisplay">Format: T2</div>
+<div style="color:var(--accent-blue); font-size:0.9rem; font-weight:bold; margin-top:4px;" id="currentInningsLabel">Innings 1</div>
+<div class="score-display"><span id="runs">0</span>/<span id="wickets">0</span></div>
+<div style="color: var(--accent-blue); font-weight: bold;">Overs: <span id="overs">0.0</span> / <span id="maxOversDisplay">2</span></div>
+<div id="matchStatusText" style="color:var(--danger-red); font-weight:bold; margin-top:5px;"></div>
+</div>
+
+<div class="card">
+<label style="margin-bottom:8px;">🏏 Live Batters:</label>
+<div class="highlight-striker" id="strikerBox">
+<span>🔴 Strike: <span id="strikerName">Batter 1</span></span>
+<span style="font-size:0.75rem; color:var(--accent-gold);">ON STRIKE</span>
+</div>
+<div class="highlight-non-striker" id="nonStrikerBox">
+<span>⚪ Non-Strike: <span id="nonStrikerName">Batter 2</span></span>
+</div>
+<button style="background:var(--input-bg); border:1px solid var(--accent-gold); color:var(--accent-gold); width:100%; padding:6px; border-radius:6px; font-weight:bold; margin-top:5px; cursor:pointer;" onclick="checkScorerAuthBeforeAction('rotate')">⚡ Rotate Strike</button>
+</div>
+
+<div class="card" style="border:2px solid var(--accent-gold);">
+<label style="color:var(--accent-gold);">⚡ Current Bowler:</label>
+<select id="currentBowlerSelect" onchange="renderBowlerStatsTable(); syncScoreToFirebase()"></select>
+</div>
+
+<div class="card">
+<div class="keypad">
+<button class="key" onclick="checkScorerAuthBeforeAction('run', 0)">0</button>
+<button class="key" onclick="checkScorerAuthBeforeAction('run', 1)">1</button>
+<button class="key" onclick="checkScorerAuthBeforeAction('run', 2)">2</button>
+<button class="key" onclick="checkScorerAuthBeforeAction('run', 3)">3</button>
+<button class="key" style="background:#065f46; color:#10b981;" onclick="checkScorerAuthBeforeAction('run', 4)">4</button>
+<button class="key" style="background:#065f46; color:#10b981;" onclick="checkScorerAuthBeforeAction('run', 6)">6</button>
+<button class="key key-extra" onclick="checkScorerAuthBeforeAction('extra', 'WD')">WD</button>
+<button class="key key-extra" onclick="checkScorerAuthBeforeAction('extra', 'NB')">NB</button>
+<button class="key key-wicket" onclick="checkScorerAuthBeforeAction('wicket')">WICKET 🔴</button>
+</div>
+
+<button class="btn btn-start" style="margin-top:15px;" onclick="checkScorerAuthBeforeAction('save')">💾 SAVE MATCH DATA</button>
+<button class="btn btn-admin" onclick="exitMatch()">⚙️ Back to Setup</button>
+</div>
+
+<div class="card">
+<label>📊 Batters Scorecard:</label>
+<div id="battersTableContainer"></div>
+
+<label style="margin-top:15px;">🎳 Bowlers Figure:</label>
+<div id="bowlersTableContainer"></div>
+
+<label style="margin-top:15px;">📋 Over Breakdown:</label>
+<div id="oversTableContainer"></div>
+</div>
+</div>
+
+</div>
+
+<!-- ALL MODALS -->
+<div class="modal" id="getLiveScoreModal">
+<div class="modal-body live-score-popup-body" style="border: 2px solid #10b981; max-width: 720px; width: 96%;">
+<button class="close-btn" onclick="closeGetLiveScoreModal()">✖ Close</button>
+<h3 style="color: var(--accent-green); margin-top:0; text-align:center;">📡 Live Score Dashboard</h3>
+<div id="popupLiveScoreContent" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 12px; padding: 12px; text-align: center; margin-top: 10px;">
+<div style="font-weight: bold; color: var(--accent-gold); font-size: 1rem;" id="popupMatchTitle">Team A VS Team B</div>
+<div style="font-size: 2.8rem; font-weight: 900; color: var(--accent-green); font-family: monospace; margin: 6px 0;"><span id="popupRuns">0</span>/<span id="popupWickets">0</span></div>
+<div class="popup-meta"><span id="popupInnings">Innings 1</span> · <span id="popupOvers">0.0</span> overs</div>
+<div class="popup-current-grid">
+<div><small>🏏 Striker</small><strong id="popupStriker">-</strong></div>
+<div><small>🏏 Non-Striker</small><strong id="popupNonStriker">-</strong></div>
+<div><small>🎳 Current Bowler</small><strong id="popupBowler">-</strong></div>
+</div>
+</div>
+<div class="popup-detail-section"><h4>🏏 Batters Detail</h4><div id="popupBattersDetails"></div></div>
+<div class="popup-detail-section"><h4>🎳 Bowlers Detail</h4><div id="popupBowlersDetails"></div></div>
+<button class="btn btn-start" style="margin-top: 15px;" onclick="refreshLiveScoreModalData()">🔄 Refresh Live Details</button>
+</div>
+</div>
+
+<div class="modal" id="oldMatchEntryModal" style="display:none; z-index: 3500;">
+<div class="modal-body" style="border: 2px solid var(--accent-gold);">
+<button class="close-btn" onclick="closeOldMatchEntryModal()">✖ Close</button>
+<h3 style="color: var(--accent-gold); margin-top:0; text-align:center;">📅 Add Old Match Data</h3>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+<label>Match Title:</label>
+<input type="text" id="oldMatchTitle" placeholder="Team A vs Team B">
+<label>Match Date (DD/MM/YYYY):</label>
+<input type="text" id="oldMatchDate" placeholder="18/09/2026">
+<label>Team 1 Summary:</label>
+<input type="text" id="oldTeam1Summary" placeholder="Team A: 35/2">
+<label>Team 2 Summary:</label>
+<input type="text" id="oldTeam2Summary" placeholder="Team B: 36/1">
+<label>Result Summary:</label>
+<input type="text" id="oldMatchResultSummary" placeholder="Team B Won">
+<button class="btn btn-start" style="margin-top:10px;" onclick="saveOldMatchDataEntry()">💾 Save Old Match</button>
+</div>
+</div>
+</div>
+
+<div class="modal" id="changePasswordModal" style="display:none; z-index: 3500;">
+<div class="modal-body" style="border: 2px solid var(--accent-gold);">
+<button class="close-btn" onclick="closeChangePasswordModal()">✖ Close</button>
+<h3 style="color: var(--accent-gold); margin-top:0; text-align:center;">🔑 Change Passwords</h3>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+<label>New Admin Password:</label>
+<input type="password" id="newAdminPassInput" placeholder="New Admin Password">
+<label>New Scorer Password:</label>
+<input type="password" id="newScorerPassInput" placeholder="New Scorer Password">
+<button class="btn btn-admin" style="margin-top:10px;" onclick="saveNewPasswords()">💾 Save Passwords</button>
+</div>
+</div>
+</div>
+
+<div class="modal" id="superOverModal" style="display:none; z-index: 3500;">
+<div class="modal-body" style="border: 2px solid var(--accent-gold); text-align: center;">
+<h3 style="color: var(--accent-gold); margin-top:0;">⚡ MATCH TIED - SUPER OVER!</h3>
+<select id="superOverCountSelect" style="margin-bottom:15px; padding:10px;">
+<option value="1">1 Over Super Over</option>
+<option value="2">2 Overs Super Over</option>
+<option value="3">3 Overs Super Over</option>
+</select>
+<button class="btn btn-start" onclick="startSuperOverMatch()">START SUPER OVER 🚀</button>
+</div>
+</div>
+
+
+<!-- Optional captain poster inside match summary -->
+<div id="captainPosterSummaryCard">
+  <div class="cps-summary-title">🏏 CAPTAIN FACE-OFF</div>
+  <img id="captainPosterSummaryImg" alt="Captain Face-Off">
+</div>
+
+<div class="modal" id="matchResultModal" style="display:none; z-index: 3000;">
+<div class="modal-body" style="border: 2px solid var(--accent-gold); text-align: center; max-width: 420px;">
+<h2 id="resultHeading" style="color: var(--accent-gold); margin-top: 0;">🎉 CONGRATULATIONS! 🎉</h2>
+<div class="fireworks-container" id="fireworksContainer">
+<div class="firework-particle" style="top:20px; left:50%; --dx:-40px; --dy:-20px; background:#10b981;"></div>
+<div class="firework-particle" style="top:20px; left:50%; --dx:40px; --dy:-30px; background:#f59e0b;"></div>
+</div>
+<div id="resultMessageText" style="font-size: 0.9rem; color: #ffffff; margin: 10px 0; line-height: 1.4; text-align: left;"></div>
+<div class="summary-share-row">
+<button class="whatsapp-btn btn" style="margin-top:0;" onclick="shareMatchOnWhatsApp()">💬 WhatsApp</button>
+<button class="btn btn-saved" style="margin-top:0;" onclick="viewCurrentMatchSummary()">📋 Full Summary</button>
+</div>
+<button class="btn btn-start" onclick="closeMatchResultModal()">OK / Continue</button>
+</div>
+</div>
+
+<div class="modal" id="bowlerSelectModal" style="display:none; z-index: 2500;">
+<div class="modal-body" style="border: 2px solid var(--accent-blue); max-width: 380px;">
+<h3 style="color: var(--accent-blue); margin-top:0; text-align: center;">🎳 Select Next Bowler</h3>
+<select id="modalBowlerDropdown" style="margin-bottom: 15px; padding: 10px;"></select>
+<button class="btn btn-start" onclick="confirmModalBowler()">Confirm</button>
+</div>
+</div>
+
+<div class="modal" id="savedModal">
+<div class="modal-body">
+<button class="close-btn" onclick="closeSaved()">✖ Close</button>
+<h3 style="color: var(--accent-purple); margin-top:0;">📁 Saved Matches</h3>
+<div id="savedMatchesList" style="max-height:320px; overflow-y:auto; font-size:0.85rem; margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="modal" id="allMatchesSummaryModal">
+<div class="modal-body" style="border: 2px solid var(--accent-green);">
+<button class="close-btn" onclick="closeAllMatchesSummaryModal()">✖ Close</button>
+<h3 style="color: var(--accent-green); margin-top:0; text-align:center;">📋 All Matches Summary</h3>
+<div id="allMatchesSummaryListContainer" style="max-height:340px; overflow-y:auto; font-size:0.85rem; margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="modal" id="adminUsersModal">
+<div class="modal-body">
+<button class="close-btn" onclick="closeAdminUsersModal()">✖ Close</button>
+<h3 style="color: var(--accent-gold); margin-top:0;">👥 Users</h3>
+<div id="adminUsersListContainer" style="max-height:300px; overflow-y:auto; font-size:0.85rem; margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="modal" id="playerStatsModal">
+<div class="modal-body">
+<button class="close-btn" onclick="closePlayerStatsModal()">✖ Close</button>
+<h3 style="color: var(--accent-gold); margin-top:0; text-align:center;">⭐ Player Rankings</h3>
+<div id="playerRankingsContainer" style="margin-top:15px; max-height:280px; overflow-y:auto;"></div>
+</div>
+</div>
+
+<div class="modal" id="teamLeaderboardModal">
+<div class="modal-body">
+<button class="close-btn" onclick="closeTeamLeaderboardModal()">✖ Close</button>
+<h3 style="color: var(--accent-gold); margin-top:0; text-align:center;">🏆 Leaderboard</h3>
+<div id="teamLeaderboardContainer" style="margin-top:15px; max-height:280px; overflow-y:auto;"></div>
+</div>
+</div>
+
+<!-- Guest username popup: additive chat feature only -->
+<div class="modal" id="guestUsernameModal" style="display:none; z-index:5000;">
+  <div class="modal-body">
+    <button class="close-btn" type="button" onclick="closeGuestUsernameModal()">✖ Close</button>
+    <h3 style="color:var(--accent-blue);margin-top:0;">👤 Choose Your Username</h3>
+    <div style="font-size:.82rem;line-height:1.4;">Chat شروع کرنے کے لیے اپنا نام لکھیں۔</div>
+    <input type="text" id="guestUsernameInput" maxlength="30" autocomplete="nickname" placeholder="Enter your username" onkeypress="if(event.key==='Enter') saveGuestChatUsername()">
+    <div class="guest-chat-name-note">کوئی بھی نام رکھ سکتے ہیں۔ یہی نام Live Chat میں نظر آئے گا۔</div>
+    <button class="guest-chat-name-btn" type="button" onclick="saveGuestChatUsername()">🚀 Start Chat</button>
+  </div>
+</div>
+
+<div class="modal" id="wicketModal">
+<div class="modal-body">
+<button class="close-btn" onclick="closeWicketModal()">✖ Close</button>
+<h3 style="color: var(--danger-red); margin-top:0;">🔴 Wicket Details</h3>
+<select id="wicketType">
+<option value="Bowled">Bowled</option>
+<option value="Caught">Caught</option>
+<option value="Run Out">Run Out</option>
+<option value="LBW">LBW</option>
+</select>
+<button class="btn btn-start" style="margin-top:15px;" onclick="processWicket()">CONFIRM 🔴</button>
+</div>
+</div>
+
+<script>
+const firebaseConfig = {
+apiKey: "AIzaSyDQ9VIPo5t-vmsPF6U12Fqhd8nhunGPp7A",
+authDomain: "cricket-live-app-bc221.firebaseapp.com",
+databaseURL: "https://cricket-live-app-bc221-default-rtdb.firebaseio.com",
+projectId: "cricket-live-app-bc221",
+storageBucket: "cricket-live-app-bc221.firebasestorage.app",
+messagingSenderId: "351538196223",
+appId: "1:351538196223:web:e021816786880cca49a6ca"
+};
+
+try {
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+var storage = null;
+try {
+  storage = firebase.storage();
+} catch(storageInitError) {
+  console.warn('Firebase Storage unavailable:', storageInitError);
+}
+} catch(e) { console.log("Firebase offline."); }
+
+var lastMicPointerTime = 0;
+var currentUserRole = "Guest";
+var currentUserName = "";
+var adminPassword = localStorage.getItem('adminPassword') || "4334";
+var scorerPassword = localStorage.getItem('scorerPassword') || "433486";
+var isScorerUnlocked = false;
+
+var runs = 0, wickets = 0, balls = 0;
+var maxOvers = 2, totalWicketsAllowed = 5;
+var currentInnings = 1;
+var teamAName = "Team A";
+var teamBName = "Team B";
+var teamAInputPlayers = [];
+var teamBInputPlayers = [];
+var currentBattingPlayers = [];
+var currentBowlingPlayers = [];
+var currentStrikerIndex = 0;
+var currentNonStrikerIndex = 1;
+var nextBatterIndex = 2;
+
+var battersStats = {};
+var bowlersStats = {};
+var firstInningsScore = 0;
+var firstInningsWickets = 0;
+var firstInningsBattersSnapshot = {};
+var firstInningsBowlersSnapshot = {};
+var firstInningsOversSnapshot = [];
+var currentOverEvents = [];
+var completedOvers = [];
+var inningsHistory = [];
+var matchStartedAt = null;
+var currentMatchFinished = false;
+var currentMatchRecord = null;
+
+var isLiveBroadcasting = false;
+var isSuperOver = false;
+
+window.onload = function() {
+populateDropdowns();
+loadSavedInputsState();
+handleFormatChange();
+setupHoldToRecordMic();
+ensureDefaultDataRestored();
+};
+document.addEventListener('DOMContentLoaded', function() {
+  setupHoldToRecordMic();
+  updateChatPlaceholder();
+});
+
+function ensureDefaultDataRestored() {
+var savedMatches = JSON.parse(localStorage.getItem('savedMatchesHistory') || "[]");
+if (savedMatches.length === 0) {
+var defaultHistory = [
+{ title: "Pakistan v Sri Lanka", score: "203/6", overs: "4.0", date: "15/05/2024", summary: "Pakistan Won", t1Summary: "Sri Lanka: 198", t2Summary: "Pakistan: 203-6" }
+];
+localStorage.setItem('savedMatchesHistory', JSON.stringify(defaultHistory));
+}
+}
+
+function saveInputsState() {
+var tA = document.getElementById('teamA').value;
+var tB = document.getElementById('teamB').value;
+localStorage.setItem('savedTeamA', tA);
+localStorage.setItem('savedTeamB', tB);
+
+var pA = [];
+document.querySelectorAll('.p-name-a').forEach(inp => pA.push(inp.value));
+localStorage.setItem('savedPlayersA', JSON.stringify(pA));
+
+var pB = [];
+document.querySelectorAll('.p-name-b').forEach(inp => pB.push(inp.value));
+localStorage.setItem('savedPlayersB', JSON.stringify(pB));
+var ca = document.getElementById('teamAPlayerCount');
+var cb = document.getElementById('teamBPlayerCount');
+if (ca) localStorage.setItem('savedPlayerCountA', ca.value);
+if (cb) localStorage.setItem('savedPlayerCountB', cb.value);
+}
+
+function loadSavedInputsState() {
+var tA = localStorage.getItem('savedTeamA');
+var tB = localStorage.getItem('savedTeamB');
+if (tA !== null && document.getElementById('teamA')) document.getElementById('teamA').value = tA;
+if (tB !== null && document.getElementById('teamB')) document.getElementById('teamB').value = tB;
+var ca = localStorage.getItem('savedPlayerCountA');
+var cb = localStorage.getItem('savedPlayerCountB');
+if (ca && document.getElementById('teamAPlayerCount')) document.getElementById('teamAPlayerCount').value = ca;
+if (cb && document.getElementById('teamBPlayerCount')) document.getElementById('teamBPlayerCount').value = cb;
+if (typeof generatePlayerInputs === 'function') generatePlayerInputs();
+}
+
+function openOldMatchEntryModal() { document.getElementById('oldMatchEntryModal').style.display = 'flex'; }
+function closeOldMatchEntryModal() { document.getElementById('oldMatchEntryModal').style.display = 'none'; }
+function openChangePasswordModal() { document.getElementById('changePasswordModal').style.display = 'flex'; }
+function closeChangePasswordModal() { document.getElementById('changePasswordModal').style.display = 'none'; }
+
+function saveNewPasswords() {
+var newAdmin = document.getElementById('newAdminPassInput').value.trim();
+var newScorer = document.getElementById('newScorerPassInput').value.trim();
+if (newAdmin) { adminPassword = newAdmin; localStorage.setItem('adminPassword', newAdmin); }
+if (newScorer) { scorerPassword = newScorer; localStorage.setItem('scorerPassword', newScorer); }
+alert("Passwords updated successfully! 🔑");
+closeChangePasswordModal();
+}
+
+function saveOldMatchDataEntry() {
+var title = document.getElementById('oldMatchTitle').value.trim();
+var date = document.getElementById('oldMatchDate').value.trim();
+if (!title || !date) { alert("Enter Match Title and Date!"); return; }
+var savedMatches = JSON.parse(localStorage.getItem('savedMatchesHistory') || "[]");
+savedMatches.unshift({ title: title, score: "Completed", overs: "2.0", date: date, summary: "Finished" });
+localStorage.setItem('savedMatchesHistory', JSON.stringify(savedMatches));
+alert("Old match saved! 📅");
+closeOldMatchEntryModal();
+}
+
+function toggleAdminLiveBroadcast() {
+isLiveBroadcasting = !isLiveBroadcasting;
+var btn = document.getElementById('adminLiveToggleBtn');
+btn.className = isLiveBroadcasting ? "btn btn-danger" : "btn btn-start";
+btn.innerHTML = isLiveBroadcasting ? "🔴 Stop Live" : "🟢 Live (ON)";
+syncScoreToFirebase();
+}
+
+function toggleScorerLiveBroadcast() {
+isLiveBroadcasting = !isLiveBroadcasting;
+var btn = document.getElementById('scorerLiveToggleBtn');
+btn.className = isLiveBroadcasting ? "btn btn-danger" : "btn btn-start";
+btn.innerHTML = isLiveBroadcasting ? "🔴 Stop Live" : "🟢 Go Live (ON)";
+syncScoreToFirebase();
+}
+
+function registerUserInline() {
+var email = document.getElementById('inlineUserEmail').value.trim();
+var pass = document.getElementById('inlineUserPass').value.trim();
+if (!email || !pass) { alert("Enter email and password!"); return; }
+var users = JSON.parse(localStorage.getItem('registeredUsersList') || "[]");
+users.push({ email: email, pass: pass });
+localStorage.setItem('registeredUsersList', JSON.stringify(users));
+alert("Registered Successfully! 🎉");
+}
+
+function loginUserInline() {
+var email = document.getElementById('inlineUserEmail').value.trim();
+var pass = document.getElementById('inlineUserPass').value.trim();
+var users = JSON.parse(localStorage.getItem('registeredUsersList') || "[]");
+var found = users.find(u => u.email === email && u.pass === pass);
+if (found) {
+currentUserRole = "User"; currentUserName = email;
+document.getElementById('userLoginForm').style.display = 'none';
+document.getElementById('userControlPanel').style.display = 'block';
+document.getElementById('userLoggedEmailDisplay').innerText = "Logged in: " + email;
+alert("User Logged In! 👤");
+} else { alert("Invalid Credentials!"); }
+}
+
+function logoutUser() {
+currentUserRole = "Guest"; currentUserName = "";
+document.getElementById('userLoginForm').style.display = 'block';
+document.getElementById('userControlPanel').style.display = 'none';
+}
+
+function viewRegisteredUsersByAdmin() {
+var users = JSON.parse(localStorage.getItem('registeredUsersList') || "[]");
+var container = document.getElementById('adminUsersListContainer');
+container.innerHTML = '';
+users.forEach((u, idx) => { container.innerHTML += '<div style="padding:6px; margin-bottom:4px; background:var(--input-bg); border-radius:6px; font-size:0.8rem;">' + (idx+1) + '. ' + u.email + '</div>'; });
+document.getElementById('adminUsersModal').style.display = 'flex';
+}
+function closeAdminUsersModal() { document.getElementById('adminUsersModal').style.display = 'none'; }
+
+function exportAppDataToFile() {
+var appData = { teamA: document.getElementById('teamA').value, teamB: document.getElementById('teamB').value, savedMatches: localStorage.getItem('savedMatchesHistory') };
+var dl = document.createElement('a');
+dl.setAttribute("href", "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData)));
+dl.setAttribute("download", "cricket_backup.json");
+document.body.appendChild(dl); dl.click(); dl.remove();
+}
+
+function triggerFileInput() { document.getElementById('importFileField').click(); }
+function importAppDataFromFile(event) {
+var reader = new FileReader();
+reader.onload = function(e) {
+try {
+var imported = JSON.parse(e.target.result);
+if (imported.savedMatches) localStorage.setItem('savedMatchesHistory', imported.savedMatches);
+alert("Restored Successfully!");
+} catch(err) { alert("Invalid File!"); }
+};
+reader.readAsText(event.target.files[0]);
+}
+function syncWithPublicCloudAPI() { alert("Synced Successfully!"); }
+
+function populateDropdowns() {
+var teamASelect = document.getElementById('teamAPlayerCount');
+var teamBSelect = document.getElementById('teamBPlayerCount');
+for (var i = 2; i <= 11; i++) {
+var sel = (i === 6) ? 'selected' : '';
+teamASelect.innerHTML += '<option value="' + i + '" ' + sel + '>' + i + ' Players</option>';
+teamBSelect.innerHTML += '<option value="' + i + '" ' + sel + '>' + i + ' Players</option>';
+}
+}
+
+function handleFormatChange() {
+var format = document.getElementById('matchFormat').value;
+var oversInput = document.getElementById('totalOvers');
+if (format !== 'Test / Custom') { maxOvers = parseInt(format.replace('T', '')); oversInput.value = maxOvers; }
+}
+
+function generatePlayerInputs() {
+var countA = parseInt(document.getElementById('teamAPlayerCount').value) || 6;
+localStorage.setItem('savedPlayerCountA', String(countA));
+var countB = parseInt(document.getElementById('teamBPlayerCount').value) || 6;
+localStorage.setItem('savedPlayerCountB', String(countB));
+var containerA = document.getElementById('teamAPlayersContainer');
+var containerB = document.getElementById('teamBPlayersContainer');
+var savedA = JSON.parse(localStorage.getItem('savedPlayersA') || "[]");
+var savedB = JSON.parse(localStorage.getItem('savedPlayersB') || "[]");
+
+containerA.innerHTML = '';
+for (var i = 1; i <= countA; i++) {
+containerA.innerHTML += '<input type="text" class="p-name-a" placeholder="P ' + i + '" value="' + (savedA[i-1] || ("Player " + i)) + '" oninput="saveInputsState()">';
+}
+containerB.innerHTML = '';
+for (var i = 1; i <= countB; i++) {
+containerB.innerHTML += '<input type="text" class="p-name-b" placeholder="P ' + i + '" value="' + (savedB[i-1] || ("Player " + i)) + '" oninput="saveInputsState()">';
+}
+}
+
+
+function syncScoreToFirebase() {
+  if (!db) {
+    console.warn("Firebase Database is not initialized.");
+    return;
+  }
+  var state = {
+    isLive: !!isLiveBroadcasting,
+    matchStartedAt: matchStartedAt || null,
+    currentMatchFinished: !!currentMatchFinished,
+    teamAName: teamAName || "Team A",
+    teamBName: teamBName || "Team B",
+    teamAPlayers: Array.isArray(teamAInputPlayers) ? teamAInputPlayers : [],
+    teamBPlayers: Array.isArray(teamBInputPlayers) ? teamBInputPlayers : [],
+    battingPlayers: Array.isArray(currentBattingPlayers) ? currentBattingPlayers : [],
+    bowlingPlayers: Array.isArray(currentBowlingPlayers) ? currentBowlingPlayers : [],
+    strikerIndex: Number(currentStrikerIndex) || 0,
+    nonStrikerIndex: Number.isFinite(Number(currentNonStrikerIndex)) ? Number(currentNonStrikerIndex) : 1,
+    nextBatterIndex: Number(nextBatterIndex) || 2,
+    currentBowler: (document.getElementById('currentBowlerSelect') || {}).value || "",
+    runs: Number(runs) || 0,
+    wickets: Number(wickets) || 0,
+    balls: Number(balls) || 0,
+    maxOvers: Number(maxOvers) || 2,
+    currentInnings: Number(currentInnings) || 1,
+    firstInningsScore: Number(firstInningsScore) || 0,
+    firstInningsWickets: Number(firstInningsWickets) || 0,
+    battersStats: battersStats || {},
+    bowlersStats: bowlersStats || {},
+    currentOverEvents: currentOverEvents || [],
+    completedOvers: completedOvers || [],
+    inningsHistory: inningsHistory || [],
+    updatedAt: firebase.database.ServerValue.TIMESTAMP
+  };
+  db.ref('liveMatchState').set(state).catch(function(err) {
+    console.error("Live score Firebase sync failed:", err);
+  });
+}
+
+function applyRemoteLiveState(state) {
+  if (!state) return;
+  if (currentUserRole === "Admin" || isScorerUnlocked) return;
+
+  teamAName = state.teamAName || "Team A";
+  teamBName = state.teamBName || "Team B";
+  teamAInputPlayers = Array.isArray(state.teamAPlayers) ? state.teamAPlayers.slice() : [];
+  teamBInputPlayers = Array.isArray(state.teamBPlayers) ? state.teamBPlayers.slice() : [];
+  currentBattingPlayers = Array.isArray(state.battingPlayers) ? state.battingPlayers.slice() : [];
+  currentBowlingPlayers = Array.isArray(state.bowlingPlayers) ? state.bowlingPlayers.slice() : [];
+  currentStrikerIndex = Number(state.strikerIndex) || 0;
+  currentNonStrikerIndex = Number.isFinite(Number(state.nonStrikerIndex)) ? Number(state.nonStrikerIndex) : 1;
+  nextBatterIndex = Number(state.nextBatterIndex) || 2;
+  runs = Number(state.runs) || 0;
+  wickets = Number(state.wickets) || 0;
+  balls = Number(state.balls) || 0;
+  maxOvers = Number(state.maxOvers) || 2;
+  currentInnings = Number(state.currentInnings) || 1;
+  firstInningsScore = Number(state.firstInningsScore) || 0;
+  firstInningsWickets = Number(state.firstInningsWickets) || 0;
+  battersStats = state.battersStats || {};
+  bowlersStats = state.bowlersStats || {};
+  currentOverEvents = Array.isArray(state.currentOverEvents) ? state.currentOverEvents : [];
+  completedOvers = Array.isArray(state.completedOvers) ? state.completedOvers : [];
+  inningsHistory = Array.isArray(state.inningsHistory) ? state.inningsHistory : [];
+  matchStartedAt = state.matchStartedAt || null;
+  currentMatchFinished = !!state.currentMatchFinished;
+  isLiveBroadcasting = !!state.isLive;
+
+  var ta = document.getElementById('teamA');
+  var tb = document.getElementById('teamB');
+  if (ta) ta.value = teamAName;
+  if (tb) tb.value = teamBName;
+
+  var title = document.getElementById('liveMatchTitle');
+  if (title) title.innerText = teamAName + " VS " + teamBName;
+  var fmt = document.getElementById('liveFormatDisplay');
+  if (fmt) fmt.innerText = "Format: T" + maxOvers;
+  var il = document.getElementById('currentInningsLabel');
+  if (il) il.innerText = "Innings " + currentInnings + " (" + (currentInnings === 1 ? teamAName : teamBName) + ")";
+  var mo = document.getElementById('maxOversDisplay');
+  if (mo) mo.innerText = maxOvers;
+
+  var ca = document.getElementById('teamAPlayerCount');
+  var cb = document.getElementById('teamBPlayerCount');
+  if (ca && teamAInputPlayers.length) ca.value = String(teamAInputPlayers.length);
+  if (cb && teamBInputPlayers.length) cb.value = String(teamBInputPlayers.length);
+
+  var a = document.getElementById('teamAPlayersContainer');
+  var b = document.getElementById('teamBPlayersContainer');
+  if (a && teamAInputPlayers.length) {
+    a.innerHTML = teamAInputPlayers.map(function(p,i) {
+      return '<input type="text" class="p-name-a" value="' + escapeHTML(p || ("Player "+(i+1))) + '" readonly>';
+    }).join('');
+  }
+  if (b && teamBInputPlayers.length) {
+    b.innerHTML = teamBInputPlayers.map(function(p,i) {
+      return '<input type="text" class="p-name-b" value="' + escapeHTML(p || ("Player "+(i+1))) + '" readonly>';
+    }).join('');
+  }
+
+  if (currentBowlingPlayers.length) {
+    populateBowlerDropdown();
+    var bs = document.getElementById('currentBowlerSelect');
+    if (bs && state.currentBowler) {
+      Array.from(bs.options).forEach(function(o) { o.selected = (o.value === state.currentBowler); });
+    }
+  }
+
+  updateLiveUI();
+
+  var pt = document.getElementById('popupMatchTitle');
+  if (pt) pt.innerText = teamAName + " VS " + teamBName;
+  var pr = document.getElementById('popupRuns');
+  if (pr) pr.innerText = runs;
+  var pw = document.getElementById('popupWickets');
+  if (pw) pw.innerText = wickets;
+
+  if (state.isLive) {
+    var setup = document.getElementById('setupForm');
+    var board = document.getElementById('liveBoard');
+    if (setup) setup.style.display = 'none';
+    if (board) board.style.display = 'block';
+  }
+}
+
+function setupFirebaseLiveScoreListener() {
+  if (!db || window.__liveScoreListenerReady) return;
+  window.__liveScoreListenerReady = true;
+  db.ref('liveMatchState').on('value', function(snapshot) {
+    try { applyRemoteLiveState(snapshot.val()); }
+    catch(err) { console.error("Live score state error:", err); }
+  }, function(err) {
+    console.error("Firebase live score read failed:", err);
+  });
+}
+
+function startMatch() {
+teamAName = document.getElementById('teamA').value || "Team A";
+teamBName = document.getElementById('teamB').value || "Team B";
+maxOvers = parseInt(document.getElementById('totalOvers').value) || 2;
+isSuperOver = false;
+
+teamAInputPlayers = []; document.querySelectorAll('.p-name-a').forEach(i => teamAInputPlayers.push(i.value || "Player"));
+teamBInputPlayers = []; document.querySelectorAll('.p-name-b').forEach(i => teamBInputPlayers.push(i.value || "Player"));
+saveInputsState();
+
+currentBattingPlayers = teamAInputPlayers;
+currentBowlingPlayers = teamBInputPlayers;
+totalWicketsAllowed = currentBattingPlayers.length - 1;
+
+runs = 0; wickets = 0; balls = 0; currentInnings = 1;
+currentStrikerIndex = 0; currentNonStrikerIndex = 1; nextBatterIndex = 2;
+matchStartedAt = new Date().toISOString();
+currentMatchFinished = false;
+currentMatchRecord = null;
+inningsHistory = [];
+completedOvers = [];
+currentOverEvents = [];
+
+battersStats = {}; currentBattingPlayers.forEach(p => { battersStats[p] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, status: 'Not Out' }; });
+bowlersStats = {}; currentBowlingPlayers.forEach(b => { bowlersStats[b] = { balls: 0, runsConceded: 0, wicketsTaken: 0 }; });
+
+document.getElementById('liveMatchTitle').innerText = teamAName + " VS " + teamBName;
+document.getElementById('liveFormatDisplay').innerText = "Format: T" + maxOvers;
+document.getElementById('currentInningsLabel').innerText = "Innings 1 (" + teamAName + ")";
+document.getElementById('maxOversDisplay').innerText = maxOvers;
+
+populateBowlerDropdown();
+updateLiveUI();
+document.getElementById('setupForm').style.display = 'none';
+document.getElementById('liveBoard').style.display = 'block';
+syncScoreToFirebase();
+}
+
+function populateBowlerDropdown() {
+var select = document.getElementById('currentBowlerSelect');
+select.innerHTML = '';
+currentBowlingPlayers.forEach(b => { select.innerHTML += '<option value="' + b + '">' + b + '</option>'; });
+}
+
+function updateLiveUI() {
+document.getElementById('runs').innerText = runs;
+document.getElementById('wickets').innerText = wickets;
+document.getElementById('overs').innerText = Math.floor(balls / 6) + "." + (balls % 6);
+
+if (currentBattingPlayers[currentStrikerIndex]) {
+document.getElementById('strikerName').innerText = currentBattingPlayers[currentStrikerIndex] + " (" + (battersStats[currentBattingPlayers[currentStrikerIndex]].runs) + "*)";
+}
+if (currentBattingPlayers[currentNonStrikerIndex]) {
+document.getElementById('nonStrikerName').innerText = currentBattingPlayers[currentNonStrikerIndex] + " (" + (battersStats[currentBattingPlayers[currentNonStrikerIndex]].runs) + ")";
+}
+renderBattersTable();
+renderBowlerStatsTable();
+renderOversTable();
+}
+
+function addRuns(score) {
+if (currentMatchFinished) return;
+if (balls >= (Number(maxOvers) || 2) * 6) { checkInningsCompletion(); return; }
+runs += score; balls += 1;
+var striker = currentBattingPlayers[currentStrikerIndex];
+if (battersStats[striker]) {
+  battersStats[striker].runs += score; battersStats[striker].balls += 1;
+  if (score === 4) battersStats[striker].fours++;
+  if (score === 6) battersStats[striker].sixes++;
+}
+var bowler = document.getElementById('currentBowlerSelect').value;
+if (bowlersStats[bowler]) { bowlersStats[bowler].balls += 1; bowlersStats[bowler].runsConceded += score; }
+currentOverEvents.push({type:'run', runs:score, batsman:striker, bowler:bowler});
+if (score % 2 !== 0) rotateStrike();
+
+if (currentInnings === 2 && runs > firstInningsScore) { checkInningsCompletion(); return; }
+if (balls % 6 === 0) {
+  completeCurrentOver();
+  rotateStrike();
+  if (Math.floor(balls / 6) >= maxOvers) { checkInningsCompletion(); return; }
+  else openModalBowlerSelection();
+}
+updateLiveUI();
+syncScoreToFirebase();
+}
+
+function addExtra(type) {
+if (currentMatchFinished) return;
+if (balls >= (Number(maxOvers) || 2) * 6) { checkInningsCompletion(); return; }
+runs += 1;
+var bowler = document.getElementById('currentBowlerSelect').value;
+if (bowlersStats[bowler]) bowlersStats[bowler].runsConceded += 1;
+currentOverEvents.push({type:'extra', extra:type, runs:1, batsman:currentBattingPlayers[currentStrikerIndex], bowler:bowler});
+if (currentInnings === 2 && runs > firstInningsScore) { checkInningsCompletion(); return; }
+updateLiveUI();
+syncScoreToFirebase();
+}
+
+function rotateStrike() {
+if (currentMatchFinished) return;
+var temp = currentStrikerIndex; currentStrikerIndex = currentNonStrikerIndex; currentNonStrikerIndex = temp;
+updateLiveUI();
+}
+
+function openWicketModal() { if (currentMatchFinished) return; document.getElementById('wicketModal').style.display = 'flex'; }
+function closeWicketModal() { document.getElementById('wicketModal').style.display = 'none'; }
+
+function processWicket() {
+if (currentMatchFinished) { closeWicketModal(); return; }
+if (balls >= (Number(maxOvers) || 2) * 6) { closeWicketModal(); checkInningsCompletion(); return; }
+var wicketType = document.getElementById('wicketType').value;
+wickets += 1; balls += 1;
+var striker = currentBattingPlayers[currentStrikerIndex];
+if (battersStats[striker]) { battersStats[striker].out = true; battersStats[striker].balls += 1; battersStats[striker].status = wicketType; }
+var bowler = document.getElementById('currentBowlerSelect').value;
+if (bowlersStats[bowler]) { bowlersStats[bowler].balls += 1; bowlersStats[bowler].wicketsTaken += 1; }
+currentOverEvents.push({type:'wicket', runs:0, batsman:striker, bowler:bowler, wicket:wicketType});
+closeWicketModal();
+
+if (wickets >= totalWicketsAllowed || Math.floor(balls / 6) >= maxOvers) {
+  if (balls % 6 === 0) completeCurrentOver();
+  checkInningsCompletion(); return;
+}
+if (balls % 6 === 0) {
+  completeCurrentOver();
+  rotateStrike();
+  openModalBowlerSelection();
+}
+if (nextBatterIndex < currentBattingPlayers.length) { currentStrikerIndex = nextBatterIndex; nextBatterIndex++; }
+updateLiveUI();
+syncScoreToFirebase();
+}
+
+function openModalBowlerSelection() {
+var modalDropdown = document.getElementById('modalBowlerDropdown');
+modalDropdown.innerHTML = '';
+currentBowlingPlayers.forEach(b => { modalDropdown.innerHTML += '<option value="' + b + '">' + b + '</option>'; });
+document.getElementById('bowlerSelectModal').style.display = 'flex';
+}
+function confirmModalBowler() {
+document.getElementById('currentBowlerSelect').value = document.getElementById('modalBowlerDropdown').value;
+document.getElementById('bowlerSelectModal').style.display = 'none';
+}
+
+function checkInningsCompletion() {
+if (currentMatchFinished) return;
+if (balls % 6 !== 0 && currentOverEvents.length) completeCurrentOver();
+
+var completedInnings = {
+  innings: currentInnings,
+  team: currentInnings === 1 ? teamAName : teamBName,
+  runs: runs, wickets: wickets, balls: balls,
+  batters: JSON.parse(JSON.stringify(battersStats)),
+  bowlers: JSON.parse(JSON.stringify(bowlersStats)),
+  overs: JSON.parse(JSON.stringify(completedOvers))
+};
+
+if (currentInnings === 1 && !isSuperOver) {
+  firstInningsScore = runs; firstInningsWickets = wickets;
+  firstInningsBattersSnapshot = JSON.parse(JSON.stringify(battersStats));
+  firstInningsBowlersSnapshot = JSON.parse(JSON.stringify(bowlersStats));
+  firstInningsOversSnapshot = JSON.parse(JSON.stringify(completedOvers));
+  inningsHistory = [completedInnings];
+  currentInnings = 2; runs = 0; wickets = 0; balls = 0;
+  currentBattingPlayers = teamBInputPlayers; currentBowlingPlayers = teamAInputPlayers;
+  totalWicketsAllowed = currentBattingPlayers.length - 1;
+  currentStrikerIndex = 0; currentNonStrikerIndex = 1; nextBatterIndex = 2;
+  battersStats = {}; currentBattingPlayers.forEach(p => { battersStats[p] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, status: 'Not Out' }; });
+  bowlersStats = {}; currentBowlingPlayers.forEach(b => { bowlersStats[b] = { balls: 0, runsConceded: 0, wicketsTaken: 0 }; });
+  completedOvers = []; currentOverEvents = [];
+  document.getElementById('currentInningsLabel').innerText = "Innings 2 (" + teamBName + " - Target: " + (firstInningsScore + 1) + ")";
+  populateBowlerDropdown(); updateLiveUI();
+  alert("Innings 1 Completed! Target is " + (firstInningsScore + 1));
+} else {
+  if (isSuperOver && currentInnings === 1) {
+    inningsHistory.push(completedInnings);
+    currentInnings = 2; runs = 0; wickets = 0; balls = 0;
+    currentBattingPlayers = teamBInputPlayers; currentBowlingPlayers = teamAInputPlayers;
+    totalWicketsAllowed = currentBattingPlayers.length - 1;
+    currentStrikerIndex = 0; currentNonStrikerIndex = 1; nextBatterIndex = 2;
+    battersStats = {}; currentBattingPlayers.forEach(p => { battersStats[p] = { runs:0, balls:0, fours:0, sixes:0, out:false, status:'Not Out' }; });
+    bowlersStats = {}; currentBowlingPlayers.forEach(b => { bowlersStats[b] = { balls:0, runsConceded:0, wicketsTaken:0 }; });
+    completedOvers=[]; currentOverEvents=[]; document.getElementById('currentInningsLabel').innerText="Super Over - Innings 2 ("+teamBName+")";
+    populateBowlerDropdown(); updateLiveUI(); return;
+  }
+  if (!isSuperOver && runs === firstInningsScore) { document.getElementById('superOverModal').style.display = 'flex'; return; }
+  inningsHistory.push(completedInnings);
+  var winnerText = runs > firstInningsScore ? (teamBName + " Won!") : (teamAName + " Won!");
+  finishAndSaveMatch(winnerText);
+}
+}
+
+function startSuperOverMatch() {
+maxOvers = parseInt(document.getElementById('superOverCountSelect').value) || 1;
+document.getElementById('maxOversDisplay').innerText = maxOvers;
+document.getElementById('superOverModal').style.display = 'none';
+isSuperOver = true;
+inningsHistory = [ {
+  innings:1, team:teamAName, runs:firstInningsScore, wickets:firstInningsWickets, balls:0,
+  batters:firstInningsBattersSnapshot, bowlers:firstInningsBowlersSnapshot, overs:firstInningsOversSnapshot
+} ];
+currentInnings = 1; runs = 0; wickets = 0; balls = 0;
+completedOvers = []; currentOverEvents = [];
+currentBattingPlayers = teamAInputPlayers; currentBowlingPlayers = teamBInputPlayers;
+totalWicketsAllowed = currentBattingPlayers.length - 1;
+currentStrikerIndex = 0; currentNonStrikerIndex = 1; nextBatterIndex = 2;
+battersStats = {}; currentBattingPlayers.forEach(p => { battersStats[p] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, status: 'Not Out' }; });
+bowlersStats = {}; currentBowlingPlayers.forEach(b => { bowlersStats[b] = { balls: 0, runsConceded: 0, wicketsTaken: 0 }; });
+document.getElementById('currentInningsLabel').innerText = "Super Over";
+populateBowlerDropdown();
+updateLiveUI();
+alert("Super Over Started!");
+}
+
+function showMatchResultPopup(heading, htmlContent) {
+document.getElementById('resultHeading').innerHTML = heading;
+document.getElementById('resultMessageText').innerHTML = htmlContent;
+document.getElementById('matchResultModal').style.display = 'flex';
+}
+function closeMatchResultModal() {
+  document.getElementById('matchResultModal').style.display = 'none';
+  /* Match is finished: after OK/Continue always return to the main setup menu. */
+  currentMatchFinished = true;
+  isLiveBroadcasting = false;
+  var resultModal = document.getElementById('matchResultModal');
+  if (resultModal) resultModal.style.display = 'none';
+  var fullSummary = document.getElementById('fullSummaryModal');
+  if (fullSummary) fullSummary.style.display = 'none';
+  var savedModal = document.getElementById('savedModal');
+  if (savedModal) savedModal.style.display = 'none';
+  var board = document.getElementById('liveBoard');
+  var setup = document.getElementById('setupForm');
+  if (board) board.style.display = 'none';
+  if (setup) setup.style.display = 'block';
+  /* Keep Firebase viewers informed that the live match has ended. */
+  try { syncScoreToFirebase(); } catch(e) { console.warn('Finished-state sync failed:', e); }
+  window.scrollTo(0, 0);
+}
+
+function completeCurrentOver() {
+if (!currentOverEvents.length) return;
+var overNo = Math.floor((balls - 1) / 6) + 1;
+var overRuns = currentOverEvents.reduce((a,e)=>a+(e.runs||0),0);
+var overWickets = currentOverEvents.filter(e=>e.type==='wicket').length;
+var bowler = currentOverEvents[0].bowler || document.getElementById('currentBowlerSelect').value || '';
+completedOvers.push({over:overNo, runs:overRuns, wickets:overWickets, bowler:bowler, events:JSON.parse(JSON.stringify(currentOverEvents))});
+currentOverEvents=[];
+}
+
+function formatOvers(b) { return Math.floor((b||0)/6)+'.'+((b||0)%6); }
+function escapeHTML(v) { return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function makeInningsSummaryHTML(inn) {
+var rr = inn.balls ? (inn.runs/(inn.balls/6)).toFixed(2) : "0.00";
+var html = '<div class="summary-section"><h4>🏏 '+escapeHTML(inn.team)+' — '+inn.runs+'/'+inn.wickets+' ('+formatOvers(inn.balls)+') | Run Rate: '+rr+'</h4>';
+html += '<table class="summary-table"><tr><th>BATSMAN</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th><th>Status</th></tr>';
+Object.keys(inn.batters||{}).forEach(p=>{
+ var b=inn.batters[p], sr=b.balls?(b.runs/b.balls*100).toFixed(2):'0.00';
+ html += '<tr><td>'+escapeHTML(p)+'</td><td>'+b.runs+'</td><td>'+b.balls+'</td><td>'+b.fours+'</td><td>'+b.sixes+'</td><td>'+sr+'</td><td>'+escapeHTML(b.status||'Not Out')+'</td></tr>';
+});
+html += '</table><h4 style="margin-top:10px">🎳 BOWLERS</h4><table class="summary-table"><tr><th>BOWLER</th><th>O</th><th>R</th><th>W</th><th>RR</th></tr>';
+Object.keys(inn.bowlers||{}).forEach(p=>{
+ var b=inn.bowlers[p], o=b.balls/6, rr2=o?(b.runsConceded/o).toFixed(2):'0.00';
+ html += '<tr><td>'+escapeHTML(p)+'</td><td>'+formatOvers(b.balls)+'</td><td>'+b.runsConceded+'</td><td>'+b.wicketsTaken+'</td><td>'+rr2+'</td></tr>';
+});
+html += '</table><h4 style="margin-top:10px">📋 OVER BY OVER</h4><table class="summary-table"><tr><th>OVER</th><th>BOWLER</th><th>RUNS</th><th>W</th><th>DETAIL</th></tr>';
+(inn.overs||[]).forEach(o=>{
+ var detail=o.events.map(e=>e.type==='wicket'?'W':(e.type==='extra'?e.extra:(e.runs||0))).join(' ');
+ html += '<tr><td>'+o.over+'</td><td>'+escapeHTML(o.bowler)+'</td><td>'+o.runs+'</td><td>'+o.wickets+'</td><td>'+detail+'</td></tr>';
+});
+html += '</table></div>'; return html;
+}
+
+function buildFullMatchSummary(record) {
+var html='<div class="match-summary-full"><div class="summary-card-title">🏏 FULL MATCH SUMMARY</div>';
+html+='<div class="summary-meta"><b>'+escapeHTML(record.title)+'</b><br>📅 '+escapeHTML(record.date)+'<br>⏰ '+escapeHTML(record.time)+'<br>🏆 '+escapeHTML(record.result)+'</div>';
+(record.innings||[]).forEach(inn=>{ html+=makeInningsSummaryHTML(inn); });
+if(!record.innings || !record.innings.length) html+='<div class="summary-section">This is an older saved match and does not contain ball-by-ball player statistics.</div>';
+html+='</div>'; return html;
+}
+
+function finishAndSaveMatch(resultSummary) {
+if (currentMatchFinished) return;
+currentMatchFinished=true;
+var finalInnings={innings:currentInnings,team:currentInnings===1?teamAName:teamBName,runs:runs,wickets:wickets,balls:balls,
+batters:JSON.parse(JSON.stringify(battersStats)),bowlers:JSON.parse(JSON.stringify(bowlersStats)),overs:JSON.parse(JSON.stringify(completedOvers))};
+if (!inningsHistory.length || inningsHistory[inningsHistory.length-1].innings!==finalInnings.innings || inningsHistory[inningsHistory.length-1].runs!==finalInnings.runs) inningsHistory.push(finalInnings);
+var now=new Date();
+currentMatchRecord={title:teamAName+' VS '+teamBName,score:teamBName+' '+runs+'/'+wickets,date:now.toLocaleDateString(),time:now.toLocaleTimeString(),result:resultSummary,format:(isSuperOver?'Super Over':'T'+document.getElementById('totalOvers').value),innings:JSON.parse(JSON.stringify(inningsHistory)),savedAt:now.toISOString()};
+saveMatchToHistoryFinal(currentMatchRecord);
+showMatchResultPopup("🎉 CONGRATULATIONS! 🎉", '<div style="text-align:center;font-weight:bold;font-size:1rem">'+escapeHTML(resultSummary)+'</div><p style="text-align:center;margin-bottom:0">📋 مکمل Match Summary خودکار Saved میں محفوظ ہو گئی ہے۔</p>');
+}
+
+function saveMatchToHistoryFinal(record) {
+var savedMatches=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");
+savedMatches.unshift(record);
+localStorage.setItem('savedMatchesHistory',JSON.stringify(savedMatches));
+}
+
+function shareMatchOnWhatsApp() {
+var record=currentMatchRecord;
+if(!record){var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");record=saved[0];}
+if(!record)return alert('No completed match summary found.');
+var text='🏏 '+record.title+'\n📅 '+record.date+' '+record.time+'\n🏆 '+record.result+'\n';
+(record.innings||[]).forEach(inn=>{
+text+='\n'+inn.team+': '+inn.runs+'/'+inn.wickets+' ('+formatOvers(inn.balls)+') RR '+(inn.balls?(inn.runs/(inn.balls/6)).toFixed(2):'0.00')+'\n';
+text+=Object.keys(inn.batters||{}).map(p=>p+': '+inn.batters[p].runs+' runs ('+inn.batters[p].balls+'b, '+inn.batters[p].fours+'x4, '+inn.batters[p].sixes+'x6)').join('\n')+'\n';
+text+='Bowling: '+Object.keys(inn.bowlers||{}).map(p=>p+' '+formatOvers(inn.bowlers[p].balls)+'-'+inn.bowlers[p].runsConceded+'-'+inn.bowlers[p].wicketsTaken).join(', ')+'\n';
+});
+window.open("https://api.whatsapp.com/send?text="+encodeURIComponent(text),"_blank");
+}
+
+function viewCurrentMatchSummary(){
+if(!currentMatchRecord){var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");currentMatchRecord=saved[0];}
+if(!currentMatchRecord)return alert('No match summary available.');
+openFullSummaryModal(currentMatchRecord);
+}
+function openFullSummaryModal(record){
+var old=document.getElementById('fullSummaryModal');
+if(!old){
+old=document.createElement('div');old.className='modal';old.id='fullSummaryModal';
+old.innerHTML='<div class="modal-body" style="border:2px solid var(--accent-green);max-width:480px"><button class="close-btn" onclick="closeFullSummaryModal()">✖ Close</button><div id="fullSummaryContent"></div><div class="summary-share-row"><button class="whatsapp-btn btn" style="margin-top:0" onclick="shareMatchOnWhatsApp()">💬 WhatsApp</button><button class="btn btn-saved" style="margin-top:0" onclick="closeFullSummaryModal();openSavedMatches()">📁 Saved</button></div></div>';
+document.body.appendChild(old);
+}
+document.getElementById('fullSummaryContent').innerHTML=buildFullMatchSummary(record);old.style.display='flex';
+}
+function closeFullSummaryModal(){var x=document.getElementById('fullSummaryModal');if(x)x.style.display='none';}
+
+function renderBattersTable() {
+var html = '<table style="width:100%; font-size:0.75rem; border-collapse:collapse; text-align:left;">';
+html += '<tr style="color:var(--accent-gold);"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr>';
+currentBattingPlayers.forEach(p => {var b=battersStats[p];if(b)html+='<tr><td>'+p+'</td><td>'+b.runs+'</td><td>'+b.balls+'</td><td>'+b.fours+'</td><td>'+b.sixes+'</td></tr>';});
+html += '</table>';document.getElementById('battersTableContainer').innerHTML=html;
+}
+function renderBowlerStatsTable() {
+var html='<table style="width:100%;font-size:.75rem;border-collapse:collapse;text-align:left;"><tr style="color:var(--accent-gold);"><th>Bowler</th><th>O</th><th>R</th><th>W</th></tr>';
+currentBowlingPlayers.forEach(b=>{var stat=bowlersStats[b];if(stat)html+='<tr><td>'+b+'</td><td>'+formatOvers(stat.balls)+'</td><td>'+stat.runsConceded+'</td><td>'+stat.wicketsTaken+'</td></tr>';});
+html+='</table>';document.getElementById('bowlersTableContainer').innerHTML=html;
+}
+function renderOversTable() {
+var all=completedOvers.slice();if(currentOverEvents.length)all.push({over:Math.floor(balls/6)+1,runs:currentOverEvents.reduce((a,e)=>a+(e.runs||0),0),wickets:currentOverEvents.filter(e=>e.type==='wicket').length,bowler:currentOverEvents[0]?.bowler||''});
+var html='<table style="width:100%;font-size:.7rem;border-collapse:collapse"><tr style="color:var(--accent-gold)"><th>Over</th><th>Bowler</th><th>Runs</th><th>W</th></tr>';
+all.forEach(o=>html+='<tr><td>'+o.over+'</td><td>'+escapeHTML(o.bowler)+'</td><td>'+o.runs+'</td><td>'+o.wickets+'</td></tr>');
+html+='</table>';document.getElementById('oversTableContainer').innerHTML=html;
+}
+
+function sendChatMessageToFirebase(sender, content, lang, type) {
+if (!db) return;
+db.ref('liveChatMessages').push({ sender: sender, content: content, lang: lang, type: type, timestamp: Date.now() });
+}
+
+setupFirebaseLiveScoreListener();
+
+if (db) {
+db.ref('liveChatMessages').limitToLast(20).on('child_added', function(snapshot) {
+  renderOneChatMessage(snapshot.key, snapshot.val());
+});
+db.ref('liveChatMessages').on('child_removed', function(snapshot) {
+  var el = document.querySelector('[data-chat-id="' + snapshot.key + '"]');
+  if (el) el.remove();
+});
+}
+
+function escapeChatHTML(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+
+function renderOneChatMessage(id, msg) {
+  if (!msg) return;
+  var chatBox = document.getElementById('chatMessagesBox');
+  if (!chatBox) return;
+  if (chatBox.querySelector('[data-chat-id="' + id + '"]')) return;
+
+  var row = document.createElement('div');
+  row.className = 'chat-message-bubble';
+  row.setAttribute('data-chat-id', id);
+
+  var sender = document.createElement('div');
+  var msgTime = msg.timestamp ? new Date(Number(msg.timestamp)) : new Date();
+  var timeText = isNaN(msgTime.getTime()) ? '' : msgTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  sender.innerHTML = '<b>' + escapeChatHTML(msg.sender || 'Visitor') + ':</b>' +
+                     (timeText ? ' <span style="font-size:.62rem;color:var(--text-muted);margin-left:5px;">' + escapeChatHTML(timeText) + '</span>' : '');
+  row.appendChild(sender);
+
+  if (msg.type === 'audio' && msg.content) {
+    var audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.src = msg.content;
+    audio.style.cssText = 'width:min(280px,100%);height:38px;margin-top:5px;';
+    row.appendChild(audio);
+
+    var voiceLabel = document.createElement('div');
+    voiceLabel.innerText = '🎤 Voice note';
+    voiceLabel.style.cssText = 'font-size:.72rem;opacity:.85;margin-top:2px;';
+    row.appendChild(voiceLabel);
+  } else {
+    var text = document.createElement('span');
+    text.innerHTML = ' ' + escapeChatHTML(msg.content);
+    row.appendChild(text);
+  }
+
+  if (currentUserRole === "Admin") addMasterChatRemoveButton(row, id);
+  chatBox.appendChild(row);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addMasterChatRemoveButton(row, id) {
+  if (currentUserRole !== "Admin" || row.querySelector('.master-chat-remove-btn')) return;
+  var btn = document.createElement('button');
+  btn.type = "button";
+  btn.className = "master-chat-remove-btn";
+  btn.innerText = "Remove";
+  btn.style.cssText = "float:right;margin-left:8px;padding:2px 7px;font-size:.68rem;border:0;border-radius:5px;cursor:pointer;";
+  btn.onclick = function(){ masterRemoveChatMessage(id); };
+  row.appendChild(btn);
+}
+
+function refreshChatAdminButtons() {
+  var chatBox = document.getElementById('chatMessagesBox');
+  if (!chatBox) return;
+  chatBox.querySelectorAll('[data-chat-id]').forEach(function(row){
+    if (currentUserRole === "Admin") {
+      addMasterChatRemoveButton(row, row.getAttribute('data-chat-id'));
+    } else {
+      var btn = row.querySelector('.master-chat-remove-btn');
+      if (btn) btn.remove();
+    }
+  });
+}
+
+function masterRemoveChatMessage(messageId) {
+  if (currentUserRole !== "Admin") {
+    alert("صرف Master Admin ہی chat message remove کر سکتا ہے!");
+    return;
+  }
+  if (!db || !messageId) {
+    alert("Firebase connection available نہیں ہے۔");
+    return;
+  }
+  if (!confirm("کیا آپ یہ chat message واقعی delete کرنا چاہتے ہیں؟")) return;
+
+  db.ref("liveChatMessages/" + messageId).once("value").then(function(snapshot) {
+    var msg = snapshot.val();
+    if (msg && msg.type === "audio" && msg.storagePath && storage) {
+      return storage.ref(msg.storagePath).delete().catch(function(err) {
+        console.warn("Audio file delete failed; removing chat record anyway.", err);
+      });
+    }
+  }).then(function() {
+    return db.ref("liveChatMessages/" + messageId).remove();
+  }).catch(function(err) {
+    console.error(err);
+    alert("Message delete نہیں ہوا۔ Firebase Rules/Storage permission چیک کریں۔");
+  });
+}
+
+function updateChatPlaceholder() {
+var lang = document.getElementById('chatLanguageSelect').value;
+var input = document.getElementById('chatInputMessage');
+input.placeholder = lang === 'ur' ? "پیغام لکھیں..." : "Type message...";
+}
+
+function sendChatMessageToFirebase(sender, content, lang, type, extra) {
+if (!db) {
+  alert("Firebase connection available نہیں ہے۔");
+  return null;
+}
+var data = {
+  sender: sender,
+  content: content,
+  lang: lang,
+  type: type,
+  timestamp: Date.now()
+};
+if (extra) Object.keys(extra).forEach(function(k){ data[k] = extra[k]; });
+return db.ref('liveChatMessages').push(data);
+}
+
+function getGuestChatUsername() {
+  return (localStorage.getItem('guestChatUsername') || '').trim();
+}
+function openGuestUsernameModal() {
+  var modal = document.getElementById('guestUsernameModal');
+  var input = document.getElementById('guestUsernameInput');
+  if (!modal || !input) return false;
+  input.value = getGuestChatUsername();
+  modal.style.display = 'flex';
+  setTimeout(function(){ input.focus(); input.select(); }, 50);
+  return true;
+}
+function closeGuestUsernameModal() {
+  var modal = document.getElementById('guestUsernameModal');
+  if (modal) modal.style.display = 'none';
+}
+function saveGuestChatUsername() {
+  var input = document.getElementById('guestUsernameInput');
+  var name = input ? input.value.trim() : '';
+  if (!name) { alert("Please enter a username."); if(input) input.focus(); return false; }
+  if (name.length < 2) { alert("Username کم از کم 2 characters کا ہونا چاہیے۔"); if(input) input.focus(); return false; }
+  localStorage.setItem('guestChatUsername', name);
+  closeGuestUsernameModal();
+  return true;
+}
+function ensureChatUsernameForGuest() {
+  if (currentUserRole !== "Guest") return true;
+  if (getGuestChatUsername()) return true;
+  return openGuestUsernameModal();
+}
+function getChatSenderName() {
+  if (currentUserRole !== "Guest") return currentUserName || "User";
+  return getGuestChatUsername() || "Visitor";
+}
+function sendChatMessage() {
+  var input = document.getElementById('chatInputMessage');
+  if (!input || !input.value.trim()) return;
+  if (!ensureChatUsernameForGuest()) return;
+  var langEl = document.getElementById('chatLanguageSelect');
+  var lang = langEl ? langEl.value : 'en';
+  var result = sendChatMessageToFirebase(getChatSenderName(), input.value.trim(), lang, 'text');
+  if (result) input.value = '';
+}
+
+function handleChatKeyPress(event) { if (event.key === 'Enter') sendChatMessage(); }
+
+
+/* ===== REAL AUDIO VOICE NOTES =====
+   Real microphone audio only. No speech-to-text.
+   Uploads to Firebase Storage when available; falls back to RTDB data URL.
+*/
+var voiceRecorder = null;
+var voiceStream = null;
+var voiceChunks = [];
+var voiceRecording = false;
+var voiceStarting = false;
+
+function setVoiceMicButtonState(recording) {
+  var btn = document.getElementById('micRecordBtn');
+  var status = document.getElementById('voiceRecordStatus');
+  if (!btn) return;
+  voiceRecording = !!recording;
+  voiceStarting = false;
+  btn.innerHTML = voiceRecording ? '⏹️' : '🎤';
+  btn.title = voiceRecording ? 'Stop & Send Voice Note' : 'Record Voice Note';
+  btn.setAttribute('aria-label', voiceRecording ? 'Stop and send voice note' : 'Record voice note');
+  btn.classList.toggle('mic-recording', voiceRecording);
+  if (status) {
+    status.style.display = voiceRecording ? 'inline-block' : 'none';
+    status.innerText = voiceRecording ? '● Recording…' : '';
+  }
+}
+
+function chooseAudioMimeType() {
+  if (!window.MediaRecorder) return '';
+  var types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4'
+  ];
+  for (var i=0;i<types.length;i++) {
+    try {
+      if (MediaRecorder.isTypeSupported(types[i])) return types[i];
+    } catch(e) {}
+  }
+  return '';
+}
+
+function blobToDataURL(blob) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onloadend = function(){ resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function pushVoiceMessage(content, mimeType, extra) {
+  if (!db) return Promise.reject(new Error('Firebase Database is not initialized.'));
+  var sender = getChatSenderName() || 'Visitor';
+  var data = {
+    sender: String(sender),
+    content: content,
+    lang: 'audio',
+    type: 'audio',
+    mimeType: mimeType || 'audio/webm',
+    timestamp: Date.now()
+  };
+  if (extra) Object.keys(extra).forEach(function(k){ data[k] = extra[k]; });
+  return db.ref('liveChatMessages').push(data);
+}
+
+function withVoiceTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise(function(_, reject){ setTimeout(function(){ reject(new Error(message)); }, ms); })
+  ]);
+}
+
+async function sendVoiceNoteBlob(blob, mimeType) {
+  if (!db) throw new Error('Firebase Database is not initialized.');
+  if (!blob || !blob.size) throw new Error('Recorded audio is empty.');
+
+  var safeType = mimeType || blob.type || 'audio/webm';
+  var fileExt = safeType.indexOf('mp4') >= 0 ? 'm4a' : (safeType.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
+  var voiceId = Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+
+  /* Primary path: Firebase Storage. Timeout prevents a stuck upload from making the mic appear dead. */
+  if (storage) {
+    try {
+      var path = 'voiceNotes/' + voiceId + '.' + fileExt;
+      var uploadRef = storage.ref().child(path);
+      await withVoiceTimeout(
+        uploadRef.put(blob, {contentType: safeType, cacheControl: 'public,max-age=31536000'}),
+        15000,
+        'Firebase Storage upload timed out.'
+      );
+      var url = await withVoiceTimeout(uploadRef.getDownloadURL(), 10000, 'Could not get voice note URL.');
+      if (!url) throw new Error('Firebase Storage returned no download URL.');
+      await withVoiceTimeout(pushVoiceMessage(url, safeType, {storagePath:path, voiceId:voiceId}), 10000, 'Voice message database save timed out.');
+      return true;
+    } catch(storageError) {
+      console.error('VOICE STORAGE ERROR:', storageError);
+      /* Continue to RTDB fallback below. */
+    }
+  }
+
+  /* Fallback: same RTDB node as working text chat, for short voice notes. */
+  var dataUrl = await blobToDataURL(blob);
+  if (!dataUrl || dataUrl.length > 9000000) {
+    throw new Error('Voice note بہت بڑی ہے۔ براہِ کرم 20–30 سیکنڈ سے کم voice note بھیجیں۔');
+  }
+  await withVoiceTimeout(
+    pushVoiceMessage(dataUrl, safeType, {voiceId:voiceId, storageFallback:true}),
+    15000,
+    'Voice message database save timed out.'
+  );
+  return true;
+}
+
+function stopVoiceNoteRecording() {
+  try {
+    if (voiceRecorder && voiceRecorder.state !== 'inactive') {
+      voiceRecorder.stop();
+      return true;
+    }
+  } catch(e) { console.error('VOICE STOP ERROR:', e); }
+  voiceRecording = false;
+  voiceStarting = false;
+  setVoiceMicButtonState(false);
+  return false;
+}
+
+async function startVoiceNoteRecording() {
+  if (voiceStarting || voiceRecording) return;
+  if (!ensureChatUsernameForGuest()) return;
+  voiceStarting = true;
+
+  if (location.protocol === 'file:') {
+    voiceStarting = false;
+    alert("🎤 یہ HTML فائل Chrome میں file:// سے کھولنے پر microphone access نہیں لے سکتی۔ Voice Note test کرنے کے لیے Netlify کا HTTPS link کھولیں، یا localhost پر چلائیں۔");
+    return;
+  }
+
+  if (!window.isSecureContext) {
+    voiceStarting = false;
+    alert("🎤 Microphone کے لیے HTTPS ضروری ہے۔ Netlify link کو Chrome میں direct کھولیں۔");
+    return;
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    voiceStarting = false;
+    alert("🎤 اس browser میں microphone recording support نہیں ہے۔ Updated Google Chrome استعمال کریں۔");
+    return;
+  }
+
+  if (!window.MediaRecorder) {
+    voiceStarting = false;
+    alert("🎤 اس browser میں audio recording support نہیں ہے۔ Updated Google Chrome استعمال کریں۔");
+    return;
+  }
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+
+    voiceChunks = [];
+    var mimeType = chooseAudioMimeType();
+    voiceRecorder = mimeType ?
+      new MediaRecorder(voiceStream, {mimeType:mimeType}) :
+      new MediaRecorder(voiceStream);
+
+    voiceRecorder.ondataavailable = function(e) {
+      if (e.data && e.data.size > 0) voiceChunks.push(e.data);
+    };
+
+    voiceRecorder.onerror = function(e) {
+      console.error("MediaRecorder error:", e);
+      setVoiceMicButtonState(false);
+      if (voiceStream) {
+        voiceStream.getTracks().forEach(function(track){ track.stop(); });
+        voiceStream = null;
+      }
+      alert("🎤 Voice recording میں مسئلہ آیا۔ دوبارہ کوشش کریں۔");
+    };
+
+    voiceRecorder.onstop = async function() {
+      setVoiceMicButtonState(false);
+
+      if (voiceStream) {
+        voiceStream.getTracks().forEach(function(track){ track.stop(); });
+        voiceStream = null;
+      }
+
+      var recorder = voiceRecorder;
+      var actualType = (recorder && recorder.mimeType) || mimeType || 'audio/webm';
+      var chunks = voiceChunks.slice();
+      voiceChunks = [];
+      voiceRecorder = null;
+
+      if (!chunks.length) {
+        alert("🎤 کوئی آواز record نہیں ہوئی۔");
+        return;
+      }
+
+      var blob = new Blob(chunks, {type:actualType});
+      var btn = document.getElementById('micRecordBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '.6';
+      }
+
+      try {
+        if (btn) btn.title = 'Uploading voice note…';
+        await sendVoiceNoteBlob(blob, actualType);
+      } catch(err) {
+        console.error("VOICE NOTE SEND ERROR:", err);
+        alert("🎤 Voice Note send نہیں ہوئی۔ Error: " + (err && err.message ? err.message : err));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '';
+        }
+      }
+    };
+
+    voiceRecorder.start(250);
+    setVoiceMicButtonState(true);
+
+  } catch(err) {
+    console.error("Microphone start error:", err);
+    voiceStarting = false;
+
+    if (voiceStream) {
+      voiceStream.getTracks().forEach(function(track){ track.stop(); });
+      voiceStream = null;
+    }
+
+    if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+      alert("🎤 Microphone permission Allow کریں۔ Chrome میں site settings کھول کر Microphone = Allow کریں، پھر دوبارہ دبائیں۔");
+    } else if (err && err.name === 'NotFoundError') {
+      alert("🎤 Phone microphone نہیں ملا۔");
+    } else if (err && err.name === 'NotReadableError') {
+      alert("🎤 Microphone کسی دوسری app نے استعمال کیا ہوا ہے۔ دوسری recording/call app بند کریں اور دوبارہ کوشش کریں۔");
+    } else {
+      alert("🎤 Microphone start نہیں ہو سکا۔ Chrome میں Netlify link direct کھول کر دوبارہ کوشش کریں۔");
+    }
+  }
+}
+
+function handleMicButtonClick(e) {
+  if (e && e.type === 'click' && Date.now() - lastMicPointerTime < 700) return;
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (!ensureChatUsernameForGuest()) return;
+  if (voiceRecording) stopVoiceNoteRecording();
+  else startVoiceNoteRecording();
+}
+
+function setupHoldToRecordMic() {
+  var btn = document.getElementById('micRecordBtn');
+  if (!btn) return;
+  btn.type = 'button';
+  btn.disabled = false;
+  btn.style.pointerEvents = 'auto';
+  btn.onclick = function(e){ handleMicButtonClick(e); };
+  btn.onpointerup = function(e){
+    if (e && e.pointerType === 'touch') {
+      e.preventDefault();
+      lastMicPointerTime = Date.now();
+      handleMicButtonClick(e);
+    }
+  };
+  /* IMPORTANT: do NOT prevent Android's synthetic click after touch.
+     The previous touchend preventDefault could make the mic appear dead on phones. */
+  btn.dataset.voiceNoteReady = '1';
+  btn.title = location.protocol === 'file:'
+    ? 'Voice Note: Netlify HTTPS link یا localhost استعمال کریں'
+    : '🎤 Record Voice Note';
+}
+
+function renderLiveScoreDashboard() {
+  var title = document.getElementById('popupMatchTitle');
+  var innings = document.getElementById('popupInnings');
+  var over = document.getElementById('popupOvers');
+  var striker = document.getElementById('popupStriker');
+  var nonStriker = document.getElementById('popupNonStriker');
+  var bowler = document.getElementById('popupBowler');
+  var batBox = document.getElementById('popupBattersDetails');
+  var bowlBox = document.getElementById('popupBowlersDetails');
+  if (title) title.innerText = (teamAName || 'Team A') + ' VS ' + (teamBName || 'Team B');
+  if (document.getElementById('popupRuns')) document.getElementById('popupRuns').innerText = Number(runs)||0;
+  if (document.getElementById('popupWickets')) document.getElementById('popupWickets').innerText = Number(wickets)||0;
+  if (innings) innings.innerText = 'Innings ' + (currentInnings||1);
+  if (over) over.innerText = Math.floor((Number(balls)||0)/6) + '.' + ((Number(balls)||0)%6);
+  var sp = currentBattingPlayers[currentStrikerIndex] || '-';
+  var np = currentBattingPlayers[currentNonStrikerIndex] || '-';
+  var cb = document.getElementById('currentBowlerSelect');
+  var bp = cb && cb.value ? cb.value : '-';
+  if (striker) striker.innerText = sp + ' — ' + ((battersStats[sp]||{}).runs||0) + '* (' + ((battersStats[sp]||{}).balls||0) + ')';
+  if (nonStriker) nonStriker.innerText = np + ' — ' + ((battersStats[np]||{}).runs||0) + ' (' + ((battersStats[np]||{}).balls||0) + ')';
+  if (bowler) { var bs= bowlersStats[bp]||{}; bowler.innerText = bp + ' — ' + (bs.runsConceded||0) + ' runs, ' + (bs.wicketsTaken||0) + ' wickets, ' + Math.floor((bs.balls||0)/6) + '.' + ((bs.balls||0)%6) + ' overs'; }
+  if (batBox) {
+    var batKeys = Object.keys(battersStats||{});
+    batBox.innerHTML = batKeys.length ? batKeys.map(function(n){ var x=battersStats[n]||{}; return '<div class="popup-stat-row"><b>'+escapeHTML(n)+'</b><span>'+Number(x.runs||0)+' runs &nbsp; '+Number(x.balls||0)+' balls &nbsp; 4s:'+Number(x.fours||0)+' &nbsp; 6s:'+Number(x.sixes||0)+' &nbsp; '+escapeHTML(x.status||'Not Out')+'</span></div>'; }).join('') : '<div style="opacity:.7;text-align:center">Batting details will appear when the match starts.</div>';
+  }
+  if (bowlBox) {
+    var bowlKeys = Object.keys(bowlersStats||{});
+    bowlBox.innerHTML = bowlKeys.length ? bowlKeys.map(function(n){ var x=bowlersStats[n]||{}; return '<div class="popup-stat-row"><b>'+escapeHTML(n)+'</b><span>'+Math.floor(Number(x.balls||0)/6)+'.'+(Number(x.balls||0)%6)+' overs &nbsp; '+Number(x.runsConceded||0)+' runs &nbsp; '+Number(x.wicketsTaken||0)+' wickets</span></div>'; }).join('') : '<div style="opacity:.7;text-align:center">Bowling details will appear when the match starts.</div>';
+  }
+}
+
+function openGetLiveScoreModal() {
+  renderLiveScoreDashboard();
+  document.getElementById('getLiveScoreModal').style.display = 'flex';
+}
+function closeGetLiveScoreModal() { document.getElementById('getLiveScoreModal').style.display = 'none'; }
+function refreshLiveScoreModalData() { renderLiveScoreDashboard(); }
+
+function unlockScorerMode() {
+if (document.getElementById('scorerPasswordInput').value === scorerPassword || document.getElementById('scorerPasswordInput').value === adminPassword) {
+isScorerUnlocked = true;
+document.getElementById('scorerLoginForm').style.display = 'none';
+document.getElementById('scorerStatusPanel').style.display = 'block';
+alert("Scorer Unlocked! 🟢");
+} else { alert("Incorrect Password!"); }
+}
+function lockScorerMode() { isScorerUnlocked = false; document.getElementById('scorerLoginForm').style.display = 'block'; document.getElementById('scorerStatusPanel').style.display = 'none'; }
+
+function loginAdminInline() {
+if (document.getElementById('inlineAdminPass').value === adminPassword) {
+currentUserRole = "Admin";
+document.getElementById('adminLoginForm').style.display = 'none';
+document.getElementById('adminControlPanel').style.display = 'block';
+var mp = document.getElementById('masterScorerPasswordPanel');
+if (mp) mp.style.display = 'block';
+if (typeof refreshChatAdminButtons === "function") refreshChatAdminButtons();
+alert("Admin Logged In! 👑");
+} else { alert("Incorrect Admin Password!"); }
+}
+function logoutAdmin() {
+currentUserRole = "Guest";
+document.getElementById('adminLoginForm').style.display = 'block';
+document.getElementById('adminControlPanel').style.display = 'none';
+var mp = document.getElementById('masterScorerPasswordPanel');
+if (mp) mp.style.display = 'none';
+if (typeof refreshChatAdminButtons === "function") refreshChatAdminButtons();
+}
+
+function masterChangeScorerPassword() {
+if (currentUserRole !== "Admin") {
+alert("صرف Master Admin کو یہ اختیار حاصل ہے!");
+return;
+}
+var input = document.getElementById("masterNewScorerPassword");
+var p = input ? input.value.trim() : "";
+if (!p) {
+alert("نیا Scorer Password لکھیں!");
+return;
+}
+scorerPassword = p;
+localStorage.setItem("scorerPassword", p);
+if (input) input.value = "";
+alert("Scorer Password کامیابی سے تبدیل ہو گیا! 🔐");
+}
+
+function checkScorerAuthBeforeAction(actionType, param1) {
+if (!isScorerUnlocked && currentUserRole !== "Admin") {
+var pass = prompt("🔒 Enter Scorer Password:");
+if (pass === scorerPassword || pass === adminPassword) isScorerUnlocked = true;
+else { alert("Access Denied!"); return; }
+}
+if (actionType === 'start') startMatch();
+else if (actionType === 'rotate') rotateStrike();
+else if (actionType === 'run') addRuns(param1);
+else if (actionType === 'extra') addExtra(param1);
+else if (actionType === 'wicket') openWicketModal();
+else if (actionType === 'save') { if (currentMatchRecord) { saveMatchToHistoryFinal(currentMatchRecord); alert("Match Summary Saved! 📋"); } else alert("Match is saved automatically when it finishes."); }
+}
+
+function exitMatch() { document.getElementById('liveBoard').style.display = 'none'; document.getElementById('setupForm').style.display = 'block'; }
+
+function openSavedMatches() {
+var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");
+var container=document.getElementById('savedMatchesList');
+if(saved.length===0){container.innerHTML='<p style="text-align:center;">No matches saved.</p>';}
+else container.innerHTML=saved.map((m,idx)=>'<div class="saved-match-item"><b>'+((idx+1)+'. '+escapeHTML(m.title||'Match'))+'</b><br>📅 '+escapeHTML(m.date||'')+' &nbsp; ⏰ '+escapeHTML(m.time||'')+'<br>🏆 '+escapeHTML(m.result||m.summary||'')+'<br><button class="btn-saved" onclick="viewSavedMatch('+idx+')">👁️ VIEW FULL SUMMARY</button><button class="whatsapp-btn" onclick="shareSavedMatch('+idx+')">💬 WhatsApp</button></div>').join('');
+document.getElementById('savedModal').style.display='flex';
+}
+function viewSavedMatch(idx){var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");if(saved[idx]){currentMatchRecord=saved[idx];openFullSummaryModal(saved[idx]);}}
+function shareSavedMatch(idx){var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");if(!saved[idx])return;currentMatchRecord=saved[idx];shareMatchOnWhatsApp();}
+function closeSaved() { document.getElementById('savedModal').style.display = 'none'; }
+
+function openAllMatchesSummaryTab() {
+var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");
+var container=document.getElementById('allMatchesSummaryListContainer');
+container.innerHTML=saved.length===0?'<p style="text-align:center;">No matches.</p>':saved.map((m,i)=>'<div class="tv-match-card"><div style="color:var(--accent-gold);font-weight:bold;">'+escapeHTML(m.title||'Match')+'</div><div>'+escapeHTML(m.result||m.summary||'')+'</div><div style="font-size:.72rem;margin:5px 0">📅 '+escapeHTML(m.date||'')+' ⏰ '+escapeHTML(m.time||'')+'</div><button class="btn btn-saved" onclick="viewSavedMatch('+i+')">📋 VIEW FULL SUMMARY</button></div>').join('');
+document.getElementById('allMatchesSummaryModal').style.display='flex';
+}
+function closeAllMatchesSummaryModal() { document.getElementById('allMatchesSummaryModal').style.display = 'none'; }
+
+function openPlayerStatsModal() { document.getElementById('playerStatsModal').style.display = 'flex'; }
+function closePlayerStatsModal() { document.getElementById('playerStatsModal').style.display = 'none'; }
+
+function openTeamLeaderboardModal() { document.getElementById('teamLeaderboardModal').style.display = 'flex'; }
+function closeTeamLeaderboardModal() { document.getElementById('teamLeaderboardModal').style.display = 'none'; }
+
+function switchMainTab(tabName) {}
+function checkForAppUpdate() { alert("You are using updated version"); }
+</script>
+
+<div id="masterScorerPasswordPanel" style="display:none; margin:10px 0; padding:12px; border-radius:10px; background:var(--input-bg); border:1px solid var(--accent-gold);">
+  <div style="font-weight:800; color:var(--accent-gold); margin-bottom:8px;">👑 Master Admin — Scorer Password Control</div>
+  <input id="masterNewScorerPassword" type="password" placeholder="نیا Scorer Password" style="width:100%; margin-bottom:7px;">
+  <button type="button" class="btn btn-admin" style="width:100%;" onclick="masterChangeScorerPassword()">🔐 Change Scorer Password</button>
+</div>
+
+
+<script>
+/* ===== OPTIONAL SINGLE CAPTAIN VS POSTER JS - ADDITIVE ONLY ===== */
+(function(){
+  var CPS_IMG_KEY = "captainVsPhotoData";
+  var CPS_A_KEY = "captainAName";
+  var CPS_B_KEY = "captainBName";
+
+  function cps(id){ return document.getElementById(id); }
+
+  function cpsSaveNames(){
+    try{
+      localStorage.setItem(CPS_A_KEY, (cps("captainAName").value || "").trim());
+      localStorage.setItem(CPS_B_KEY, (cps("captainBName").value || "").trim());
+    }catch(e){}
+  }
+
+  function cpsLoad(){
+    try{
+      var a=localStorage.getItem(CPS_A_KEY)||"";
+      var b=localStorage.getItem(CPS_B_KEY)||"";
+      if(cps("captainAName")) cps("captainAName").value=a;
+      if(cps("captainBName")) cps("captainBName").value=b;
+      var img=localStorage.getItem(CPS_IMG_KEY);
+      if(img){
+        cps("captainVsPreviewImg").src=img;
+        cps("captainVsPreview").style.display="block";
+      }
+      cpsApplySummary();
+    }catch(e){}
+  }
+
+  function cpsReadPhoto(ev){
+    var file=ev.target.files && ev.target.files[0];
+    if(!file) return;
+    if(!file.type || file.type.indexOf("image/")!==0){
+      alert("براہِ کرم صرف image file منتخب کریں۔");
+      ev.target.value="";
+      return;
+    }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        localStorage.setItem(CPS_IMG_KEY,e.target.result);
+        cps("captainVsPreviewImg").src=e.target.result;
+        cps("captainVsPreview").style.display="block";
+        cpsApplySummary();
+      }catch(err){
+        alert("یہ تصویر بہت بڑی ہے۔ براہِ کرم تھوڑی کم size والی JPG/PNG تصویر لگائیں۔");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.saveCaptainPosterSettings=function(){
+    cpsSaveNames();
+    cpsApplySummary();
+    alert("Captain VS Poster settings saved! 🏏🔥");
+  };
+
+  window.clearCaptainPosterSettings=function(){
+    try{
+      localStorage.removeItem(CPS_A_KEY);
+      localStorage.removeItem(CPS_B_KEY);
+      localStorage.removeItem(CPS_IMG_KEY);
+    }catch(e){}
+    if(cps("captainAName")) cps("captainAName").value="";
+    if(cps("captainBName")) cps("captainBName").value="";
+    if(cps("captainVsPhoto")) cps("captainVsPhoto").value="";
+    if(cps("captainVsPreview")) cps("captainVsPreview").style.display="none";
+    if(cps("captainPosterSummaryCard")) cps("captainPosterSummaryCard").style.display="none";
+  };
+
+  function cpsApplySummary(){
+    var img=null;
+    try{ img=localStorage.getItem(CPS_IMG_KEY); }catch(e){}
+    if(!img || !cps("captainPosterSummaryCard")) return;
+    cps("captainPosterSummaryImg").src=img;
+    cps("captainPosterSummaryCard").style.display="block";
+  }
+
+  // Public helper so the existing summary can call it without changing its logic.
+  window.showCaptainPosterInSummary=function(){
+    cpsApplySummary();
+  };
+
+  document.addEventListener("DOMContentLoaded",function(){
+    if(cps("captainVsPhoto")) cps("captainVsPhoto").addEventListener("change",cpsReadPhoto);
+    if(cps("captainAName")) cps("captainAName").addEventListener("input",cpsSaveNames);
+    if(cps("captainBName")) cps("captainBName").addEventListener("input",cpsSaveNames);
+    cpsLoad();
+  });
+})();
+</script>
+
+
+<!-- AUTO BACKUP SYSTEM: LocalStorage + IndexedDB + Firebase Live + Firebase Archive -->
+<script>
+(function(){
+  'use strict';
+  var BACKUP_LOCAL_KEY = 'cricketAutoBackupDraft_v1';
+  var BACKUP_DB_NAME = 'CricketScoreAutoBackupDB_v1';
+  var BACKUP_STORE = 'drafts';
+  var BACKUP_INTERVAL = 10000;
+  var backupTimer = null;
+
+  function safeClone(v){
+    try { return JSON.parse(JSON.stringify(v)); } catch(e){ return null; }
+  }
+
+  function collectBackupState(){
+    try {
+      return {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        matchStartedAt: matchStartedAt || null,
+        currentMatchFinished: !!currentMatchFinished,
+        isLiveBroadcasting: !!isLiveBroadcasting,
+        isSuperOver: !!isSuperOver,
+        teamAName: teamAName || '',
+        teamBName: teamBName || '',
+        maxOvers: Number(maxOvers)||2,
+        currentInnings: Number(currentInnings)||1,
+        runs: Number(runs)||0,
+        wickets: Number(wickets)||0,
+        balls: Number(balls)||0,
+        firstInningsScore: Number(firstInningsScore)||0,
+        firstInningsWickets: Number(firstInningsWickets)||0,
+        currentStrikerIndex: Number(currentStrikerIndex)||0,
+        currentNonStrikerIndex: Number(currentNonStrikerIndex)||1,
+        nextBatterIndex: Number(nextBatterIndex)||2,
+        teamAInputPlayers: safeClone(teamAInputPlayers)||[],
+        teamBInputPlayers: safeClone(teamBInputPlayers)||[],
+        currentBattingPlayers: safeClone(currentBattingPlayers)||[],
+        currentBowlingPlayers: safeClone(currentBowlingPlayers)||[],
+        battersStats: safeClone(battersStats)||{},
+        bowlersStats: safeClone(bowlersStats)||{},
+        currentOverEvents: safeClone(currentOverEvents)||[],
+        completedOvers: safeClone(completedOvers)||[],
+        inningsHistory: safeClone(inningsHistory)||[],
+        currentMatchRecord: safeClone(currentMatchRecord),
+        savedMatchesHistory: localStorage.getItem('savedMatchesHistory') || '[]'
+      };
+    } catch(e){ return null; }
+  }
+
+  function saveLocalBackup(){
+    var state=collectBackupState();
+    if(!state) return false;
+    try {
+      localStorage.setItem(BACKUP_LOCAL_KEY, JSON.stringify(state));
+      localStorage.setItem('cricketAutoBackupLastSavedAt', state.savedAt);
+      return true;
+    } catch(e){
+      console.warn('Local auto backup failed:', e);
+      return false;
+    }
+  }
+
+  function openBackupDB(cb){
+    if(!window.indexedDB){ cb(null); return; }
+    try{
+      var req=indexedDB.open(BACKUP_DB_NAME,1);
+      req.onupgradeneeded=function(){
+        var dbx=req.result;
+        if(!dbx.objectStoreNames.contains(BACKUP_STORE)) dbx.createObjectStore(BACKUP_STORE,{keyPath:'id'});
+      };
+      req.onsuccess=function(){ cb(req.result); };
+      req.onerror=function(){ cb(null); };
+    }catch(e){ cb(null); }
+  }
+
+  function saveIndexedDBBackup(){
+    var state=collectBackupState();
+    if(!state) return;
+    openBackupDB(function(dbx){
+      if(!dbx) return;
+      try{
+        var tx=dbx.transaction(BACKUP_STORE,'readwrite');
+        tx.objectStore(BACKUP_STORE).put({id:'latest',state:state});
+        tx.oncomplete=function(){ try{dbx.close();}catch(e){} };
+        tx.onerror=function(){ try{dbx.close();}catch(e){} };
+      }catch(e){ try{dbx.close();}catch(x){} }
+    });
+  }
+
+  function saveBackupEverywhere(reason){
+    if(!matchStartedAt && !currentMatchRecord) return;
+    saveLocalBackup();
+    saveIndexedDBBackup();
+  }
+
+  window.getCricketAutoBackup=function(){
+    try{return JSON.parse(localStorage.getItem(BACKUP_LOCAL_KEY)||'null');}catch(e){return null;}
+  };
+
+  window.restoreCricketAutoBackup=function(){
+    var state=window.getCricketAutoBackup();
+    if(!state) return false;
+    try{
+      teamAName=state.teamAName||teamAName; teamBName=state.teamBName||teamBName;
+      maxOvers=Number(state.maxOvers)||2; currentInnings=Number(state.currentInnings)||1;
+      runs=Number(state.runs)||0; wickets=Number(state.wickets)||0; balls=Number(state.balls)||0;
+      firstInningsScore=Number(state.firstInningsScore)||0; firstInningsWickets=Number(state.firstInningsWickets)||0;
+      currentStrikerIndex=Number(state.currentStrikerIndex)||0;
+      currentNonStrikerIndex=Number.isFinite(Number(state.currentNonStrikerIndex))?Number(state.currentNonStrikerIndex):1;
+      nextBatterIndex=Number(state.nextBatterIndex)||2;
+      teamAInputPlayers=state.teamAInputPlayers||[]; teamBInputPlayers=state.teamBInputPlayers||[];
+      currentBattingPlayers=state.currentBattingPlayers||[]; currentBowlingPlayers=state.currentBowlingPlayers||[];
+      battersStats=state.battersStats||{}; bowlersStats=state.bowlersStats||{};
+      currentOverEvents=state.currentOverEvents||[]; completedOvers=state.completedOvers||[]; inningsHistory=state.inningsHistory||[];
+      matchStartedAt=state.matchStartedAt||null; currentMatchFinished=!!state.currentMatchFinished;
+      isLiveBroadcasting=!!state.isLiveBroadcasting; isSuperOver=!!state.isSuperOver;
+      currentMatchRecord=state.currentMatchRecord||null;
+      var a=document.getElementById('teamA'),b=document.getElementById('teamB');
+      if(a)a.value=teamAName;if(b)b.value=teamBName;
+      if(typeof updateLiveUI==='function') updateLiveUI();
+      return true;
+    }catch(e){console.warn('Restore backup failed:',e);return false;}
+  };
+
+  function firebaseBackupState(){
+    var state=collectBackupState();
+    if(!state || !db) return;
+    try{
+      var key=(matchStartedAt||'current').replace(/[^a-zA-Z0-9_-]/g,'_');
+      db.ref('matchBackups/'+key+'/latest').set(state).catch(function(e){console.warn('Firebase backup failed:',e);});
+    }catch(e){console.warn('Firebase backup exception:',e);}
+  }
+
+  // Wrap the existing live sync so every score update also creates local backups.
+  if(typeof window.syncScoreToFirebase==='function'){
+    var originalSync=window.syncScoreToFirebase;
+    window.syncScoreToFirebase=function(){
+      try{saveBackupEverywhere('score');}catch(e){}
+      var result=originalSync.apply(this,arguments);
+      try{firebaseBackupState();}catch(e){}
+      return result;
+    };
+  }
+
+  // Wrap final match saving so completed matches are also archived in Firebase.
+  if(typeof window.saveMatchToHistoryFinal==='function'){
+    var originalSave=window.saveMatchToHistoryFinal;
+    window.saveMatchToHistoryFinal=function(record){
+      var result=originalSave.apply(this,arguments);
+      try{
+        saveBackupEverywhere('match-finished');
+        if(db && record){
+          var id=(record.savedAt||new Date().toISOString()).replace(/[^a-zA-Z0-9_-]/g,'_');
+          db.ref('matchArchive/'+id).set(safeClone(record)).catch(function(e){console.warn('Firebase match archive failed:',e);});
+        }
+      }catch(e){}
+      return result;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    try{
+      saveBackupEverywhere('startup');
+      backupTimer=setInterval(function(){
+        if(matchStartedAt && !currentMatchFinished){
+          saveLocalBackup();
+          saveIndexedDBBackup();
+          firebaseBackupState();
+        }
+      },BACKUP_INTERVAL);
+    }catch(e){}
+  });
+
+  window.addEventListener('beforeunload',function(){
+    try{saveBackupEverywhere('close');firebaseBackupState();}catch(e){}
+  });
+})();
+</script>
+
+</body>
+</html>
