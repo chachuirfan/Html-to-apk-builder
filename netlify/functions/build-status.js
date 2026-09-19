@@ -7,14 +7,15 @@ function json(statusCode, data) {
     statusCode,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "GET, OPTIONS"
     },
     body: JSON.stringify(data)
   };
 }
 
 async function githubRequest(path) {
-
   const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
@@ -26,20 +27,18 @@ async function githubRequest(path) {
   const response = await fetch(
     GITHUB_API + path,
     {
+      method: "GET",
       headers: {
-        "Accept":
-          "application/vnd.github+json",
-        "Authorization":
-          "Bearer " + token,
-        "X-GitHub-Api-Version":
-          "2022-11-28"
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer " + token,
+        "X-GitHub-Api-Version": "2022-11-28"
       }
     }
   );
 
   const text = await response.text();
 
-  let data;
+  let data = {};
 
   try {
     data = text ? JSON.parse(text) : {};
@@ -59,48 +58,61 @@ async function githubRequest(path) {
 
 exports.handler = async function (event) {
 
+  // CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type",
-        "Access-Control-Allow-Methods":
-          "GET, OPTIONS"
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS"
       },
       body: ""
     };
   }
 
+  // Only GET
   if (event.httpMethod !== "GET") {
     return json(405, {
+      success: false,
       error: "Only GET is allowed."
     });
   }
 
   try {
-
-    const owner =
-      process.env.GITHUB_OWNER;
-
-    const repo =
-      process.env.GITHUB_REPO;
+    const owner = process.env.GITHUB_OWNER;
+    const repo = process.env.GITHUB_REPO;
 
     if (!owner || !repo) {
       return json(500, {
+        success: false,
         error:
           "GITHUB_OWNER or GITHUB_REPO is not configured."
       });
     }
 
-    const buildId =
-      event.queryStringParameters &&
-      event.queryStringParameters.buildId;
+    const params =
+      event.queryStringParameters || {};
+
+    const buildId = params.buildId;
 
     if (!buildId) {
       return json(400, {
+        success: false,
         error: "buildId is required."
+      });
+    }
+
+    /*
+      Security / validation:
+      build IDs created by our builder should only
+      contain letters, numbers, hyphens and underscores.
+    */
+
+    if (!/^[a-zA-Z0-9_-]{3,100}$/.test(buildId)) {
+      return json(400, {
+        success: false,
+        error: "Invalid buildId."
       });
     }
 
@@ -109,31 +121,67 @@ exports.handler = async function (event) {
       "build-apk.yml";
 
     /*
-      Look for recent GitHub Actions runs.
+      Get recent workflow runs.
     */
 
-    const runs =
-      await githubRequest(
-        `/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=20`
+    const runs = await githubRequest(
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=50`
+    );
+
+    const workflowRuns =
+      runs.workflow_runs || [];
+
+    /*
+      start-build.js creates a branch using the buildId.
+
+      Expected branch:
+      build/<buildId>
+
+      This is much more reliable than searching
+      JSON.stringify(run) for the buildId.
+    */
+
+    const expectedBranch =
+      `build/${buildId}`;
+
+    let matchingRun =
+      workflowRuns.find(run =>
+        run.head_branch === expectedBranch
       );
 
-    const matchingRun =
-      (runs.workflow_runs || []).find(run => {
-
-        const text =
-          JSON.stringify(run);
-
-        return text.includes(buildId);
-
-      });
+    /*
+      Also support a workflow run name containing
+      the buildId. This gives us another reliable
+      matching method after we update the workflow.
+    */
 
     if (!matchingRun) {
+      matchingRun =
+        workflowRuns.find(run => {
+          const name =
+            run.name ||
+            run.display_title ||
+            "";
 
+          return (
+            name.includes(buildId) &&
+            run.workflow_id
+          );
+        });
+    }
+
+    /*
+      No workflow run yet.
+    */
+
+    if (!matchingRun) {
       return json(200, {
+        success: true,
         buildId,
-        status: "queued"
+        status: "queued",
+        message:
+          "Build request received. Waiting for GitHub Actions."
       });
-
     }
 
     const runStatus =
@@ -142,51 +190,58 @@ exports.handler = async function (event) {
     const conclusion =
       matchingRun.conclusion;
 
-    if (
-      runStatus !== "completed"
-    ) {
+    /*
+      GitHub Actions is still running.
+    */
 
+    if (runStatus !== "completed") {
       return json(200, {
+        success: true,
         buildId,
         status: "building",
         githubStatus: runStatus,
-        runId: matchingRun.id
+        runId: matchingRun.id,
+        runUrl: matchingRun.html_url,
+        message:
+          "APK is currently being built."
       });
-
     }
 
-    if (
-      conclusion === "success"
-    ) {
+    /*
+      Successful build.
+    */
 
-      /*
-        The workflow will save the final APK URL
-        as an artifact.
-
-        We return the GitHub Actions run URL here
-        until the final artifact download system
-        is connected.
-      */
-
+    if (conclusion === "success") {
       return json(200, {
+        success: true,
         buildId,
         status: "success",
         runId: matchingRun.id,
-        downloadUrl:
-          matchingRun.html_url,
+        runUrl: matchingRun.html_url,
+        downloadUrl: matchingRun.html_url,
         message:
-          "APK build completed. Open the build to download the APK."
+          "APK build completed successfully."
       });
-
     }
 
+    /*
+      Failed / cancelled / timed out etc.
+    */
+
     return json(200, {
+      success: false,
       buildId,
       status: "failed",
       runId: matchingRun.id,
+      runUrl: matchingRun.html_url,
+      conclusion:
+        conclusion || "unknown",
       message:
-        conclusion ||
-        "APK build failed."
+        conclusion === "cancelled"
+          ? "APK build was cancelled."
+          : conclusion === "timed_out"
+          ? "APK build timed out."
+          : "APK build failed."
     });
 
   } catch (error) {
@@ -202,7 +257,5 @@ exports.handler = async function (event) {
         error.message ||
         "Unable to check build status."
     });
-
   }
-
 };
