@@ -1,35 +1,131 @@
-name: Cricket Live APK
+name: Universal HTML ZIP to APK Builder
 
 on:
   workflow_dispatch:
+    inputs:
+      buildId:
+        description: "Unique build ID"
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Read Build Information
+        id: info
+        shell: bash
+        run: |
+          BUILD_ID="${{ inputs.buildId }}"
+
+          METADATA="uploads/${BUILD_ID}/build.json"
+
+          if [ ! -f "$METADATA" ]; then
+            echo "Build metadata not found:"
+            echo "$METADATA"
+            exit 1
+          fi
+
+          APP_NAME=$(python3 -c "import json; print(json.load(open('$METADATA'))['appName'])")
+          PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('$METADATA'))['packageName'])")
+          ORIGINAL_FILE=$(python3 -c "import json; print(json.load(open('$METADATA'))['originalFileName'])")
+          EXTENSION=$(python3 -c "import json; print(json.load(open('$METADATA'))['extension'])")
+
+          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+          echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
+          echo "ORIGINAL_FILE=$ORIGINAL_FILE" >> "$GITHUB_ENV"
+          echo "EXTENSION=$EXTENSION" >> "$GITHUB_ENV"
+
+          echo "App Name: $APP_NAME"
+          echo "Package: $PACKAGE_NAME"
+          echo "File: $ORIGINAL_FILE"
+          echo "Type: $EXTENSION"
+
+      - name: Prepare Web Project
+        shell: bash
+        run: |
+          set -e
+
+          mkdir -p web
+
+          SOURCE="uploads/${BUILD_ID}/${ORIGINAL_FILE}"
+
+          if [ ! -f "$SOURCE" ]; then
+            echo "Uploaded file not found:"
+            echo "$SOURCE"
+            exit 1
+          fi
+
+          if [ "$EXTENSION" = "zip" ]; then
+
+            echo "Extracting ZIP..."
+
+            mkdir -p zip-content
+
+            unzip -o "$SOURCE" -d zip-content
+
+            INDEX=$(find zip-content -type f \
+              \( -iname "index.html" -o -iname "index.htm" \) \
+              | head -n 1)
+
+            if [ -z "$INDEX" ]; then
+              echo "ERROR: ZIP does not contain index.html"
+              exit 1
+            fi
+
+            ROOT=$(dirname "$INDEX")
+
+            cp -R "$ROOT"/. web/
+
+          else
+
+            cp "$SOURCE" web/index.html
+
+          fi
+
+          if [ ! -f "web/index.html" ]; then
+            echo "ERROR: index.html was not found."
+            exit 1
+          fi
+
+          echo "Web project prepared successfully."
+
+          find web -maxdepth 2 -type f | sort | head -100
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Setup Android
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          accept-android-sdk-licenses: 'true'
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
 
       - name: Create Android Project
+        shell: bash
         run: |
-          mkdir -p app/src/main/java/com/irfan/cricket
+          set -e
+
+          mkdir -p app/src/main/java
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
-          cp Index.html app/src/main/assets/index.html
+          PACKAGE_PATH=$(echo "$PACKAGE_NAME" | tr '.' '/')
+
+          mkdir -p "app/src/main/java/$PACKAGE_PATH"
+
+          cp -R web/. app/src/main/assets/
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -42,13 +138,14 @@ jobs:
 
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
               repositories {
                   google()
                   mavenCentral()
               }
           }
 
-          rootProject.name = "CricketLive"
+          rootProject.name = "UniversalAPKBuilder"
           include(":app")
           EOF
 
@@ -63,17 +160,17 @@ jobs:
           android.useAndroidX=true
           EOF
 
-          cat > app/build.gradle <<'EOF'
+          cat > app/build.gradle <<EOF
           plugins {
               id 'com.android.application'
           }
 
           android {
-              namespace 'com.irfan.cricket'
+              namespace '$PACKAGE_NAME'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.irfan.cricket'
+                  applicationId '$PACKAGE_NAME'
                   minSdk 23
                   targetSdk 35
                   versionCode 1
@@ -82,19 +179,21 @@ jobs:
           }
           EOF
 
-          cat > app/src/main/res/values/strings.xml <<'EOF'
+          cat > app/src/main/res/values/strings.xml <<EOF
           <resources>
-              <string name="app_name">Cricket Live</string>
+              <string name="app_name">$APP_NAME</string>
           </resources>
           EOF
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"/>
+              <style name="AppTheme"
+                  parent="android:style/Theme.Material.Light.NoActionBar">
+              </style>
           </resources>
           EOF
 
-          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          cat > app/src/main/AndroidManifest.xml <<EOF
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET"/>
@@ -104,7 +203,8 @@ jobs:
               <application
                   android:theme="@style/AppTheme"
                   android:label="@string/app_name"
-                  android:usesCleartextTraffic="true">
+                  android:usesCleartextTraffic="true"
+                  android:hardwareAccelerated="true">
 
                   <activity
                       android:name=".MainActivity"
@@ -117,16 +217,18 @@ jobs:
                       </intent-filter>
 
                   </activity>
+
               </application>
 
           </manifest>
           EOF
 
-          cat > app/src/main/java/com/irfan/cricket/MainActivity.java <<'EOF'
-          package com.irfan.cricket;
+          cat > "app/src/main/java/$PACKAGE_PATH/MainActivity.java" <<EOF
+          package $PACKAGE_NAME;
 
           import android.app.Activity;
           import android.os.Bundle;
+          import android.webkit.WebChromeClient;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
@@ -143,14 +245,28 @@ jobs:
                   setContentView(webView);
 
                   WebSettings settings = webView.getSettings();
+
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setDatabaseEnabled(true);
                   settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(true);
+                  settings.setMediaPlaybackRequiresUserGesture(false);
 
                   webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient());
+
                   webView.loadUrl("file:///android_asset/index.html");
+              }
+
+              @Override
+              public void onBackPressed() {
+
+                  if (webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
               }
           }
           EOF
@@ -158,13 +274,25 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.13'
+          gradle-version: "8.13"
 
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build Universal APK
+        shell: bash
+        run: |
+          set -e
 
-      - name: Upload Cricket APK
+          gradle assembleDebug --no-daemon
+
+          mkdir -p output
+
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "output/${APP_NAME// /-}.apk"
+
+          echo "APK created successfully."
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Cricket-Live-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: APK-${{ inputs.buildId }}
+          path: output/*.apk
+          if-no-files-found: error
