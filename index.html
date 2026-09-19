@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HTML to APK Builder</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#07151d;
+    color:#fff;
+    min-height:100vh;
+}
+
+.container{
+    width:min(900px,94%);
+    margin:30px auto;
+}
+
+.header{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.header h1{
+    margin:0;
+    font-size:32px;
+}
+
+.header p{
+    color:#a9bdc7;
+    margin-top:8px;
+}
+
+.card{
+    background:#10242e;
+    border:1px solid #23414d;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
+    box-shadow:0 10px 35px rgba(0,0,0,.25);
+}
+
+label{
+    display:block;
+    margin:15px 0 7px;
+    font-weight:bold;
+}
+
+input,select{
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    border:1px solid #355763;
+    background:#07151d;
+    color:#fff;
+    font-size:15px;
+}
+
+.upload{
+    border:2px dashed #3c6877;
+    border-radius:15px;
+    padding:30px 15px;
+    text-align:center;
+    cursor:pointer;
+    background:#0b1c24;
+}
+
+.upload:hover{
+    border-color:#6eabbf;
+}
+
+.upload input{
+    display:none;
+}
+
+.file-name{
+    margin-top:12px;
+    color:#8ed0e6;
+    word-break:break-all;
+}
+
+button{
+    width:100%;
+    border:0;
+    border-radius:12px;
+    padding:15px;
+    margin-top:20px;
+    background:#1683a5;
+    color:#fff;
+    font-size:17px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1b9fc6;
+}
+
+button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+
+.status{
+    display:none;
+    padding:15px;
+    border-radius:12px;
+    background:#07151d;
+    border:1px solid #294854;
+    margin-top:18px;
+}
+
+.progress{
+    height:9px;
+    background:#203842;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:12px;
+}
+
+.progress-bar{
+    width:0%;
+    height:100%;
+    background:#39b9df;
+    transition:.4s;
+}
+
+.download{
+    display:none;
+    text-decoration:none;
+    text-align:center;
+    background:#1c9b65;
+    color:#fff;
+    padding:15px;
+    border-radius:12px;
+    font-weight:bold;
+    margin-top:15px;
+}
+
+.note{
+    color:#9eb2bb;
+    font-size:13px;
+    line-height:1.6;
+    margin-top:12px;
+}
+
+.error{
+    color:#ff8585;
+}
+
+.success{
+    color:#65e0a0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+    <h1>📱 HTML → APK Builder</h1>
+    <p>Upload your HTML or ZIP and build an Android APK</p>
+</div>
+
+<div class="card">
+
+    <label>App Name</label>
+    <input
+        id="appName"
+        type="text"
+        placeholder="My Android App"
+        maxlength="40"
+    >
+
+    <label>Package Name</label>
+    <input
+        id="packageName"
+        type="text"
+        placeholder="com.example.myapp"
+        value="com.example.myapp"
+    >
+
+    <label>Upload HTML / ZIP</label>
+
+    <label class="upload" for="fileInput">
+        <div style="font-size:38px">📦</div>
+        <div style="margin-top:10px">
+            Click here to select HTML or ZIP
+        </div>
+
+        <input
+            id="fileInput"
+            type="file"
+            accept=".html,.htm,.zip"
+        >
+
+        <div class="file-name" id="fileName">
+            No file selected
+        </div>
+    </label>
+
+    <div class="note">
+        HTML files can be used directly. ZIP files should contain your
+        website files, with index.html as the main page.
+    </div>
+
+    <button id="buildBtn">
+        🚀 Build APK
+    </button>
+
+    <div class="status" id="statusBox">
+
+        <div id="statusText">
+            Preparing build...
+        </div>
+
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+    </div>
+
+    <a
+        id="downloadBtn"
+        class="download"
+        href="#"
+        target="_blank"
+    >
+        ⬇️ Download APK
+    </a>
+
+</div>
+
+<div class="card">
+
+    <h3>📘 How it works</h3>
+
+    <div class="note">
+        1. Enter your app name.<br>
+        2. Enter a unique Android package name.<br>
+        3. Upload your HTML or ZIP file.<br>
+        4. Press Build APK.<br>
+        5. The server creates the Android application.<br>
+        6. When the build finishes, your APK download appears here.
+    </div>
+
+</div>
+
+</div>
+
+<script>
+
+const fileInput = document.getElementById("fileInput");
+const fileName = document.getElementById("fileName");
+const buildBtn = document.getElementById("buildBtn");
+const statusBox = document.getElementById("statusBox");
+const statusText = document.getElementById("statusText");
+const progressBar = document.getElementById("progressBar");
+const downloadBtn = document.getElementById("downloadBtn");
+
+fileInput.addEventListener("change", () => {
+
+    if (!fileInput.files.length) {
+        fileName.textContent = "No file selected";
+        return;
+    }
+
+    fileName.textContent = fileInput.files[0].name;
+
+});
+
+function validPackageName(name){
+
+    return /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(name);
+
+}
+
+buildBtn.addEventListener("click", async () => {
+
+    const appName =
+        document.getElementById("appName").value.trim();
+
+    const packageName =
+        document.getElementById("packageName").value.trim();
+
+    const file =
+        fileInput.files[0];
+
+    downloadBtn.style.display = "none";
+
+    if (!appName) {
+
+        alert("Please enter an App Name.");
+        return;
+
+    }
+
+    if (!validPackageName(packageName)) {
+
+        alert(
+            "Please enter a valid package name.\n\nExample:\ncom.example.myapp"
+        );
+
+        return;
+
+    }
+
+    if (!file) {
+
+        alert("Please select an HTML or ZIP file.");
+        return;
+
+    }
+
+    const extension =
+        file.name.split(".").pop().toLowerCase();
+
+    if (!["html","htm","zip"].includes(extension)) {
+
+        alert("Only HTML, HTM or ZIP files are supported.");
+        return;
+
+    }
+
+    buildBtn.disabled = true;
+
+    statusBox.style.display = "block";
+
+    statusText.className = "";
+    statusText.textContent =
+        "Uploading your project...";
+
+    progressBar.style.width = "15%";
+
+    try {
+
+        const formData = new FormData();
+
+        formData.append("file", file);
+        formData.append("appName", appName);
+        formData.append("packageName", packageName);
+
+        const response =
+            await fetch("/.netlify/functions/start-build", {
+                method:"POST",
+                body:formData
+            });
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                result.error || "Unable to start build."
+            );
+
+        }
+
+        const buildId =
+            result.buildId;
+
+        progressBar.style.width = "30%";
+
+        statusText.textContent =
+            "Build started. Preparing Android project...";
+
+        await checkBuild(buildId);
+
+    } catch(error) {
+
+        statusText.className = "error";
+
+        statusText.textContent =
+            "❌ " + error.message;
+
+        progressBar.style.width = "0%";
+
+        buildBtn.disabled = false;
+
+    }
+
+});
+
+async function checkBuild(buildId){
+
+    const timer =
+        setInterval(async () => {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/.netlify/functions/build-status?buildId="
+                        + encodeURIComponent(buildId)
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error || "Status check failed."
+                    );
+
+                }
+
+                if (data.status === "queued") {
+
+                    progressBar.style.width = "40%";
+
+                    statusText.textContent =
+                        "⏳ Build is queued...";
+
+                }
+
+                else if (data.status === "building") {
+
+                    progressBar.style.width = "65%";
+
+                    statusText.textContent =
+                        "🔨 Building Android APK...";
+
+                }
+
+                else if (data.status === "success") {
+
+                    clearInterval(timer);
+
+                    progressBar.style.width = "100%";
+
+                    statusText.className =
+                        "success";
+
+                    statusText.textContent =
+                        "✅ APK successfully created!";
+
+                    if (data.downloadUrl) {
+
+                        downloadBtn.href =
+                            data.downloadUrl;
+
+                        downloadBtn.style.display =
+                            "block";
+
+                    }
+
+                    buildBtn.disabled = false;
+
+                }
+
+                else if (data.status === "failed") {
+
+                    clearInterval(timer);
+
+                    progressBar.style.width = "0%";
+
+                    statusText.className =
+                        "error";
+
+                    statusText.textContent =
+                        "❌ APK build failed.";
+
+                    if (data.message) {
+
+                        statusText.textContent +=
+                            " " + data.message;
+
+                    }
+
+                    buildBtn.disabled = false;
+
+                }
+
+            } catch(error) {
+
+                clearInterval(timer);
+
+                statusText.className =
+                    "error";
+
+                statusText.textContent =
+                    "❌ " + error.message;
+
+                buildBtn.disabled = false;
+
+            }
+
+        },5000);
+
+}
+
+</script>
+
+</body>
+</html>
