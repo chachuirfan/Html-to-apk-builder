@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#071015">
+<title>HTML TO APK BUILDER — Made by Irfan Aslam</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#05090d;--card:#0b141b;--card2:#0f1c24;--line:#20333d;
+  --text:#f2f8fa;--muted:#91a6ae;--green:#12d6a0;--blue:#18aaf5;
+  --purple:#8b63ff;--pink:#ff4bcf;--yellow:#ffe56b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:radial-gradient(circle at 50% -10%,#123b3b,#071117 38%,#04070a 78%);color:var(--text);font-family:Arial,Segoe UI,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+body{min-height:100vh}
+.topbar{position:sticky;top:0;z-index:50;background:#05090dee;border-bottom:1px solid #ffffff12;backdrop-filter:blur(16px)}
+.topbar-inner{max-width:1100px;margin:auto;min-height:62px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:1000;color:#00130e;background:linear-gradient(135deg,var(--green),var(--blue))}
+.brand b{font-size:14px}.brand small{display:block;color:#8299a2;font-size:9px;margin-top:3px}
+.pill{font-size:10px;color:#b5c6cb;border:1px solid #ffffff16;background:#ffffff07;padding:8px 11px;border-radius:999px}
+.wrap{width:min(1100px,100%);margin:auto;padding:12px}
+.hero{text-align:center;padding:24px 4px 16px}
+.hero h1{
+  margin:0;font-size:clamp(36px,9vw,72px);line-height:.95;font-weight:1000;letter-spacing:-2.5px;
+  background:linear-gradient(90deg,#ff43cf,#8a62ff,#17c9ff,#12e3a0,#ffe36b,#ff794d);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+.made{margin-top:10px;font-size:13px;font-weight:900;color:#b4c5ca}
+.made span{color:#8bffe0}
+.instructions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.info{background:#081118;border:1px solid var(--line);border-radius:15px;padding:13px;text-align:left}
+.info h3{font-size:11px;margin:0 0 7px;color:#e7f5f6}
+.info p{margin:0;color:#91a5ad;font-size:10px;line-height:1.7}
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.mode-btn{
+  min-height:58px;border-radius:14px;border:1px solid #263b45;background:#0a141b;color:#9cb0b7;
+  font-size:13px;font-weight:1000;transition:.18s
+}
+.mode-btn.active{color:#eafff9;border-color:#12d6a0aa;background:linear-gradient(135deg,#0b3029,#0b2433);box-shadow:0 8px 30px #12d6a018}
+.mode-btn span{font-size:9px;color:#6f858e;font-weight:700}
+.mode-btn.active span{color:#86e7d0}
+.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(290px,.65fr);gap:14px;align-items:start}
+.card{background:linear-gradient(180deg,#0c171e,#081016);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 20px 55px #0008}
+.card-head{padding:14px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.card-head b{font-size:13px}.card-head small{font-size:9px;color:#849aa2}
+.body{padding:14px}
+.panel{display:none !important}.panel.active{display:block !important}
+.section{background:#ffffff03;border:1px solid #ffffff0e;border-radius:14px;padding:13px;margin-bottom:11px}
+.section:last-child{margin-bottom:0}
+.section-title{font-size:12px;font-weight:1000;margin:0 0 11px;color:#eaf6f7}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.field label{display:block;color:#9fb2b9;font-size:9px;margin-bottom:5px}
+.field input,.field select{
+  width:100%;height:42px;border-radius:10px;border:1px solid #223740;background:#071016;color:#eef7f8;padding:8px 10px;outline:0
+}
+.field input:focus,.field select:focus{border-color:#12d6a088;box-shadow:0 0 0 3px #12d6a012}
+.file-box{border:1px dashed #3a5964;background:#071016;border-radius:13px;padding:16px 12px;text-align:center}
+.file-box strong{display:block;font-size:12px;margin-bottom:5px}.file-box small{display:block;color:#778d95;font-size:9px;line-height:1.5}
+.file-box input{margin-top:10px;width:100%;font-size:10px;color:#b8c9ce}
+.permission-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.permission{
+  min-height:50px;display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #1d313a;
+  background:#071016;border-radius:11px;color:#d1dfe3;font-size:11px
+}
+.permission input{width:19px;height:19px;accent-color:var(--green);flex:0 0 auto}
+.setting{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;
+  margin-bottom:8px;background:#071016;border:1px solid #1d313a;border-radius:11px
+}
+.setting:last-child{margin-bottom:0}
+.setting b{display:block;font-size:11px;color:#e8f4f5}.setting small{display:block;color:#738990;font-size:9px;margin-top:3px;line-height:1.45}
+.switch{position:relative;width:45px;height:25px;flex:0 0 auto}.switch input{display:none}
+.slider{position:absolute;inset:0;background:#273940;border-radius:99px;transition:.2s}.slider:before{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;border-radius:50%;background:#9eafb4;transition:.2s}
+.switch input:checked+.slider{background:#087e64}.switch input:checked+.slider:before{transform:translateX(20px);background:#fff}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+.btn{min-height:48px;border-radius:12px;font-weight:1000;border:1px solid #28404a}
+.primary{color:#00140f;background:linear-gradient(135deg,#12d6a0,#18aaf5);border:0}
+.secondary{color:#d8e6e9;background:#0b171e}
+.preview-card{position:sticky;top:76px}
+.phone{width:min(100%,320px);margin:auto;border:7px solid #162126;border-radius:30px;overflow:hidden;background:#020607;box-shadow:0 25px 70px #000b}
+.phone-top{height:27px;background:#050a0d;color:#58727b;display:grid;place-items:center;font-size:9px}
+.phone-screen{min-height:500px;padding:18px 14px;display:flex;flex-direction:column;text-align:center;background:radial-gradient(circle at 50% 0,#10413d,#071318 45%,#040708)}
+.preview-icon{width:78px;height:78px;border-radius:21px;margin:14px auto 10px;display:grid;place-items:center;overflow:hidden;color:#00140f;font-size:24px;font-weight:1000;background:linear-gradient(135deg,#12d6a0,#18aaf5)}
+.preview-icon img{width:100%;height:100%;object-fit:cover}
+.phone-screen h2{margin:4px 0;font-size:19px}.phone-screen p{margin:0 0 14px;color:#82979f;font-size:10px}
+.badges{display:flex;justify-content:center;gap:5px;flex-wrap:wrap}.badge{padding:5px 8px;border-radius:99px;background:#0a2822;color:#7cefd0;font-size:8px}
+.preview-item{margin-top:7px;padding:10px;border:1px solid #ffffff0d;background:#ffffff07;border-radius:10px;color:#c8d9de;font-size:10px}
+.phone-footer{margin-top:auto;padding-top:20px;color:#536a72;font-size:9px}
+.output{display:none;margin-top:14px}.output.show{display:block}
+.file-tabs{display:flex;gap:6px;overflow:auto;padding:10px;border-bottom:1px solid var(--line)}
+.file-tab{flex:0 0 auto;border:1px solid var(--line);background:#071016;color:#8ea4ab;border-radius:8px;padding:8px 10px;font-size:9px}
+.file-tab.active{color:#7cf0d1;background:#0a2721;border-color:#12d6a066}
+.code{display:none;direction:ltr;text-align:left;margin:11px;padding:12px;max-height:370px;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:11px;border:1px solid #172a33;background:#02070a;color:#bfd0d5;font:10px/1.65 Consolas,monospace}
+.code.active{display:block}
+.output-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:11px}
+.footer{text-align:center;color:#60757d;font-size:10px;padding:24px 5px}
+.toast{position:fixed;z-index:200;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#0d1b22;border:1px solid #29414b;color:#eaf8f8;padding:11px 15px;border-radius:12px;font-size:11px;transition:.22s;box-shadow:0 15px 45px #0009}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.preview-card{position:static}}
+@media(max-width:600px){
+  .wrap{padding:9px}.pill{display:none}.instructions,.grid2,.grid3{grid-template-columns:1fr}
+  .permission-grid{grid-template-columns:1fr 1fr}.actions,.output-actions{grid-template-columns:1fr}
+  .hero h1{font-size:38px}.mode-tabs{position:sticky;top:62px;z-index:30;background:#05090df5;padding:6px 0}
+}
+@media(max-width:390px){.permission-grid{grid-template-columns:1fr}}
+
+/* ===== REAL APK BUILD UI ===== */
+.apk-build-box{margin-top:13px;padding:13px;border:1px solid #12d6a055;background:linear-gradient(135deg,#08221e,#071722);border-radius:14px}
+.apk-build-title{font-size:12px;font-weight:1000;margin-bottom:7px}.apk-status{font-size:10px;color:#91a6ae;line-height:1.6;margin:8px 0}.apk-progress{height:9px;border-radius:99px;background:#17282f;overflow:hidden}.apk-progress>span{display:block;height:100%;width:0;background:linear-gradient(90deg,#12d6a0,#18aaf5);transition:width .35s}.apk-download{display:block;margin-top:9px;width:100%;opacity:.55;cursor:not-allowed;text-decoration:none;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">IA</div>
+      <div><b>HTML TO APK BUILDER</b><small>Professional Android WebView Builder</small></div>
+    </div>
+    <div class="pill">Professional Builder</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="hero">
+  <h1>HTML TO APK BUILDER</h1>
+  <div class="made">Made by <span>Irfan Aslam</span></div>
+
+  <div class="instructions">
+    <div class="info">
+      <h3>ENGLISH — HOW TO USE</h3>
+      <p>Select an HTML file or ZIP website. Enter the app name and package name. Use Simple Mode for the main setup and Advanced Mode for WebView, permissions, media, links and build settings. Then press Generate Project.</p>
+    </div>
+    <div class="info">
+      <h3>اردو — طریقہ استعمال</h3>
+      <p>HTML یا ZIP فائل منتخب کریں، App Name اور Package Name لکھیں۔ Simple Mode میں بنیادی سیٹنگز اور Advanced Mode میں WebView، Permissions، Media، Links اور Build Settings کریں۔ آخر میں Generate Project دبائیں۔</p>
+    </div>
+  </div>
+</section>
+
+<div class="mode-tabs">
+  <button type="button" id="simpleBtn" class="mode-btn active" onclick="switchMode('simple')">Simple Mode<br><span>Basic Project Setup</span></button>
+  <button type="button" id="advancedBtn" class="mode-btn" onclick="switchMode('advanced')">Advanced Mode<br><span>Advanced Settings</span></button>
+</div>
+
+<div class="layout">
+
+<div class="card">
+  <div class="card-head">
+    <b id="panelTitle">Simple Project Setup</b>
+    <small id="panelMode">SIMPLE</small>
+  </div>
+
+  <div class="body">
+
+    <section id="simplePanel" class="panel active">
+
+      <div class="section">
+        <h3 class="section-title">📦 Project / Website</h3>
+        <div class="file-box">
+          <strong>Choose HTML / ZIP File</strong>
+          <small>HTML, HTM or complete Website ZIP</small>
+          <input id="projectFile" type="file" accept=".html,.htm,.zip">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🏷 App Identity</h3>
+        <div class="grid2">
+          <div class="field"><label>App Name</label><input id="appName" value="Irfan Web App"></div>
+          <div class="field"><label>Package Name</label><input id="packageName" value="com.irfan.webapp"></div>
+        </div>
+        <div class="grid3" style="margin-top:10px">
+          <div class="field"><label>Version Name</label><input id="versionName" value="1.0"></div>
+          <div class="field"><label>Version Code</label><input id="versionCode" value="1"></div>
+          <div class="field"><label>Min Android</label>
+            <select id="minSdk"><option value="23">Android 6</option><option value="26">Android 8</option><option value="28">Android 9</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🎨 App Appearance</h3>
+        <div class="grid2">
+          <div class="field"><label>Orientation</label>
+            <select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option><option value="sensor">Auto Rotate</option></select>
+          </div>
+          <div class="field"><label>Theme</label>
+            <select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select>
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="field"><label>Status Bar</label>
+            <select id="statusBar"><option value="dark">Dark</option><option value="light">Light</option></select>
+          </div>
+          <div class="field"><label>Navigation Bar</label>
+            <select id="navBar"><option value="dark">Dark</option><option value="light">Light</option></select>
+          </div>
+        </div>
+        <div class="file-box" style="margin-top:10px">
+          <strong>🖼 App Icon</strong><small>PNG / JPG / WEBP</small>
+          <input id="appIcon" type="file" accept="image/png,image/jpeg,image/webp">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🚀 Splash Screen</h3>
+        <div class="grid2">
+          <div class="field"><label>Splash</label>
+            <select id="splashEnabled"><option value="on">ON</option><option value="off">OFF</option></select>
+          </div>
+          <div class="field"><label>Duration</label>
+            <select id="splashDuration"><option value="1000">1 Second</option><option value="1500" selected>1.5 Seconds</option><option value="2000">2 Seconds</option><option value="3000">3 Seconds</option></select>
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="field"><label>Animation</label>
+            <select id="splashAnimation"><option value="fade">Fade</option><option value="zoom">Zoom</option><option value="none">None</option></select>
+          </div>
+          <div class="field"><label>Background</label><input id="splashBg" value="#071014"></div>
+        </div>
+        <div class="file-box" style="margin-top:10px">
+          <strong>🖼 Splash Logo</strong><small>PNG / JPG / WEBP</small>
+          <input id="splashLogo" type="file" accept="image/png,image/jpeg,image/webp">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🔐 Permissions</h3>
+        <div class="permission-grid">
+          <label class="permission"><input id="internet" type="checkbox" checked><span>Internet / Firebase</span></label>
+          <label class="permission"><input id="camera" type="checkbox"><span>Camera</span></label>
+          <label class="permission"><input id="mic" type="checkbox"><span>Microphone</span></label>
+          <label class="permission"><input id="files" type="checkbox" checked><span>File Upload</span></label>
+          <label class="permission"><input id="media" type="checkbox" checked><span>Audio / Video</span></label>
+          <label class="permission"><input id="download" type="checkbox"><span>Downloads</span></label>
+        </div>
+      </div>
+
+    </section>
+
+    <section id="advancedPanel" class="panel">
+
+      <div class="section">
+        <h3 class="section-title">🧠 WebView Engine</h3>
+
+        <div class="setting"><div><b>JavaScript</b><small>Required for dynamic websites and Firebase</small></div><label class="switch"><input id="js" type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="setting"><div><b>DOM Storage / LocalStorage</b><small>Website local data and browser storage</small></div><label class="switch"><input id="dom" type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="setting"><div><b>Database</b><small>WebView database support</small></div><label class="switch"><input id="database" type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="setting"><div><b>Media Autoplay</b><small>Allow audio and video playback without a user gesture</small></div><label class="switch"><input id="autoplay" type="checkbox"><span class="slider"></span></label></div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🔗 Links & Navigation</h3>
+        <div class="setting"><div><b>External Links</b><small>Open HTTP / HTTPS links outside the app</small></div><label class="switch"><input id="external" type="checkbox"><span class="slider"></span></label></div>
+        <div class="setting"><div><b>Back Button Handling</b><small>Go back in WebView history before closing</small></div><label class="switch"><input id="backHandling" type="checkbox" checked><span class="slider"></span></label></div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">📁 File & Media Controls</h3>
+        <div class="permission-grid">
+          <label class="permission"><input id="advancedFile" type="checkbox" checked><span>File Chooser</span></label>
+          <label class="permission"><input id="advancedCamera" type="checkbox"><span>Camera Access</span></label>
+          <label class="permission"><input id="advancedMic" type="checkbox"><span>Mic Access</span></label>
+          <label class="permission"><input id="advancedMedia" type="checkbox" checked><span>Media Playback</span></label>
+          <label class="permission"><input id="advancedDownload" type="checkbox"><span>Download Manager</span></label>
+          <label class="permission"><input id="notifications" type="checkbox"><span>Notifications</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🏗 Build Settings</h3>
+        <div class="grid2">
+          <div class="field"><label>Build Type</label>
+            <select id="buildType"><option value="debug">Debug APK</option><option value="release">Release-ready Project</option></select>
+          </div>
+          <div class="field"><label>Android Gradle Plugin</label>
+            <select id="agp"><option value="8.13.2">8.13.2</option><option value="8.7.3">8.7.3</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">✍️ Owner Branding</h3>
+        <div class="grid2">
+          <div class="field"><label>Customer / App Owner</label><input id="customerName" placeholder="Owner name"></div>
+          <div class="field"><label>Owner Authorization Code</label><input id="ownerCode" type="password" placeholder="Authorization code"></div>
+        </div>
+        <div class="info" style="margin-top:10px"><h3>Fixed Builder Credit</h3><p>Made by Irfan Aslam</p></div>
+      </div>
+
+    </section>
+
+    <div class="actions">
+      <button id="generateBtn" type="button" class="btn primary">✨ Generate Project</button>
+      <button id="resetBtn" type="button" class="btn secondary">↺ Reset</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="card preview-card">
+  <div class="card-head"><b>📱 Live Preview</b><small id="previewPackage">com.irfan.webapp</small></div>
+  <div class="body">
+    <div class="phone">
+      <div class="phone-top">●　●　●</div>
+      <div class="phone-screen">
+        <div class="preview-icon" id="previewIcon"><span id="iconText">IA</span></div>
+        <h2 id="previewName">Irfan Web App</h2>
+        <p>Android WebView Project</p>
+        <div class="badges">
+          <span id="internetBadge" class="badge">Internet</span>
+          <span id="filesBadge" class="badge">Files</span>
+          <span id="orientationBadge" class="badge">Portrait</span>
+        </div>
+        <div class="preview-item">🌐 HTML / Website</div>
+        <div class="preview-item">⚡ JavaScript WebView</div>
+        <div class="preview-item">📱 Android Application</div>
+        <div class="preview-item">🔐 Permissions & Settings</div>
+        <div class="phone-footer">Made by Irfan Aslam</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="output" class="card output">
+  <div class="card-head"><b>✅ Generated Android Project</b><small id="fileCount">0 files</small></div>
+  <div id="fileTabs" class="file-tabs"></div>
+  <div id="codeArea"></div>
+  <div class="output-actions">
+    <button id="zipBtn" type="button" class="btn primary">⬇ Download Project ZIP</button>
+    <button id="copyFileBtn" type="button" class="btn secondary">📋 Copy Selected File</button>
+  </div>
+</div>
+
+<div class="apk-build-box">
+    <div class="apk-build-title">📱 Build APK</div>
+    <div id="apkStatus" class="apk-status">HTML/ZIP منتخب کریں اور Build APK دبائیں۔ Generate Project ضروری نہیں۔</div>
+    <div class="apk-progress"><span id="apkProgressBar"></span></div>
+    <button id="buildApkBtn" type="button" class="btn primary" style="margin-top:10px;width:100%">🚀 Build APK</button>
+    <a id="downloadApkBtn" class="btn primary apk-download" href="#" aria-disabled="true" download="app.apk" target="_blank" rel="noopener">⬇ Download APK</a>
+</div>
+
+<div class="footer">HTML TO APK BUILDER • Made by Irfan Aslam</div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+"use strict";
+
+/* ---------- tiny safe helpers ---------- */
+var generatedFiles = {};
+var selectedFile = "";
+
+function $(id){ return document.getElementById(id); }
+
+function toast(message){
+  var box = $("toast");
+  box.textContent = message;
+  box.classList.add("show");
+  clearTimeout(window.__toast);
+  window.__toast = setTimeout(function(){ box.classList.remove("show"); }, 2600);
+}
+
+/* ---------- REAL MODE SWITCH ---------- */
+function switchMode(mode){
+  var simple = mode === "simple";
+
+  $("simpleBtn").classList.toggle("active", simple);
+  $("advancedBtn").classList.toggle("active", !simple);
+
+  $("simplePanel").classList.toggle("active", simple);
+  $("advancedPanel").classList.toggle("active", !simple);
+
+  $("panelTitle").textContent = simple ? "Simple Project Setup" : "Advanced Android / WebView Settings";
+  $("panelMode").textContent = simple ? "SIMPLE" : "ADVANCED";
+}
+
+/* ---------- live preview ---------- */
+$("appName").addEventListener("input", function(){
+  $("previewName").textContent = this.value.trim() || "Irfan Web App";
+});
+
+$("packageName").addEventListener("input", function(){
+  $("previewPackage").textContent = this.value.trim() || "com.irfan.webapp";
+});
+
+$("orientation").addEventListener("change", function(){
+  $("orientationBadge").textContent = this.options[this.selectedIndex].text;
+});
+
+$("internet").addEventListener("change", function(){
+  $("internetBadge").style.display = this.checked ? "inline-block" : "none";
+});
+
+$("files").addEventListener("change", function(){
+  $("filesBadge").style.display = this.checked ? "inline-block" : "none";
+});
+
+$("appIcon").addEventListener("change", function(){
+  var file = this.files && this.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    $("previewIcon").innerHTML = '<img src="' + reader.result + '" alt="Icon">';
+  };
+  reader.readAsDataURL(file);
+});
+
+/* ---------- collect settings ---------- */
+function validPackage(value){
+  return /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(value);
+}
+
+function collectSettings(){
+  return {
+    appName: $("appName").value.trim() || "Irfan Web App",
+    packageName: $("packageName").value.trim(),
+    versionName: $("versionName").value.trim() || "1.0",
+    versionCode: parseInt($("versionCode").value,10) || 1,
+    minSdk: $("minSdk").value,
+    orientation: $("orientation").value,
+    theme: $("theme").value,
+    internet: $("internet").checked,
+    camera: $("camera").checked || $("advancedCamera").checked,
+    microphone: $("mic").checked || $("advancedMic").checked,
+    fileUpload: $("files").checked || $("advancedFile").checked,
+    media: $("media").checked || $("advancedMedia").checked,
+    download: $("download").checked || $("advancedDownload").checked,
+    notifications: $("notifications").checked,
+    javascript: $("js").checked,
+    domStorage: $("dom").checked,
+    database: $("database").checked,
+    autoplay: $("autoplay").checked,
+    externalLinks: $("external").checked,
+    backHandling: $("backHandling").checked,
+    buildType: $("buildType").value,
+    agp: $("agp").value,
+    splash: $("splashEnabled").value,
+    splashDuration: $("splashDuration").value,
+    splashAnimation: $("splashAnimation").value,
+    splashBg: $("splashBg").value || "#071014"
+  };
+}
+
+/* ---------- android project generation ---------- */
+function generateFiles(c){
+  if(!validPackage(c.packageName)){
+    throw new Error("Package Name درست لکھیں، مثال: com.irfan.myapp");
+  }
+
+  var permissions = [];
+
+  if(c.internet){
+    permissions.push(
+      '<uses-permission android:name="android.permission.INTERNET"/>',
+      '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>'
+    );
+  }
+  if(c.camera){
+    permissions.push('<uses-permission android:name="android.permission.CAMERA"/>');
+  }
+  if(c.microphone){
+    permissions.push('<uses-permission android:name="android.permission.RECORD_AUDIO"/>');
+  }
+  if(c.notifications){
+    permissions.push('<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>');
+  }
+
+  var orientation = c.orientation === "sensor" ? "fullSensor" : c.orientation;
+  var theme = c.theme === "light" ? "Theme.AppCompat.Light.NoActionBar" : "Theme.AppCompat.NoActionBar";
+
+  var manifest =
+'<?xml version="1.0" encoding="utf-8"?>\n' +
+'<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n\n' +
+'    ' + permissions.join("\n    ") + '\n\n' +
+'    <application\n' +
+'        android:allowBackup="false"\n' +
+'        android:usesCleartextTraffic="true"\n' +
+'        android:label="@string/app_name"\n' +
+'        android:theme="@style/AppTheme">\n\n' +
+'        <activity\n' +
+'            android:name=".MainActivity"\n' +
+'            android:screenOrientation="' + orientation + '"\n' +
+'            android:exported="true">\n' +
+'            <intent-filter>\n' +
+'                <action android:name="android.intent.action.MAIN"/>\n' +
+'                <category android:name="android.intent.category.LAUNCHER"/>\n' +
+'            </intent-filter>\n' +
+'        </activity>\n\n' +
+'    </application>\n' +
+'</manifest>';
+
+  var java =
+'package ' + c.packageName + ';\n\n' +
+'import android.Manifest;\n' +
+'import android.app.DownloadManager;\n' +
+'import android.content.Intent;\n' +
+'import android.content.pm.PackageManager;\n' +
+'import android.net.Uri;\n' +
+'import android.os.Bundle;\n' +
+'import android.os.Environment;\n' +
+'import android.webkit.PermissionRequest;\n' +
+'import android.webkit.ValueCallback;\n' +
+'import android.webkit.WebChromeClient;\n' +
+'import android.webkit.WebResourceRequest;\n' +
+'import android.webkit.WebSettings;\n' +
+'import android.webkit.WebView;\n' +
+'import android.webkit.WebViewClient;\n' +
+'import androidx.activity.result.ActivityResultLauncher;\n' +
+'import androidx.activity.result.contract.ActivityResultContracts;\n' +
+'import androidx.appcompat.app.AppCompatActivity;\n' +
+'import java.util.ArrayList;\n\n' +
+'public class MainActivity extends AppCompatActivity {\n' +
+'    private WebView webView;\n' +
+'    private ValueCallback<Uri[]> fileCallback;\n' +
+'    private PermissionRequest pendingPermissionRequest;\n' +
+'    private ActivityResultLauncher<String[]> permissionLauncher;\n\n' +
+'    @Override\n' +
+'    protected void onCreate(Bundle savedInstanceState) {\n' +
+'        super.onCreate(savedInstanceState);\n' +
+'        setContentView(R.layout.activity_main);\n' +
+'        webView = findViewById(R.id.webView);\n' +
+'        WebSettings s = webView.getSettings();\n' +
+'        s.setJavaScriptEnabled(' + c.javascript + ');\n' +
+'        s.setDomStorageEnabled(' + c.domStorage + ');\n' +
+'        s.setDatabaseEnabled(' + c.database + ');\n' +
+'        s.setAllowFileAccess(true);\n' +
+'        s.setAllowContentAccess(true);\n' +
+'        s.setMediaPlaybackRequiresUserGesture(' + (!c.autoplay) + ');\n\n' +
+'        webView.setWebViewClient(new WebViewClient(){\n' +
+'            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){\n' +
+'                String url = request.getUrl().toString();\n' +
+(c.externalLinks ?
+'                if(url.startsWith("http://") || url.startsWith("https://")){\n' +
+'                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));\n' +
+'                    return true;\n' +
+'                }\n' : '') +
+'                return false;\n' +
+'            }\n' +
+'        });\n\n' +
+'        webView.setWebChromeClient(new WebChromeClient(){\n' +
+'            @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params){\n' +
+'                if(fileCallback != null) fileCallback.onReceiveValue(null);\n' +
+'                fileCallback = callback;\n' +
+'                try{\n' +
+'                    startActivityForResult(params.createIntent(),1001);\n' +
+'                    return true;\n' +
+'                }catch(Exception e){ fileCallback=null; return false; }\n' +
+'            }\n' +
+'            @Override public void onPermissionRequest(final PermissionRequest request){\n' +
+'                runOnUiThread(new Runnable(){ public void run(){\n' +
+'                    pendingPermissionRequest=request;\n' +
+'                    requestAndroidPermissions();\n' +
+'                }});\n' +
+'            }\n' +
+'        });\n\n' +
+'        permissionLauncher = registerForActivityResult(\n' +
+'            new ActivityResultContracts.RequestMultiplePermissions(),\n' +
+'            result -> {\n' +
+'                if(pendingPermissionRequest == null) return;\n' +
+'                boolean ok=true;\n' +
+'                for(Boolean value: result.values()) if(!Boolean.TRUE.equals(value)) ok=false;\n' +
+'                if(ok) pendingPermissionRequest.grant(pendingPermissionRequest.getResources());\n' +
+'                else pendingPermissionRequest.deny();\n' +
+'                pendingPermissionRequest=null;\n' +
+'            });\n\n' +
+(c.download ?
+'        webView.setDownloadListener((url,userAgent,contentDisposition,mimeType,contentLength)->{\n' +
+'            try{\n' +
+'                DownloadManager.Request r=new DownloadManager.Request(Uri.parse(url));\n' +
+'                r.setMimeType(mimeType);\n' +
+'                r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);\n' +
+'                r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"download");\n' +
+'                ((DownloadManager)getSystemService(DOWNLOAD_SERVICE)).enqueue(r);\n' +
+'            }catch(Exception ignored){}\n' +
+'        });\n' : '') +
+'        webView.loadUrl("file:///android_asset/index.html");\n' +
+'    }\n\n' +
+'    private void requestAndroidPermissions(){\n' +
+'        ArrayList<String> p=new ArrayList<>();\n' +
+(c.camera ?
+'        if(checkSelfPermission(Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED) p.add(Manifest.permission.CAMERA);\n' : '') +
+(c.microphone ?
+'        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) p.add(Manifest.permission.RECORD_AUDIO);\n' : '') +
+'        if(p.isEmpty()){\n' +
+'            if(pendingPermissionRequest!=null){ pendingPermissionRequest.grant(pendingPermissionRequest.getResources()); pendingPermissionRequest=null; }\n' +
+'            return;\n' +
+'        }\n' +
+'        permissionLauncher.launch(p.toArray(new String[0]));\n' +
+'    }\n\n' +
+'    @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){\n' +
+'        super.onActivityResult(requestCode,resultCode,data);\n' +
+'        if(requestCode==1001 && fileCallback!=null){\n' +
+'            Uri[] results=WebChromeClient.FileChooserParams.parseResult(resultCode,data);\n' +
+'            fileCallback.onReceiveValue(results);\n' +
+'            fileCallback=null;\n' +
+'        }\n' +
+'    }\n\n' +
+'    @Override public void onBackPressed(){\n' +
+(c.backHandling ?
+'        if(webView.canGoBack()){ webView.goBack(); return; }\n' : '') +
+'        super.onBackPressed();\n' +
+'    }\n' +
+'}';
+
+  var layout =
+'<?xml version="1.0" encoding="utf-8"?>\n' +
+'<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"\n' +
+'    android:layout_width="match_parent"\n' +
+'    android:layout_height="match_parent">\n' +
+'    <WebView\n' +
+'        android:id="@+id/webView"\n' +
+'        android:layout_width="match_parent"\n' +
+'        android:layout_height="match_parent"/>\n' +
+'</FrameLayout>';
+
+  var styles =
+'<resources>\n' +
+'    <style name="AppTheme" parent="' + theme + '">\n' +
+'        <item name="android:fontFamily">sans</item>\n' +
+'        <item name="android:colorAccent">#12D6A0</item>\n' +
+'        <item name="android:statusBarColor">#05090D</item>\n' +
+'        <item name="android:navigationBarColor">#05090D</item>\n' +
+'        <item name="android:windowLightStatusBar">false</item>\n' +
+'    </style>\n' +
+'</resources>';
+
+  var strings =
+'<resources>\n<string name="app_name">' +
+c.appName.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") +
+'</string>\n</resources>';
+
+  var rootGradle =
+'plugins {\n    id "com.android.application" version "' + c.agp + '" apply false\n}';
+
+  var settingsGradle =
+'pluginManagement {\n    repositories { google(); mavenCentral(); gradlePluginPortal() }\n}\n' +
+'dependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories { google(); mavenCentral() }\n}\n' +
+'rootProject.name="HTMLToAPKBuilder"\ninclude(":app")';
+
+  var properties =
+'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\n' +
+'android.useAndroidX=true\n' +
+'android.nonTransitiveRClass=true';
+
+  var appGradle =
+'plugins { id "com.android.application" }\n\n' +
+'android {\n' +
+'    namespace "' + c.packageName + '"\n' +
+'    compileSdk 35\n' +
+'    defaultConfig {\n' +
+'        applicationId "' + c.packageName + '"\n' +
+'        minSdk ' + c.minSdk + '\n' +
+'        targetSdk 35\n' +
+'        versionCode ' + c.versionCode + '\n' +
+'        versionName "' + c.versionName.replace(/"/g,'\\"') + '"\n' +
+'    }\n' +
+'}\n\n' +
+'dependencies {\n' +
+'    implementation "androidx.appcompat:appcompat:1.7.1"\n' +
+'    implementation "androidx.activity:activity:1.10.1"\n' +
+'}';
+
+  var readme =
+'HTML TO APK BUILDER\nMade by Irfan Aslam\n\n' +
+'APP NAME: ' + c.appName + '\n' +
+'PACKAGE: ' + c.packageName + '\n' +
+'VERSION: ' + c.versionName + '\n\n' +
+'Open this project in Android Studio and build the APK from Build > Build APK(s).\n';
+
+  var files = {};
+  files["settings.gradle"] = settingsGradle;
+  files["build.gradle"] = rootGradle;
+  files["gradle.properties"] = properties;
+  files["app/build.gradle"] = appGradle;
+  files["app/src/main/AndroidManifest.xml"] = manifest;
+  files["app/src/main/java/" + c.packageName.replace(/\./g,"/") + "/MainActivity.java"] = java;
+  files["app/src/main/res/layout/activity_main.xml"] = layout;
+  files["app/src/main/res/values/styles.xml"] = styles;
+  files["app/src/main/res/values/strings.xml"] = strings;
+  files["README.txt"] = readme;
+
+  return files;
+}
+
+/* ---------- source HTML / ZIP ---------- */
+async function addWebsite(file){
+  if(!file) return;
+
+  if(/\.(html?|HTML?)$/i.test(file.name)){
+    generatedFiles["app/src/main/assets/index.html"] = await file.text();
+    return;
+  }
+
+  if(/\.zip$/i.test(file.name)){
+    var zip = await JSZip.loadAsync(file);
+    var names = Object.keys(zip.files);
+
+    for(var i=0;i<names.length;i++){
+      var name = names[i];
+      var entry = zip.files[name];
+      if(entry.dir) continue;
+
+      generatedFiles["app/src/main/assets/" + name.replace(/^\/+/,"")] =
+        await entry.async("uint8array");
+    }
+  }
+}
+
+/* ---------- render files ---------- */
+function renderFiles(){
+  var names = Object.keys(generatedFiles);
+  $("fileCount").textContent = names.length + " files";
+
+  $("fileTabs").innerHTML = "";
+  $("codeArea").innerHTML = "";
+
+  names.forEach(function(name,index){
+    var tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "file-tab" + (index===0 ? " active" : "");
+    tab.textContent = name.split("/").pop();
+    tab.onclick = function(){
+      document.querySelectorAll(".file-tab").forEach(function(x){x.classList.remove("active");});
+      document.querySelectorAll(".code").forEach(function(x){x.classList.remove("active");});
+      tab.classList.add("active");
+      $("code_" + index).classList.add("active");
+      selectedFile = name;
+    };
+    $("fileTabs").appendChild(tab);
+
+    var code = document.createElement("div");
+    code.id = "code_" + index;
+    code.className = "code" + (index===0 ? " active" : "");
+
+    if(typeof generatedFiles[name] === "string"){
+      code.textContent = generatedFiles[name];
+    }else{
+      code.textContent = "[Binary file included in ZIP]";
+    }
+
+    $("codeArea").appendChild(code);
+  });
+
+  selectedFile = names[0] || "";
+  $("output").classList.add("show");
+  $("output").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---------- Generate ---------- */
+$("generateBtn").onclick = async function(){
+  try{
+    var source = $("projectFile").files[0];
+
+    if(!source){
+      switchMode("simple");
+      toast("پہلے HTML یا ZIP فائل منتخب کریں");
+      return;
+    }
+
+    var settings = collectSettings();
+    generatedFiles = generateFiles(settings);
+    await addWebsite(source);
+    renderFiles();
+    toast("✅ Project generated successfully");
+  }catch(err){
+    console.error(err);
+    toast(err.message || "Project generate نہیں ہو سکا");
+  }
+};
+
+/* ---------- ZIP ---------- */
+$("zipBtn").onclick = async function(){
+  try{
+    if(Object.keys(generatedFiles).length===0){
+      toast("پہلے Generate Project دبائیں");
+      return;
+    }
+
+    var zip = new JSZip();
+    var names = Object.keys(generatedFiles);
+
+    names.forEach(function(name){
+      zip.file(name,generatedFiles[name]);
+    });
+
+    var icon = $("appIcon").files[0];
+    if(icon){
+      zip.file("app/src/main/res/drawable/app_icon.png",await icon.arrayBuffer());
+    }
+
+    var splash = $("splashLogo").files[0];
+    if(splash){
+      zip.file("app/src/main/res/drawable/splash_logo.png",await splash.arrayBuffer());
+    }
+
+    var blob = await zip.generateAsync({type:"blob"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (($("appName").value.trim() || "HTML_APK_Project").replace(/[^A-Za-z0-9_-]+/g,"_")) + ".zip";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    toast("📦 Project ZIP تیار ہے");
+  }catch(err){
+    console.error(err);
+    toast("ZIP error: " + err.message);
+  }
+};
+
+/* ---------- Copy ---------- */
+$("copyFileBtn").onclick = async function(){
+  try{
+    var value = generatedFiles[selectedFile];
+
+    if(typeof value !== "string"){
+      toast("یہ binary file ہے، اسے text کی طرح copy نہیں کیا جا سکتا");
+      return;
+    }
+
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(value);
+    }else{
+      var ta = document.createElement("textarea");
+      ta.value = value;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+
+    toast("📋 File copied");
+  }catch(err){
+    toast("Copy نہیں ہو سکی");
+  }
+};
+
+/* ===== REAL APK BUILD CONNECTOR =====
+   Netlify Function: /.netlify/functions/build-apk
+   Status Function: /.netlify/functions/apk-status
+   The GitHub token is NEVER stored in this HTML.
+*/
+(function(){
+  var buildId=null, pollTimer=null;
+
+  function setBuildStatus(msg,pct,done){
+    var st=$("apkStatus"), bar=$("apkProgressBar"), dl=$("downloadApkBtn");
+    if(st) st.textContent=msg;
+    if(bar) bar.style.width=Math.max(0,Math.min(100,pct||0))+"%";
+
+    if(dl){
+      dl.style.display="block";
+      dl.style.opacity=done?"1":".55";
+      dl.style.cursor=done?"pointer":"not-allowed";
+    }
+  }
+
+  async function poll(){
+    if(!buildId)return;
+
+    try{
+      var r=await fetch("/.netlify/functions/apk-status?buildId="+encodeURIComponent(buildId));
+      var d=await r.json();
+
+      if(d.status==="completed" && d.downloadUrl){
+        setBuildStatus("✅ APK تیار ہے — Download APK دبائیں۔",100,true);
+        $("downloadApkBtn").textContent="⬇ Download APK";
+        $("downloadApkBtn").href=d.downloadUrl;
+        $("downloadApkBtn").setAttribute("aria-disabled","false");
+        $("downloadApkBtn").setAttribute("download","app.apk");
+        clearInterval(pollTimer);
+        return;
+      }
+
+      if(d.status==="failed"){
+        setBuildStatus("❌ Build ناکام ہوئی: "+(d.message||"GitHub build error"),100,false);
+        clearInterval(pollTimer);
+        return;
+      }
+
+      var p=d.progress||20;
+      setBuildStatus(d.message||"⏳ APK build ہو رہی ہے…",p,false);
+
+    }catch(e){
+      setBuildStatus("⏳ Build status چیک ہو رہا ہے…",20,false);
+    }
+  }
+
+  $("downloadApkBtn").onclick=function(e){
+    var href=this.getAttribute("href");
+
+    if(!href || href==="#" || this.getAttribute("aria-disabled")==="true"){
+      e.preventDefault();
+      toast("پہلے Build APK مکمل ہونے دیں");
+    }
+  };
+
+  $("buildApkBtn").onclick=async function(){
+    try{
+      var source=$("projectFile").files[0];
+
+      if(!source){
+        toast("پہلے اپنی HTML یا ZIP فائل منتخب کریں");
+        return;
+      }
+
+      var settings=collectSettings();
+
+      var bytes=new Uint8Array(await source.arrayBuffer());
+      var binary="";
+
+      for(var i=0;i<bytes.length;i+=0x8000)
+        binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+
+      var payload={
+        sourceName:source.name,
+        sourceBase64:btoa(binary),
+        settings:settings
+      };
+
+      setBuildStatus("📤 Build request بھیجی جا رہی ہے…",8,false);
+
+      var r=await fetch("/.netlify/functions/build-apk",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+
+      var d=await r.json();
+
+      if(!r.ok)
+        throw new Error(d.error||"Build request failed");
+
+      buildId=d.buildId;
+
+      setBuildStatus("⏳ GitHub Actions نے APK build شروع کر دی ہے…",15,false);
+
+      clearInterval(pollTimer);
+      pollTimer=setInterval(poll,5000);
+      poll();
+
+    }catch(e){
+      console.error(e);
+      setBuildStatus("❌ "+e.message,0,false);
+    }
+  };
+})();
+
+/* ---------- Reset ---------- */
+$("resetBtn").onclick = function(){
+  if(confirm("کیا تمام settings reset کرنی ہیں؟"))
+    location.reload();
+};
+
+/* ---------- initial ---------- */
+$("internetBadge").style.display = $("internet").checked ? "inline-block" : "none";
+$("filesBadge").style.display = $("files").checked ? "inline-block" : "none";
+switchMode("simple");
+</script>
+
+<script>
+(function(){
+  var b=document.getElementById("copyBuilderCodeBtn");
+
+  if(!b)return;
+
+  b.addEventListener("click",async function(){
+    try{
+      var r=await fetch(location.href,{cache:"no-store"});
+
+      if(!r.ok)
+        throw new Error("fetch failed");
+
+      var html=await r.text();
+
+      await navigator.clipboard.writeText(html);
+
+      var old=b.textContent;
+      b.textContent="✅ Copied";
+
+      setTimeout(function(){
+        b.textContent=old
+      },1800);
+
+    }catch(e){
+      try{
+        var ta=document.createElement("textarea");
+        ta.value=document.documentElement.outerHTML;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+
+        var old2=b.textContent;
+        b.textContent="✅ Copied";
+
+        setTimeout(function(){
+          b.textContent=old2
+        },1800);
+
+      }catch(e2){
+        alert("HTML code copy نہیں ہو سکی.");
+      }
+    }
+  });
+})();
+</script>
+
+</body>
