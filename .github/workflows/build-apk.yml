@@ -13,59 +13,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # ==================================================
-      # 1. Checkout user's build branch
-      # ==================================================
       - name: Checkout Build Branch
         uses: actions/checkout@v4
         with:
           ref: build/${{ inputs.buildId }}
           fetch-depth: 1
 
-      # ==================================================
-      # 2. Setup Java 17
-      # ==================================================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # ==================================================
-      # 3. Setup Android SDK
-      # ==================================================
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
 
-      # ==================================================
-      # 4. Accept Android SDK licenses
-      # ==================================================
       - name: Accept Android SDK Licenses
         shell: bash
         run: |
           set -e
-
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
-      # ==================================================
-      # 5. Install Android SDK
-      # ==================================================
       - name: Install Android SDK Packages
         shell: bash
         run: |
           set -e
-
           sdkmanager "platform-tools"
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.0"
 
-      # ==================================================
-      # 6. Read build metadata
-      # ==================================================
       - name: Read Build Metadata
         shell: bash
         run: |
@@ -74,7 +53,6 @@ jobs:
           echo "Checking metadata files..."
 
           if [ -f "build-meta.json" ]; then
-
             echo "Found build-meta.json"
             cat build-meta.json
 
@@ -82,7 +60,6 @@ jobs:
             PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('build-meta.json')).get('packageName','com.cricketlovers.app'))")
 
           elif [ -f "metadata.json" ]; then
-
             echo "Found metadata.json"
             cat metadata.json
 
@@ -90,13 +67,11 @@ jobs:
             PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('metadata.json')).get('packageName','com.cricketlovers.app'))")
 
           else
-
             echo "Metadata file not found."
             echo "Using default values."
 
             APP_NAME="Cricket App"
             PACKAGE_NAME="com.cricketlovers.app"
-
           fi
 
           echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
@@ -107,9 +82,6 @@ jobs:
           echo "PACKAGE:  $PACKAGE_NAME"
           echo "--------------------------------"
 
-      # ==================================================
-      # 7. Create Android project folders
-      # ==================================================
       - name: Create Android Project
         shell: bash
         run: |
@@ -125,9 +97,20 @@ jobs:
 
           echo "Android project folders created."
 
-      # ==================================================
-      # 8. Prepare HTML files
-      # ==================================================
+      - name: Create gradle.properties
+        shell: bash
+        run: |
+          set -e
+
+          cat > android-project/gradle.properties <<'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          EOF
+
+          echo "gradle.properties created:"
+          cat android-project/gradle.properties
+
       - name: Prepare Web Project
         shell: bash
         run: |
@@ -166,9 +149,6 @@ jobs:
           echo "HTML files prepared:"
           find android-project/app/src/main/assets -maxdepth 3 -type f | head -100
 
-      # ==================================================
-      # 9. Create settings.gradle
-      # ==================================================
       - name: Create settings.gradle
         shell: bash
         run: |
@@ -195,9 +175,6 @@ jobs:
           include(":app")
           EOF
 
-      # ==================================================
-      # 10. Create root build.gradle
-      # ==================================================
       - name: Create root build.gradle
         shell: bash
         run: |
@@ -207,9 +184,6 @@ jobs:
           }
           EOF
 
-      # ==================================================
-      # 11. Create app build.gradle
-      # ==================================================
       - name: Create app build.gradle
         shell: bash
         run: |
@@ -220,6 +194,7 @@ jobs:
 
           android {
               namespace '${PACKAGE_NAME}'
+
               compileSdk 35
 
               defaultConfig {
@@ -247,9 +222,6 @@ jobs:
           }
           EOF
 
-      # ==================================================
-      # 12. Create AndroidManifest.xml
-      # ==================================================
       - name: Create AndroidManifest.xml
         shell: bash
         run: |
@@ -282,9 +254,6 @@ jobs:
           </manifest>
           EOF
 
-      # ==================================================
-      # 13. Create Android Style
-      # ==================================================
       - name: Create Android Style
         shell: bash
         run: |
@@ -308,9 +277,6 @@ jobs:
           </resources>
           EOF
 
-      # ==================================================
-      # 14. Create MainActivity.java
-      # ==================================================
       - name: Create MainActivity
         shell: bash
         run: |
@@ -349,10 +315,8 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setDatabaseEnabled(true);
-
                   settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(true);
-
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
                   webView.setWebViewClient(new WebViewClient());
@@ -372,9 +336,6 @@ jobs:
           }
           EOF
 
-      # ==================================================
-      # 15. Verify Android Project
-      # ==================================================
       - name: Verify Android Project
         shell: bash
         run: |
@@ -387,23 +348,17 @@ jobs:
           echo "Checking index.html..."
 
           if [ ! -f "android-project/app/src/main/assets/index.html" ]; then
-            echo "ERROR: index.html was not copied."
-            exit 1
+              echo "ERROR: index.html was not copied."
+              exit 1
           fi
 
           echo "index.html found successfully."
 
-      # ==================================================
-      # 16. Install Gradle 8.9
-      # ==================================================
       - name: Install Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
-      # ==================================================
-      # 17. Verify Gradle Version
-      # ==================================================
       - name: Verify Gradle Version
         shell: bash
         run: |
@@ -415,9 +370,6 @@ jobs:
 
           gradle --version
 
-      # ==================================================
-      # 18. Build Debug APK
-      # ==================================================
       - name: Build APK
         working-directory: android-project
         shell: bash
@@ -427,15 +379,13 @@ jobs:
           echo "Starting Android APK build..."
           echo "Using Gradle 8.9"
           echo "Using Android Gradle Plugin 8.7.3"
+          echo "AndroidX enabled"
 
           gradle :app:assembleDebug \
             --no-daemon \
             --stacktrace \
             --warning-mode all
 
-      # ==================================================
-      # 19. Find APK
-      # ==================================================
       - name: Find APK
         shell: bash
         run: |
@@ -443,22 +393,13 @@ jobs:
 
           echo "Searching for APK..."
 
-          find android-project \
-            -type f \
-            -name "*.apk" \
-            -print
+          find android-project -type f -name "*.apk" -print
 
-          APK_FILE=$(find android-project \
-            -type f \
-            -name "*.apk" \
-            | head -1)
+          APK_FILE=$(find android-project -type f -name "*.apk" | head -1)
 
           if [ -z "$APK_FILE" ]; then
-
-            echo "ERROR: APK was not created."
-
-            exit 1
-
+              echo "ERROR: APK was not created."
+              exit 1
           fi
 
           echo "APK found:"
@@ -472,9 +413,6 @@ jobs:
           echo "Final APK:"
           ls -lh output/
 
-      # ==================================================
-      # 20. Upload APK artifact
-      # ==================================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -483,9 +421,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      # ==================================================
-      # 21. Build successful
-      # ==================================================
       - name: Build Complete
         run: |
           echo ""
@@ -497,4 +432,5 @@ jobs:
           echo "Package:  $PACKAGE_NAME"
           echo "Gradle:   8.9"
           echo "AGP:      8.7.3"
+          echo "AndroidX: ENABLED"
           echo "========================================"
