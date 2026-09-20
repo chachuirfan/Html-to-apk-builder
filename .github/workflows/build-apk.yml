@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout Build Branch
         uses: actions/checkout@v4
         with:
@@ -53,6 +54,7 @@ jobs:
           echo "Checking metadata files..."
 
           if [ -f "build-meta.json" ]; then
+
             echo "Found build-meta.json"
             cat build-meta.json
 
@@ -60,6 +62,7 @@ jobs:
             PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('build-meta.json')).get('packageName','com.cricketlovers.app'))")
 
           elif [ -f "metadata.json" ]; then
+
             echo "Found metadata.json"
             cat metadata.json
 
@@ -67,11 +70,13 @@ jobs:
             PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('metadata.json')).get('packageName','com.cricketlovers.app'))")
 
           else
+
             echo "Metadata file not found."
             echo "Using default values."
 
             APP_NAME="Cricket App"
             PACKAGE_NAME="com.cricketlovers.app"
+
           fi
 
           echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
@@ -108,7 +113,7 @@ jobs:
           org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
           EOF
 
-          echo "gradle.properties created:"
+          echo "gradle.properties:"
           cat android-project/gradle.properties
 
       - name: Prepare Web Project
@@ -182,6 +187,16 @@ jobs:
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
+
+          allprojects {
+              configurations.all {
+                  resolutionStrategy {
+                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+                  }
+              }
+          }
           EOF
 
       - name: Create app build.gradle
@@ -217,8 +232,13 @@ jobs:
           }
 
           dependencies {
+
               implementation 'androidx.appcompat:appcompat:1.7.0'
               implementation 'androidx.activity:activity:1.9.3'
+
+              implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+              implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+              implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
           }
           EOF
 
@@ -380,6 +400,7 @@ jobs:
           echo "Using Gradle 8.9"
           echo "Using Android Gradle Plugin 8.7.3"
           echo "AndroidX enabled"
+          echo "Kotlin dependency alignment enabled"
 
           gradle :app:assembleDebug \
             --no-daemon \
@@ -433,4 +454,5 @@ jobs:
           echo "Gradle:   8.9"
           echo "AGP:      8.7.3"
           echo "AndroidX: ENABLED"
+          echo "Kotlin:   ALIGNED"
           echo "========================================"
