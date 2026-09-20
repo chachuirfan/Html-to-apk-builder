@@ -2444,16 +2444,30 @@ alert("Voice upload failed.");
 } else {
 alert("Voice note requires Firebase Storage.");
 }
+
 };
 
 window.voiceRecorder.start();
 
 var btn = document.getElementById('micRecordBtn');
-btn.classList.add('mic-recording');
 
-document.getElementById('voiceRecordStatus').style.display = 'inline';
+if (btn) {
+btn.classList.add('mic-recording');
 }
 
+var status = document.getElementById('voiceRecordStatus');
+
+if (status) {
+status.style.display = 'inline';
+}
+
+}).catch(function(err) {
+console.error("Microphone error:", err);
+alert("Microphone access failed.");
+});
+
+}
+  
 function stopVoiceRecording() {
 if (window.voiceRecorder) {
 window.voiceRecorder.stop();
