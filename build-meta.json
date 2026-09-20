@@ -1,0 +1,10 @@
+{
+  "appName": "Irfan Cricket Live",
+  "packageName": "com.irfan.cricketlive",
+  "versionName": "1.0",
+  "versionCode": 1,
+  "minSdk": 23,
+  "orientation": "portrait",
+  "buildType": "debug",
+  "agp": "8.7.3"
+}
