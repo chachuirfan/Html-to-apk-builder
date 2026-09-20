@@ -1,33 +1,20 @@
-const GITHUB_API =
-  "https://api.github.com";
+const GITHUB_API = "https://api.github.com";
 
 function json(statusCode, data) {
   return {
     statusCode,
-
     headers: {
-      "Content-Type":
-        "application/json",
-
-      "Access-Control-Allow-Origin":
-        "*",
-
-      "Access-Control-Allow-Headers":
-        "Content-Type",
-
-      "Access-Control-Allow-Methods":
-        "GET, OPTIONS"
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "GET, OPTIONS"
     },
-
-    body:
-      JSON.stringify(data)
+    body: JSON.stringify(data)
   };
 }
 
 async function githubRequest(path) {
-
-  const token =
-    process.env.GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
     throw new Error(
@@ -35,35 +22,27 @@ async function githubRequest(path) {
     );
   }
 
-  const response =
-    await fetch(
-      GITHUB_API + path,
-      {
-        method: "GET",
-
-        headers: {
-          "Accept":
-            "application/vnd.github+json",
-
-          "Authorization":
-            "Bearer " + token,
-
-          "X-GitHub-Api-Version":
-            "2022-11-28"
-        }
+  const response = await fetch(
+    GITHUB_API + path,
+    {
+      method: "GET",
+      headers: {
+        "Accept":
+          "application/vnd.github+json",
+        "Authorization":
+          "Bearer " + token,
+        "X-GitHub-Api-Version":
+          "2022-11-28"
       }
-    );
+    }
+  );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
     data = {};
   }
@@ -78,39 +57,26 @@ async function githubRequest(path) {
   return data;
 }
 
-exports.handler =
-  async function(event) {
+exports.handler = async function(event) {
 
-  if (
-    event.httpMethod ===
-    "OPTIONS"
-  ) {
+  if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,
-
       headers: {
-        "Access-Control-Allow-Origin":
-          "*",
-
+        "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers":
           "Content-Type",
-
         "Access-Control-Allow-Methods":
           "GET, OPTIONS"
       },
-
       body: ""
     };
   }
 
-  if (
-    event.httpMethod !==
-    "GET"
-  ) {
+  if (event.httpMethod !== "GET") {
     return json(405, {
       success: false,
-      error:
-        "Only GET is allowed."
+      error: "Only GET is allowed."
     });
   }
 
@@ -131,8 +97,7 @@ exports.handler =
     }
 
     const params =
-      event.queryStringParameters ||
-      {};
+      event.queryStringParameters || {};
 
     const buildId =
       params.buildId;
@@ -140,19 +105,16 @@ exports.handler =
     if (!buildId) {
       return json(400, {
         success: false,
-        error:
-          "buildId is required."
+        error: "buildId is required."
       });
     }
 
     if (
-      !/^[a-zA-Z0-9_-]{3,100}$/
-        .test(buildId)
+      !/^[a-zA-Z0-9_-]{3,100}$/.test(buildId)
     ) {
       return json(400, {
         success: false,
-        error:
-          "Invalid buildId."
+        error: "Invalid buildId."
       });
     }
 
@@ -160,9 +122,13 @@ exports.handler =
       process.env.GITHUB_WORKFLOW ||
       "build-apk.yml";
 
+    /*
+     * Find GitHub Actions workflow runs
+     */
+
     const runs =
       await githubRequest(
-        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=50`
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=100`
       );
 
     const workflowRuns =
@@ -177,6 +143,10 @@ exports.handler =
           run.head_branch ===
           expectedBranch
       );
+
+    /*
+     * Fallback search by build ID
+     */
 
     if (!matchingRun) {
 
@@ -195,18 +165,24 @@ exports.handler =
         });
     }
 
+    /*
+     * GitHub has not created the run yet
+     */
+
     if (!matchingRun) {
 
       return json(200, {
+
         success: true,
 
         buildId,
 
-        status:
-          "queued",
+        status: "queued",
+
+        progress: 15,
 
         message:
-          "Build request received. Waiting for GitHub Actions."
+          "⏳ Build request received. Waiting for GitHub Actions..."
       });
     }
 
@@ -216,10 +192,21 @@ exports.handler =
     const conclusion =
       matchingRun.conclusion;
 
-    if (
-      runStatus !==
-      "completed"
-    ) {
+    /*
+     * Build still running
+     */
+
+    if (runStatus !== "completed") {
+
+      let progress = 35;
+
+      if (runStatus === "queued") {
+        progress = 20;
+      }
+
+      if (runStatus === "in_progress") {
+        progress = 55;
+      }
 
       return json(200, {
 
@@ -227,8 +214,9 @@ exports.handler =
 
         buildId,
 
-        status:
-          "building",
+        status: "building",
+
+        progress,
 
         githubStatus:
           runStatus,
@@ -240,19 +228,15 @@ exports.handler =
           matchingRun.html_url,
 
         message:
-          "APK is currently being built."
+          "⏳ APK build ہو رہی ہے..."
       });
     }
 
-    if (
-      conclusion ===
-      "success"
-    ) {
+    /*
+     * Build completed successfully
+     */
 
-      /*
-       * Get artifacts belonging
-       * specifically to this run.
-       */
+    if (conclusion === "success") {
 
       const artifacts =
         await githubRequest(
@@ -270,13 +254,12 @@ exports.handler =
           item =>
             item.name ===
             expectedArtifact
-        ) ||
-        artifactList.find(
-          item =>
-            !item.expired &&
-            item.name &&
-            item.name.startsWith("APK-")
         );
+
+      /*
+       * Artifact may take a moment
+       * to become available.
+       */
 
       if (!artifact) {
 
@@ -286,8 +269,9 @@ exports.handler =
 
           buildId,
 
-          status:
-            "success",
+          status: "building",
+
+          progress: 95,
 
           runId:
             matchingRun.id,
@@ -296,9 +280,13 @@ exports.handler =
             matchingRun.html_url,
 
           message:
-            "APK build completed, but the artifact is still being prepared."
+            "⏳ APK تیار ہو گئی ہے، download file تیار ہو رہی ہے..."
         });
       }
+
+      /*
+       * Artifact expired
+       */
 
       if (artifact.expired) {
 
@@ -308,8 +296,9 @@ exports.handler =
 
           buildId,
 
-          status:
-            "failed",
+          status: "failed",
+
+          progress: 100,
 
           runId:
             matchingRun.id,
@@ -318,16 +307,15 @@ exports.handler =
             matchingRun.html_url,
 
           message:
-            "The APK artifact has expired."
+            "❌ APK artifact expire ہو گیا ہے."
         });
       }
 
       /*
-       * GitHub provides the artifact
-       * archive download endpoint.
+       * IMPORTANT:
        *
-       * This downloads the artifact ZIP,
-       * which contains the APK.
+       * GitHub artifact archive is a ZIP.
+       * It contains the APK.
        */
 
       const downloadUrl =
@@ -339,8 +327,9 @@ exports.handler =
 
         buildId,
 
-        status:
-          "success",
+        status: "completed",
+
+        progress: 100,
 
         runId:
           matchingRun.id,
@@ -361,8 +350,25 @@ exports.handler =
           "artifact-zip",
 
         message:
-          "APK build completed successfully."
+          "✅ APK تیار ہے."
       });
+    }
+
+    /*
+     * Build failed
+     */
+
+    let message =
+      "❌ APK build failed.";
+
+    if (conclusion === "cancelled") {
+      message =
+        "❌ APK build cancelled.";
+    }
+
+    if (conclusion === "timed_out") {
+      message =
+        "❌ APK build timed out.";
     }
 
     return json(200, {
@@ -371,8 +377,9 @@ exports.handler =
 
       buildId,
 
-      status:
-        "failed",
+      status: "failed",
+
+      progress: 100,
 
       runId:
         matchingRun.id,
@@ -381,27 +388,15 @@ exports.handler =
         matchingRun.html_url,
 
       conclusion:
-        conclusion ||
-        "unknown",
+        conclusion || "unknown",
 
-      message:
-        conclusion ===
-        "cancelled"
-
-          ? "APK build was cancelled."
-
-          : conclusion ===
-            "timed_out"
-
-          ? "APK build timed out."
-
-          : "APK build failed."
+      message
     });
 
   } catch (error) {
 
     console.error(
-      "BUILD STATUS ERROR:",
+      "APK STATUS ERROR:",
       error
     );
 
@@ -411,7 +406,7 @@ exports.handler =
 
       error:
         error.message ||
-        "Unable to check build status."
+        "Unable to check APK build status."
     });
   }
 };
