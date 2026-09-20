@@ -8,248 +8,133 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-  actions: read
-
 jobs:
-  build:
-    name: Build APK
+  build-apk:
     runs-on: ubuntu-latest
-
-    env:
-      BUILD_ID: ${{ inputs.buildId }}
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
 
-      # ============================================================
-      # 1. Checkout repository
-      # ============================================================
-      - name: Checkout repository
+      # --------------------------------------------------
+      # 1. Checkout the user's build branch
+      # --------------------------------------------------
+      - name: Checkout Build Branch
         uses: actions/checkout@v4
+        with:
+          ref: build/${{ inputs.buildId }}
+          fetch-depth: 1
 
-      # ============================================================
-      # 2. Setup Java 17
-      # ============================================================
-      - name: Setup Java 17
+      # --------------------------------------------------
+      # 2. Setup Java
+      # --------------------------------------------------
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # ============================================================
+      # --------------------------------------------------
       # 3. Setup Android SDK
-      # ============================================================
+      # --------------------------------------------------
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          accept-android-sdk-licenses: true
-          log-accepted-android-sdk-licenses: false
-          packages: ""
+        uses: android-actions/setup-android@v3
 
-      # ============================================================
-      # 4. Accept ALL Android SDK licenses
-      # ============================================================
-      - name: Accept Android SDK licenses
-        shell: bash
+      # --------------------------------------------------
+      # 4. Accept Android licenses
+      # --------------------------------------------------
+      - name: Accept Android SDK Licenses
         run: |
-          set -e
           yes | sdkmanager --licenses >/dev/null || true
 
-      # ============================================================
-      # 5. Install required Android SDK packages
-      # ============================================================
-      - name: Install Android SDK packages
+      # --------------------------------------------------
+      # 5. Install Android SDK packages
+      # --------------------------------------------------
+      - name: Install Android SDK
+        run: |
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.0"
+
+      # --------------------------------------------------
+      # 6. Read build metadata
+      # --------------------------------------------------
+      - name: Read Build Metadata
+        id: metadata
         shell: bash
         run: |
           set -e
 
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
+          if [ -f build-meta.json ]; then
+            echo "Metadata file found:"
+            cat build-meta.json
 
-      # ============================================================
-      # 6. Verify Android SDK
-      # ============================================================
-      - name: Verify Android SDK
-        shell: bash
-        run: |
-          set -e
+            APP_NAME=$(python3 -c "import json; print(json.load(open('build-meta.json')).get('appName','Cricket App'))")
+            PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('build-meta.json')).get('packageName','com.cricketlovers.app'))")
 
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          elif [ -f metadata.json ]; then
+            echo "metadata.json found:"
+            cat metadata.json
 
-          sdkmanager --list_installed || true
+            APP_NAME=$(python3 -c "import json; print(json.load(open('metadata.json')).get('appName','Cricket App'))")
+            PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('metadata.json')).get('packageName','com.cricketlovers.app'))")
 
-          echo "Android platform:"
-          ls -la "$ANDROID_HOME/platforms/android-35" || true
-
-          echo "Build tools:"
-          ls -la "$ANDROID_HOME/build-tools/35.0.0" || true
-
-      # ============================================================
-      # 7. Read build metadata
-      # ============================================================
-      - name: Read build metadata
-        shell: bash
-        run: |
-          set -e
-
-          META="uploads/${BUILD_ID}/build.json"
-
-          if [ ! -f "$META" ]; then
-            echo "ERROR: build.json not found:"
-            echo "$META"
-            exit 1
-          fi
-
-          echo "Found metadata:"
-          cat "$META"
-
-          APP_NAME=$(node -e "const x=require('./$META'); console.log(x.appName || '')")
-          PACKAGE_NAME=$(node -e "const x=require('./$META'); console.log(x.packageName || '')")
-          ORIGINAL_FILE=$(node -e "const x=require('./$META'); console.log(x.originalFileName || '')")
-          EXTENSION=$(node -e "const x=require('./$META'); console.log(x.extension || '')")
-
-          if [ -z "$APP_NAME" ]; then
-            echo "ERROR: appName missing"
-            exit 1
-          fi
-
-          if [ -z "$PACKAGE_NAME" ]; then
-            echo "ERROR: packageName missing"
-            exit 1
-          fi
-
-          if [ -z "$ORIGINAL_FILE" ]; then
-            echo "ERROR: originalFileName missing"
-            exit 1
+          else
+            echo "No metadata file found."
+            APP_NAME="Cricket App"
+            PACKAGE_NAME="com.cricketlovers.app"
           fi
 
           echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
-          echo "ORIGINAL_FILE=$ORIGINAL_FILE" >> "$GITHUB_ENV"
-          echo "EXTENSION=$EXTENSION" >> "$GITHUB_ENV"
 
           echo "App Name: $APP_NAME"
           echo "Package Name: $PACKAGE_NAME"
-          echo "Original File: $ORIGINAL_FILE"
-          echo "Extension: $EXTENSION"
 
-      # ============================================================
-      # 8. Prepare Android web project
-      # ============================================================
-      - name: Prepare web project
+      # --------------------------------------------------
+      # 7. Create Android project
+      # --------------------------------------------------
+      - name: Create Android Project
         shell: bash
         run: |
           set -e
 
           rm -rf android-project
-          mkdir -p android-project/app/src/main/assets
 
-          SOURCE_DIR="uploads/${BUILD_ID}"
+          mkdir -p android-project/app/src/main/java/${PACKAGE_NAME//.//}
+          mkdir -p android-project/app/src/main/res/layout
+          mkdir -p android-project/app/src/main/res/mipmap-hdpi
+          mkdir -p android-project/app/src/main/res/mipmap-mdpi
+          mkdir -p android-project/app/src/main/res/mipmap-xhdpi
+          mkdir -p android-project/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android-project/app/src/main/res/mipmap-xxxhdpi
 
-          echo "Source directory:"
-          ls -la "$SOURCE_DIR"
-
-          if [ -f "$SOURCE_DIR/$ORIGINAL_FILE" ]; then
-
-            echo "HTML/HTM file detected."
-
-            cp "$SOURCE_DIR/$ORIGINAL_FILE" \
-              android-project/app/src/main/assets/index.html
-
-          elif [ -f "$SOURCE_DIR/$ORIGINAL_FILE" ] && \
-               [[ "$EXTENSION" == ".zip" || "$EXTENSION" == ".ZIP" ]]; then
-
-            echo "ZIP file detected."
-
-            mkdir -p /tmp/html-project
-
-            unzip -o "$SOURCE_DIR/$ORIGINAL_FILE" \
-              -d /tmp/html-project
-
-            INDEX_FILE=$(find /tmp/html-project \
-              -type f \
-              \( -iname "index.html" -o -iname "index.htm" \) \
-              | head -n 1)
-
-            if [ -z "$INDEX_FILE" ]; then
-              echo "ERROR: index.html was not found inside ZIP."
-              exit 1
-            fi
-
-            cp "$INDEX_FILE" \
-              android-project/app/src/main/assets/index.html
-
-            INDEX_DIR=$(dirname "$INDEX_FILE")
-
-            find "$INDEX_DIR" -mindepth 1 -maxdepth 1 \
-              ! -name "$(basename "$INDEX_FILE")" \
-              -exec cp -r {} android-project/app/src/main/assets/ \;
-
-          else
-
-            if [[ "$ORIGINAL_FILE" == *.zip || "$ORIGINAL_FILE" == *.ZIP ]]; then
-
-              echo "ZIP file detected."
-
-              mkdir -p /tmp/html-project
-
-              unzip -o "$SOURCE_DIR/$ORIGINAL_FILE" \
-                -d /tmp/html-project
-
-              INDEX_FILE=$(find /tmp/html-project \
-                -type f \
-                \( -iname "index.html" -o -iname "index.htm" \) \
-                | head -n 1)
-
-              if [ -z "$INDEX_FILE" ]; then
-                echo "ERROR: index.html was not found inside ZIP."
-                exit 1
-              fi
-
-              cp "$INDEX_FILE" \
-                android-project/app/src/main/assets/index.html
-
-              INDEX_DIR=$(dirname "$INDEX_FILE")
-
-              find "$INDEX_DIR" -mindepth 1 -maxdepth 1 \
-                ! -name "$(basename "$INDEX_FILE")" \
-                -exec cp -r {} android-project/app/src/main/assets/ \;
-
-            else
-
-              echo "ERROR: Uploaded file not found."
-              echo "Expected:"
-              echo "$SOURCE_DIR/$ORIGINAL_FILE"
-              exit 1
-
-            fi
-
-          fi
-
-          echo "Prepared web files:"
-          find android-project/app/src/main/assets -maxdepth 2 -type f -print
-
-      # ============================================================
-      # 9. Create Android project directories
-      # ============================================================
-      - name: Create Android project
+      # --------------------------------------------------
+      # 8. Copy HTML project
+      # --------------------------------------------------
+      - name: Prepare Web Project
         shell: bash
         run: |
           set -e
 
-          mkdir -p android-project/app/src/main/java/com/apkbuilder/app
-          mkdir -p android-project/app/src/main/res/values
+          mkdir -p android-project/app/src/main/assets
 
-      # ============================================================
-      # 10. Create settings.gradle
-      # ============================================================
-      - name: Create Gradle settings
+          if [ -d "www" ]; then
+            cp -R www/. android-project/app/src/main/assets/
+          elif [ -d "web" ]; then
+            cp -R web/. android-project/app/src/main/assets/
+          elif [ -f "index.html" ]; then
+            cp -R . android-project/app/src/main/assets/
+          else
+            echo "ERROR: No HTML project found."
+            exit 1
+          fi
+
+          echo "Web files:"
+          find android-project/app/src/main/assets -maxdepth 2 -type f | head -100
+
+      # --------------------------------------------------
+      # 9. Create settings.gradle
+      # --------------------------------------------------
+      - name: Create Gradle Settings
         shell: bash
         run: |
           cat > android-project/settings.gradle <<'EOF'
@@ -269,38 +154,26 @@ jobs:
               }
           }
 
-          rootProject.name = "HTMLToAPK"
+          rootProject.name = "HtmlToApk"
           include(":app")
           EOF
 
-      # ============================================================
-      # 11. Create root build.gradle
-      # ============================================================
-      - name: Create root Gradle file
+      # --------------------------------------------------
+      # 10. Create root build.gradle
+      # --------------------------------------------------
+      - name: Create Root Gradle File
         shell: bash
         run: |
           cat > android-project/build.gradle <<'EOF'
           plugins {
-              id 'com.android.application' version '8.13.2' apply false
+              id 'com.android.application' version '8.6.1' apply false
           }
           EOF
 
-      # ============================================================
-      # 12. Create gradle.properties
-      # ============================================================
-      - name: Create gradle.properties
-        shell: bash
-        run: |
-          cat > android-project/gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          android.useAndroidX=true
-          android.nonTransitiveRClass=true
-          EOF
-
-      # ============================================================
-      # 13. Create app build.gradle
-      # ============================================================
-      - name: Create app Gradle file
+      # --------------------------------------------------
+      # 11. Create app build.gradle
+      # --------------------------------------------------
+      - name: Create App Gradle File
         shell: bash
         run: |
           cat > android-project/app/build.gradle <<EOF
@@ -321,47 +194,41 @@ jobs:
               }
 
               buildTypes {
-                  debug {
-                      minifyEnabled false
-                      shrinkResources false
-                  }
-
                   release {
                       minifyEnabled false
-                      shrinkResources false
                   }
               }
           }
 
           dependencies {
-              implementation 'androidx.appcompat:appcompat:1.7.1'
-              implementation 'androidx.activity:activity:1.10.1'
+              implementation 'androidx.appcompat:appcompat:1.7.0'
+              implementation 'androidx.activity:activity:1.9.3'
           }
           EOF
 
-      # ============================================================
-      # 14. Create AndroidManifest.xml
-      # ============================================================
-      - name: Create Android manifest
+      # --------------------------------------------------
+      # 12. Create AndroidManifest
+      # --------------------------------------------------
+      - name: Create Android Manifest
         shell: bash
         run: |
-          cat > android-project/app/src/main/AndroidManifest.xml <<'EOF'
+          mkdir -p android-project/app/src/main
+
+          cat > android-project/app/src/main/AndroidManifest.xml <<EOF
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
               <application
                   android:allowBackup="true"
-                  android:hardwareAccelerated="true"
+                  android:label="${APP_NAME}"
                   android:usesCleartextTraffic="true"
-                  android:label="HTML APK">
+                  android:theme="@style/AppTheme">
 
                   <activity
                       android:name=".MainActivity"
-                      android:exported="true"
-                      android:screenOrientation="portrait">
+                      android:exported="true">
 
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -375,18 +242,44 @@ jobs:
           </manifest>
           EOF
 
-      # ============================================================
-      # 15. Create MainActivity.java
-      # ============================================================
+      # --------------------------------------------------
+      # 13. Create Android theme
+      # --------------------------------------------------
+      - name: Create Android Theme
+        shell: bash
+        run: |
+          mkdir -p android-project/app/src/main/res/values
+
+          cat > android-project/app/src/main/res/values/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#10B981</item>
+                  <item name="android:navigationBarColor">#000000</item>
+                  <item name="android:statusBarColor">#000000</item>
+                  <item name="android:windowLightStatusBar">false</item>
+              </style>
+
+          </resources>
+          EOF
+
+      # --------------------------------------------------
+      # 14. Create MainActivity
+      # --------------------------------------------------
       - name: Create MainActivity
         shell: bash
         run: |
-          cat > android-project/app/src/main/java/com/apkbuilder/app/MainActivity.java <<'EOF'
-          package com.apkbuilder.app;
+          PACKAGE_PATH="${PACKAGE_NAME//.//}"
+          mkdir -p "android-project/app/src/main/java/$PACKAGE_PATH"
 
+          cat > "android-project/app/src/main/java/$PACKAGE_PATH/MainActivity.java" <<EOF
+          package ${PACKAGE_NAME};
+
+          import android.annotation.SuppressLint;
           import android.app.Activity;
           import android.os.Bundle;
-          import android.webkit.WebChromeClient;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
@@ -395,11 +288,13 @@ jobs:
 
               private WebView webView;
 
+              @SuppressLint("SetJavaScriptEnabled")
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
 
                   webView = new WebView(this);
+                  setContentView(webView);
 
                   WebSettings settings = webView.getSettings();
 
@@ -409,21 +304,15 @@ jobs:
                   settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(true);
                   settings.setMediaPlaybackRequiresUserGesture(false);
-                  settings.setSupportZoom(false);
-                  settings.setBuiltInZoomControls(false);
-                  settings.setDisplayZoomControls(false);
 
                   webView.setWebViewClient(new WebViewClient());
-                  webView.setWebChromeClient(new WebChromeClient());
 
                   webView.loadUrl("file:///android_asset/index.html");
-
-                  setContentView(webView);
               }
 
               @Override
               public void onBackPressed() {
-                  if (webView != null && webView.canGoBack()) {
+                  if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
                       super.onBackPressed();
@@ -432,104 +321,68 @@ jobs:
           }
           EOF
 
-      # ============================================================
-      # 16. Download Gradle 8.13
-      # ============================================================
-      - name: Setup Gradle 8.13
-        shell: bash
-        run: |
-          set -e
-
-          cd android-project
-
-          if [ ! -f gradlew ]; then
-            wget -q \
-              https://services.gradle.org/distributions/gradle-8.13-bin.zip \
-              -O /tmp/gradle.zip
-
-            unzip -q /tmp/gradle.zip -d /tmp/gradle
-
-            cp /tmp/gradle/gradle-8.13/bin/gradle ./gradle
-
-            mkdir -p gradle/wrapper
-
-            cp -r /tmp/gradle/gradle-8.13/lib \
-              gradle/wrapper/
-
-            cat > gradle/wrapper/gradle-wrapper.properties <<'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip
-          networkTimeout=10000
-          validateDistributionUrl=true
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
-
-            cat > gradle/wrapper/gradle-wrapper.jar.txt <<'EOF'
-          Gradle wrapper bootstrap handled by system Gradle.
-          EOF
-          fi
-
-          chmod +x gradle
-
-      # ============================================================
-      # 17. Build APK
-      # ============================================================
+      # --------------------------------------------------
+      # 15. Build APK
+      # --------------------------------------------------
       - name: Build APK
+        working-directory: android-project
         shell: bash
         run: |
           set -e
 
-          cd android-project
+          echo "Checking Gradle..."
+          gradle --version
 
-          echo "Starting Gradle build..."
+          echo "Building APK..."
 
-          ./gradle \
-            --no-daemon \
-            --stacktrace \
-            :app:assembleDebug
+          gradle :app:assembleDebug --no-daemon --stacktrace
 
-      # ============================================================
-      # 18. Prepare APK output
-      # ============================================================
-      - name: Prepare APK output
+      # --------------------------------------------------
+      # 16. Find APK
+      # --------------------------------------------------
+      - name: Find APK
         shell: bash
         run: |
           set -e
 
-          mkdir -p output
+          echo "Searching APK..."
 
-          APK_FILE="android-project/app/build/outputs/apk/debug/app-debug.apk"
+          find android-project -type f -name "*.apk" -print
 
-          if [ ! -f "$APK_FILE" ]; then
-            echo "ERROR: APK was not generated."
-            find android-project/app/build -type f -name "*.apk" -print || true
+          APK_FILE=$(find android-project -type f -name "*.apk" | head -1)
+
+          if [ -z "$APK_FILE" ]; then
+            echo "ERROR: APK was not created."
             exit 1
           fi
 
-          SAFE_APP_NAME=$(echo "$APP_NAME" \
-            | tr ' ' '-' \
-            | tr -cd '[:alnum:]_.-')
+          echo "APK found: $APK_FILE"
 
-          if [ -z "$SAFE_APP_NAME" ]; then
-            SAFE_APP_NAME="app"
-          fi
+          mkdir -p output
 
-          FINAL_APK="output/${SAFE_APP_NAME}.apk"
+          cp "$APK_FILE" "output/${APP_NAME// /_}.apk"
 
-          cp "$APK_FILE" "$FINAL_APK"
+          ls -lh output/
 
-          echo "APK created:"
-          ls -lh "$FINAL_APK"
-
-      # ============================================================
-      # 19. Upload APK artifact
-      # ============================================================
-      - name: Upload APK artifact
+      # --------------------------------------------------
+      # 17. Upload APK artifact
+      # --------------------------------------------------
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: APK-${{ inputs.buildId }}
           path: output/*.apk
           if-no-files-found: error
           retention-days: 7
+
+      # --------------------------------------------------
+      # 18. Build completed
+      # --------------------------------------------------
+      - name: Build Complete
+        run: |
+          echo "======================================"
+          echo "APK BUILD SUCCESSFUL"
+          echo "Build ID: ${{ inputs.buildId }}"
+          echo "App Name: $APP_NAME"
+          echo "Package: $PACKAGE_NAME"
+          echo "======================================"
