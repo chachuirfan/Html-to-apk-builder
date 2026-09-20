@@ -1,1503 +1,945 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ur" dir="rtl">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HTML to APK Builder</title>
-
+<title>HTML TO APK BUILDER — Made by Irfan Aslam</title>
 <style>
+:root{--b:#07131a;--c:#0d2029;--bd:#1d4654;--t:#e7f7fb;--m:#8eabb5;--p:#3b82f6;--g:#10b981;--y:#f59e0b}
 *{box-sizing:border-box}
-
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#07151d;
-    color:#fff;
-    min-height:100vh;
-}
-
-.container{
-    width:min(900px,94%);
-    margin:30px auto;
-}
-
-.header{
-    text-align:center;
-    margin-bottom:25px;
-}
-
-.header h1{
-    margin:0;
-    font-size:32px;
-}
-
-.header p{
-    color:#a9bdc7;
-    margin-top:8px;
-}
-
-.card{
-    background:#10242e;
-    border:1px solid #23414d;
-    border-radius:18px;
-    padding:22px;
-    margin-bottom:18px;
-    box-shadow:0 10px 35px rgba(0,0,0,.25);
-}
-
-label{
-    display:block;
-    margin:15px 0 7px;
-    font-weight:bold;
-}
-
-input,select{
-    width:100%;
-    padding:13px;
-    border-radius:10px;
-    border:1px solid #355763;
-    background:#07151d;
-    color:#fff;
-    font-size:15px;
-}
-
-button{
-    width:100%;
-    border:0;
-    border-radius:12px;
-    padding:15px;
-    margin-top:15px;
-    background:#1683a5;
-    color:#fff;
-    font-size:17px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#1b9fc6;
-}
-
-button:disabled{
-    opacity:.5;
-    cursor:not-allowed;
-}
-
-.secondary{
-    background:#28434e;
-}
-
-.secondary:hover{
-    background:#365965;
-}
-
-.danger{
-    background:#9c3d45;
-}
-
-.danger:hover{
-    background:#b74a53;
-}
-
-.auth-box{
-    max-width:520px;
-    margin:0 auto 20px;
-}
-
-.auth-title{
-    text-align:center;
-    margin-top:0;
-}
-
-.auth-tabs{
-    display:flex;
-    gap:8px;
-    margin-bottom:10px;
-}
-
-.auth-tabs button{
-    margin-top:0;
-    font-size:14px;
-    padding:11px;
-}
-
-.auth-tabs .active{
-    background:#1683a5;
-}
-
-.auth-message{
-    display:none;
-    padding:12px;
-    border-radius:10px;
-    margin-top:12px;
-    background:#07151d;
-    border:1px solid #294854;
-}
-
-.user-panel{
-    display:none;
-    background:#0c2029;
-    border:1px solid #28505d;
-    border-radius:14px;
-    padding:15px;
-    margin-bottom:18px;
-}
-
-.user-top{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
-}
-
-.user-email{
-    color:#9fd9e9;
-    word-break:break-all;
-}
-
-.plan-badge{
-    display:inline-block;
-    padding:6px 12px;
-    border-radius:20px;
-    background:#1683a5;
-    font-size:12px;
-    font-weight:bold;
-    text-transform:uppercase;
-}
-
-.stats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-    margin-top:12px;
-}
-
-.stat{
-    background:#07151d;
-    border:1px solid #24434e;
-    border-radius:10px;
-    padding:12px;
-    text-align:center;
-}
-
-.stat strong{
-    display:block;
-    font-size:20px;
-    margin-bottom:4px;
-}
-
-.stat span{
-    color:#9eb2bb;
-    font-size:12px;
-}
-
-.logout-btn{
-    width:auto;
-    padding:9px 14px;
-    margin:0;
-    font-size:13px;
-}
-
-.upload{
-    border:2px dashed #3c6877;
-    border-radius:15px;
-    padding:30px 15px;
-    text-align:center;
-    cursor:pointer;
-    background:#0b1c24;
-}
-
-.upload:hover{
-    border-color:#6eabbf;
-}
-
-.upload input{
-    display:none;
-}
-
-.file-name{
-    margin-top:12px;
-    color:#8ed0e6;
-    word-break:break-all;
-}
-
-.status{
-    display:none;
-    padding:15px;
-    border-radius:12px;
-    background:#07151d;
-    border:1px solid #294854;
-    margin-top:18px;
-}
-
-.progress{
-    height:9px;
-    background:#203842;
-    border-radius:20px;
-    overflow:hidden;
-    margin-top:12px;
-}
-
-.progress-bar{
-    width:0%;
-    height:100%;
-    background:#39b9df;
-    transition:.4s;
-}
-
-.download{
-    display:none;
-    text-decoration:none;
-    text-align:center;
-    background:#1c9b65;
-    color:#fff;
-    padding:15px;
-    border-radius:12px;
-    font-weight:bold;
-    margin-top:15px;
-}
-
-.note{
-    color:#9eb2bb;
-    font-size:13px;
-    line-height:1.6;
-    margin-top:12px;
-}
-
-.error{
-    color:#ff8585;
-}
-
-.success{
-    color:#65e0a0;
-}
-
-.hidden{
-    display:none!important;
-}
-
-@media(max-width:600px){
-    .container{
-        margin:18px auto;
-    }
-
-    .header h1{
-        font-size:25px;
-    }
-
-    .card{
-        padding:17px;
-    }
-
-    .stats{
-        grid-template-columns:1fr;
-    }
-}
+body{margin:0;background:linear-gradient(145deg,#061116,#081c25,#07151c);color:var(--t);font-family:Arial,sans-serif}
+.w{max-width:1050px;margin:auto;padding:12px}
+.hero,.card{background:#0d2029ef;border:1px solid var(--bd);border-radius:15px;padding:13px;margin-bottom:10px}
+.hero h1{margin:0;font-size:1.15rem}
+.hero p,.small{color:var(--m);font-size:.75rem}
+.tabs,.row,.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tabs{margin:10px 0}
+.tab,.btn{border:0;border-radius:10px;padding:10px;font-weight:800;color:#fff;background:#183442}
+.active,.primary{background:var(--p)}
+.green{background:var(--g)}
+.gold{background:var(--y)}
+.field{margin:7px 0}
+.field label{display:block;font-size:.7rem;color:#b9d0d7;margin-bottom:4px}
+input,select{width:100%;padding:9px;border-radius:9px;border:1px solid var(--bd);background:#081a22;color:#fff}
+.check{padding:8px;border:1px solid var(--bd);border-radius:9px;font-size:.72rem;background:#091b23}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.checks input{width:auto}
+.btn{width:100%;margin-top:7px}
+.status{padding:10px;border:1px solid var(--bd);border-radius:9px;background:#071820;font-size:.75rem}
+.bar{height:8px;background:#061017;border-radius:8px;margin-top:8px;overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#10b981);transition:.3s}
+.code{direction:ltr;text-align:left;white-space:pre-wrap;background:#061017;border:1px solid var(--bd);padding:10px;border-radius:9px;max-height:300px;overflow:auto;font:12px monospace}
+.hide{display:none}
+@media(max-width:700px){.grid,.row{grid-template-columns:1fr}}
+.notice{font-size:.72rem;color:#b9d0d7;padding:9px;border:1px solid var(--bd);border-radius:9px;margin-top:8px}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="w">
 
-<div class="header">
-    <h1>📱 HTML → APK Builder</h1>
-    <p>Upload your HTML or ZIP and build an Android APK</p>
+<div class="hero">
+<h1>HTML TO APK BUILDER — Made by Irfan Aslam</h1>
+<p>HTML/ZIP کو Android APK کے لیے تیار کریں۔</p>
 </div>
 
-
-<!-- =====================================================
-     LOGIN / SIGNUP
-====================================================== -->
-
-<div class="card auth-box" id="authCard">
-
-    <h2 class="auth-title">🔐 Account Login</h2>
-
-    <div class="auth-tabs">
-
-        <button
-            id="loginTab"
-            class="active"
-            type="button">
-            Login
-        </button>
-
-        <button
-            id="signupTab"
-            class="secondary"
-            type="button">
-            Create Account
-        </button>
-
-    </div>
-
-    <label>Email</label>
-
-    <input
-        id="authEmail"
-        type="email"
-        placeholder="your@email.com"
-        autocomplete="email"
-    >
-
-    <label>Password</label>
-
-    <input
-        id="authPassword"
-        type="password"
-        placeholder="Minimum 6 characters"
-        autocomplete="current-password"
-    >
-
-    <button
-        id="authBtn"
-        type="button">
-        🔐 Login
-    </button>
-
-    <button
-        id="forgotBtn"
-        class="secondary"
-        type="button">
-        📧 Forgot Password
-    </button>
-
-    <div
-        id="authMessage"
-        class="auth-message">
-    </div>
-
+<div class="tabs">
+<button class="tab active" id="sTab">Simple Mode</button>
+<button class="tab" id="aTab">Advanced Mode</button>
 </div>
-
-
-<!-- =====================================================
-     USER ACCOUNT
-====================================================== -->
-
-<div
-    class="user-panel"
-    id="userPanel">
-
-    <div class="user-top">
-
-        <div>
-            <strong>👤 My Account</strong>
-
-            <div
-                class="user-email"
-                id="userEmail">
-            </div>
-        </div>
-
-        <div>
-
-            <span
-                class="plan-badge"
-                id="planBadge">
-                FREE
-            </span>
-
-            <button
-                id="logoutBtn"
-                class="logout-btn secondary"
-                type="button">
-                Logout
-            </button>
-
-        </div>
-
-    </div>
-
-    <div class="stats">
-
-        <div class="stat">
-            <strong id="planName">Free</strong>
-            <span>Plan</span>
-        </div>
-
-        <div class="stat">
-            <strong id="buildsUsed">0</strong>
-            <span>Builds Used</span>
-        </div>
-
-        <div class="stat">
-            <strong id="buildLimit">3</strong>
-            <span>Build Limit</span>
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     BUILDER
-====================================================== -->
-
-<div
-    class="card"
-    id="builderCard">
-
-    <label>App Name</label>
-
-    <input
-        id="appName"
-        type="text"
-        placeholder="My Android App"
-        maxlength="40"
-    >
-
-    <label>Package Name</label>
-
-    <input
-        id="packageName"
-        type="text"
-        placeholder="com.example.myapp"
-        value="com.example.myapp"
-    >
-
-    <label>Upload HTML / ZIP</label>
-
-    <label
-        class="upload"
-        for="fileInput">
-
-        <div style="font-size:38px">
-            📦
-        </div>
-
-        <div style="margin-top:10px">
-            Click here to select HTML or ZIP
-        </div>
-
-        <input
-            id="fileInput"
-            type="file"
-            accept=".html,.htm,.zip"
-        >
-
-        <div
-            class="file-name"
-            id="fileName">
-            No file selected
-        </div>
-
-    </label>
-
-    <div class="note">
-        HTML files can be used directly. ZIP files should contain your
-        website files, with index.html as the main page.
-    </div>
-
-    <button
-        id="buildBtn"
-        type="button">
-        🚀 Build APK
-    </button>
-
-    <div
-        class="status"
-        id="statusBox">
-
-        <div id="statusText">
-            Preparing build...
-        </div>
-
-        <div class="progress">
-            <div
-                class="progress-bar"
-                id="progressBar">
-            </div>
-        </div>
-
-    </div>
-
-    <a
-        id="downloadBtn"
-        class="download"
-        href="#"
-        target="_blank"
-        rel="noopener">
-        ⬇️ Download APK
-    </a>
-
-</div>
-
-
-<!-- =====================================================
-     HOW IT WORKS
-====================================================== -->
 
 <div class="card">
+<h3>📁 Project / Website</h3>
 
-    <h3>📘 How it works</h3>
+<div class="field">
+<label>HTML یا ZIP</label>
+<input id="file" type="file" accept=".html,.htm,.zip">
+</div>
 
-    <div class="note">
+<div class="row">
 
-        1. Create your account or login.<br>
-        2. Enter your app name.<br>
-        3. Enter a unique Android package name.<br>
-        4. Upload your HTML or ZIP file.<br>
-        5. Press Build APK.<br>
-        6. The server creates the Android application.<br>
-        7. When the build finishes, your APK download appears here.
+<div class="field">
+<label>App Name</label>
+<input id="name" value="My Cricket App">
+</div>
 
-    </div>
+<div class="field">
+<label>Package Name</label>
+<input id="pkg" value="com.irfanaslam.cricketapp">
+</div>
 
+</div>
+
+<div class="row">
+
+<div class="field">
+<label>Version Name</label>
+<input id="ver" value="1.0.0">
+</div>
+
+<div class="field">
+<label>Version Code</label>
+<input id="vc" type="number" value="1">
+</div>
+
+</div>
+</div>
+
+
+<div id="simple" class="grid">
+
+<div class="card">
+<h3>🎨 Appearance</h3>
+
+<div class="row">
+
+<div class="field">
+<label>Orientation</label>
+<select id="ori">
+<option value="portrait">Portrait</option>
+<option value="landscape">Landscape</option>
+<option value="unspecified">Auto</option>
+</select>
+</div>
+
+<div class="field">
+<label>Theme</label>
+<select id="theme">
+<option>dark</option>
+<option>light</option>
+<option>system</option>
+</select>
+</div>
+
+</div>
+</div>
+
+
+<div class="card">
+<h3>🖼️ Splash Screen</h3>
+
+<div class="field">
+<label>Background</label>
+<input id="sbg" value="#07131a">
+</div>
+
+<div class="field">
+<label>Duration</label>
+<input id="sd" type="number" value="1200">
+</div>
+
+</div>
+</div>
+
+
+<div id="advanced" class="hide">
+
+<div class="grid">
+
+<div class="card">
+<h3>🔐 Permissions</h3>
+
+<div class="checks">
+
+<label class="check">
+<input id="internet" type="checkbox" checked>
+Internet
+</label>
+
+<label class="check">
+<input id="camera" type="checkbox">
+Camera
+</label>
+
+<label class="check">
+<input id="mic" type="checkbox">
+Microphone
+</label>
+
+<label class="check">
+<input id="upload" type="checkbox" checked>
+File Upload
+</label>
+
+<label class="check">
+<input id="media" type="checkbox" checked>
+Media
+</label>
+
+<label class="check">
+<input id="notif" type="checkbox">
+Notifications
+</label>
+
+</div>
+</div>
+
+
+<div class="card">
+<h3>🌐 WebView</h3>
+
+<div class="checks">
+
+<label class="check">
+<input id="js" type="checkbox" checked>
+JavaScript
+</label>
+
+<label class="check">
+<input id="dom" type="checkbox" checked>
+DOM Storage
+</label>
+
+<label class="check">
+<input id="db" type="checkbox" checked>
+Database
+</label>
+
+<label class="check">
+<input id="auto" type="checkbox" checked>
+Autoplay
+</label>
+
+<label class="check">
+<input id="links" type="checkbox" checked>
+External Links
+</label>
+
+<label class="check">
+<input id="down" type="checkbox" checked>
+Downloads
+</label>
+
+</div>
+</div>
+
+
+<div class="card">
+<h3>🏗️ Build Settings</h3>
+
+<div class="row">
+
+<div class="field">
+<label>Min Android</label>
+<select id="min">
+<option>23</option>
+<option>24</option>
+<option>26</option>
+<option>28</option>
+</select>
+</div>
+
+<div class="field">
+<label>Build Type</label>
+<select id="type">
+<option>debug</option>
+<option>release</option>
+</select>
+</div>
+
+</div>
+
+<div class="field">
+<label>AGP</label>
+
+<select id="agp">
+<option value="8.7.3">8.7.3 — recommended</option>
+<option value="8.13.0">8.13.0</option>
+</select>
+
+</div>
+
+<div class="notice">
+اس fixed version میں AGP کا default 8.7.3 رکھا گیا ہے اور backend کو Gradle 8.9 استعمال کرنے کی درخواست بھیجی جاتی ہے۔
 </div>
 
 </div>
 
 
-<!-- =====================================================
-     FIREBASE
-====================================================== -->
+<div class="card">
+<h3>👤 Owner Branding</h3>
+<input id="owner" value="Irfan Aslam">
+</div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+</div>
+</div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<section style="margin-top:26px;border-top:2px solid var(--bd);padding-top:16px">
+
+<div class="card">
+<h3>⚙️ App Settings</h3>
+
+<div class="row">
+<input id="bn" value="My Cricket App">
+<input id="bp" value="com.irfanaslam.cricketapp">
+</div>
+
+</div>
+
+
+<div class="card">
+<h3>📱 Build APK</h3>
+
+<div id="status" class="status">
+HTML/ZIP منتخب کریں اور Build APK دبائیں۔
+</div>
+
+<div class="bar">
+<span id="bar"></span>
+</div>
+
+<button id="build" class="btn primary">
+🚀 Build APK
+</button>
+
+<a id="dl"
+class="btn green"
+href="#"
+aria-disabled="true"
+style="display:block;text-align:center;text-decoration:none;opacity:.55;pointer-events:none">
+⬇ Download APK
+</a>
+
+</div>
+
+
+<div class="card">
+<h3>📦 Project Tools</h3>
+
+<button id="gen" class="btn gold">
+Generate Project
+</button>
+
+<button id="dproj" class="btn">
+⬇ Download Project Files
+</button>
+
+<button id="copy" class="btn">
+📋 Copy Selected File
+</button>
+
+<button id="reset" class="btn">
+Reset
+</button>
+
+</div>
+
+
+<div class="card">
+<h3>👁️ Live Preview</h3>
+
+<iframe
+id="preview"
+style="width:100%;height:230px;border:1px solid var(--bd);border-radius:9px;background:#fff">
+</iframe>
+
+</div>
+
+
+<div class="card">
+<h3>📄 Generated Android Project</h3>
+
+<select id="sel"></select>
+
+<pre id="code" class="code">
+Generate Project دبائیں۔
+</pre>
+
+</div>
+
+</section>
+
+<p class="small">
+HTML TO APK BUILDER • Made by Irfan Aslam
+</p>
+
+</div>
 
 
 <script>
 
-/* =====================================================
-   FIREBASE CONFIG
-====================================================== */
+const $=x=>document.getElementById(x),G={};
 
-const firebaseConfig = {
 
-    apiKey:
-        "AIzaSyDr2M1Uj3CW8SKTEDXoTvTXRpCkVu4DP7E",
-
-    authDomain:
-        "apk-builder-d6ea7.firebaseapp.com",
-
-    databaseURL:
-        "https://apk-builder-d6ea7-default-rtdb.firebaseio.com",
-
-    projectId:
-        "apk-builder-d6ea7",
-
-    storageBucket:
-        "apk-builder-d6ea7.firebasestorage.app",
-
-    messagingSenderId:
-        "915063482303",
-
-    appId:
-        "1:915063482303:web:8576b8c76affaa789ea30a"
+$('sTab').onclick=()=>{
+$('sTab').classList.add('active');
+$('aTab').classList.remove('active');
+$('simple').classList.remove('hide');
+$('advanced').classList.add('hide');
 };
 
-firebase.initializeApp(firebaseConfig);
 
-const auth =
-    firebase.auth();
+$('aTab').onclick=()=>{
+$('aTab').classList.add('active');
+$('sTab').classList.remove('active');
+$('advanced').classList.remove('hide');
+$('simple').classList.add('hide');
+};
 
-const db =
-    firebase.firestore();
 
+$('bn').oninput=e=>$('name').value=e.target.value;
+$('name').oninput=e=>$('bn').value=e.target.value;
 
-/* =====================================================
-   ELEMENTS
-====================================================== */
+$('bp').oninput=e=>$('pkg').value=e.target.value;
+$('pkg').oninput=e=>$('bp').value=e.target.value;
 
-const authCard =
-    document.getElementById("authCard");
 
-const userPanel =
-    document.getElementById("userPanel");
+function S(){
 
-const builderCard =
-    document.getElementById("builderCard");
+return {
 
-const authEmail =
-    document.getElementById("authEmail");
+appName:$('name').value||'My Cricket App',
 
-const authPassword =
-    document.getElementById("authPassword");
+packageName:$('pkg').value||'com.irfanaslam.cricketapp',
 
-const authBtn =
-    document.getElementById("authBtn");
+versionName:$('ver').value||'1.0.0',
 
-const forgotBtn =
-    document.getElementById("forgotBtn");
+versionCode:$('vc').value||1,
 
-const loginTab =
-    document.getElementById("loginTab");
+minSdk:$('min').value,
 
-const signupTab =
-    document.getElementById("signupTab");
+orientation:$('ori').value,
 
-const authMessage =
-    document.getElementById("authMessage");
+internet:$('internet').checked,
 
-const logoutBtn =
-    document.getElementById("logoutBtn");
+camera:$('camera').checked,
 
-const userEmail =
-    document.getElementById("userEmail");
+microphone:$('mic').checked,
 
-const planBadge =
-    document.getElementById("planBadge");
+javascript:$('js').checked,
 
-const planName =
-    document.getElementById("planName");
+domStorage:$('dom').checked,
 
-const buildsUsed =
-    document.getElementById("buildsUsed");
+database:$('db').checked,
 
-const buildLimit =
-    document.getElementById("buildLimit");
+autoplay:$('auto').checked,
 
-const fileInput =
-    document.getElementById("fileInput");
+externalLinks:$('links').checked,
 
-const fileName =
-    document.getElementById("fileName");
+download:$('down').checked,
 
-const buildBtn =
-    document.getElementById("buildBtn");
+buildType:$('type').value,
 
-const statusBox =
-    document.getElementById("statusBox");
+agp:$('agp').value,
 
-const statusText =
-    document.getElementById("statusText");
+gradleVersion:'8.9',
 
-const progressBar =
-    document.getElementById("progressBar");
+owner:$('owner').value
 
-const downloadBtn =
-    document.getElementById("downloadBtn");
-
-
-/* =====================================================
-   AUTH MODE
-====================================================== */
-
-let authMode = "login";
-
-
-function setAuthMode(mode){
-
-    authMode = mode;
-
-    authMessage.style.display =
-        "none";
-
-    if(mode === "login"){
-
-        loginTab.classList.add("active");
-        loginTab.classList.remove("secondary");
-
-        signupTab.classList.remove("active");
-        signupTab.classList.add("secondary");
-
-        authBtn.textContent =
-            "🔐 Login";
-
-        authPassword.autocomplete =
-            "current-password";
-
-    }else{
-
-        signupTab.classList.add("active");
-        signupTab.classList.remove("secondary");
-
-        loginTab.classList.remove("active");
-        loginTab.classList.add("secondary");
-
-        authBtn.textContent =
-            "📝 Create Account";
-
-        authPassword.autocomplete =
-            "new-password";
-    }
-}
-
-
-loginTab.addEventListener(
-    "click",
-    () => setAuthMode("login")
-);
-
-signupTab.addEventListener(
-    "click",
-    () => setAuthMode("signup")
-);
-
-
-/* =====================================================
-   AUTH MESSAGE
-====================================================== */
-
-function showAuthMessage(
-    message,
-    isError = false
-){
-
-    authMessage.style.display =
-        "block";
-
-    authMessage.className =
-        "auth-message " +
-        (isError ? "error" : "success");
-
-    authMessage.textContent =
-        message;
-}
-
-
-/* =====================================================
-   LOGIN / SIGNUP
-====================================================== */
-
-authBtn.addEventListener(
-    "click",
-    async () => {
-
-        const email =
-            authEmail.value.trim();
-
-        const password =
-            authPassword.value;
-
-        if(!email){
-
-            showAuthMessage(
-                "Please enter your email.",
-                true
-            );
-
-            return;
-        }
-
-        if(!password){
-
-            showAuthMessage(
-                "Please enter your password.",
-                true
-            );
-
-            return;
-        }
-
-        if(password.length < 6){
-
-            showAuthMessage(
-                "Password must be at least 6 characters.",
-                true
-            );
-
-            return;
-        }
-
-        authBtn.disabled = true;
-
-        try{
-
-            if(authMode === "login"){
-
-                await auth.signInWithEmailAndPassword(
-                    email,
-                    password
-                );
-
-                showAuthMessage(
-                    "Login successful."
-                );
-
-            }else{
-
-                await auth.createUserWithEmailAndPassword(
-                    email,
-                    password
-                );
-
-                showAuthMessage(
-                    "Account created successfully."
-                );
-            }
-
-        }catch(error){
-
-            console.error(error);
-
-            let message =
-                error.message ||
-                "Authentication failed.";
-
-            if(
-                error.code ===
-                "auth/invalid-credential"
-            ){
-
-                message =
-                    "Email or password is incorrect.";
-
-            }else if(
-                error.code ===
-                "auth/email-already-in-use"
-            ){
-
-                message =
-                    "This email is already registered.";
-
-            }else if(
-                error.code ===
-                "auth/invalid-email"
-            ){
-
-                message =
-                    "Please enter a valid email address.";
-
-            }else if(
-                error.code ===
-                "auth/weak-password"
-            ){
-
-                message =
-                    "Password must be at least 6 characters.";
-
-            }
-
-            showAuthMessage(
-                message,
-                true
-            );
-
-        }finally{
-
-            authBtn.disabled = false;
-
-        }
-
-    }
-);
-
-
-/* =====================================================
-   FORGOT PASSWORD
-====================================================== */
-
-forgotBtn.addEventListener(
-    "click",
-    async () => {
-
-        const email =
-            authEmail.value.trim();
-
-        if(!email){
-
-            showAuthMessage(
-                "Enter your email first.",
-                true
-            );
-
-            return;
-        }
-
-        try{
-
-            await auth.sendPasswordResetEmail(
-                email
-            );
-
-            showAuthMessage(
-                "Password reset email sent. Check your inbox."
-            );
-
-        }catch(error){
-
-            console.error(error);
-
-            showAuthMessage(
-                error.message ||
-                "Unable to send reset email.",
-                true
-            );
-        }
-
-    }
-);
-
-
-/* =====================================================
-   LOAD USER PROFILE
-====================================================== */
-
-async function loadUserProfile(user){
-
-    try{
-
-        const token =
-            await user.getIdToken();
-
-        const response =
-            await fetch(
-                "/.netlify/functions/auth",
-                {
-                    method:"GET",
-
-                    headers:{
-                        "Authorization":
-                            "Bearer " + token
-                    }
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if(!response.ok){
-
-            throw new Error(
-                data.error ||
-                "Unable to load account."
-            );
-        }
-
-        userEmail.textContent =
-            data.user.email ||
-            user.email ||
-            "";
-
-        const plan =
-            data.user.plan ||
-            "free";
-
-        const used =
-            Number(
-                data.user.buildsUsed || 0
-            );
-
-        const limit =
-            Number(
-                data.user.buildLimit || 3
-            );
-
-        planName.textContent =
-            plan.charAt(0).toUpperCase() +
-            plan.slice(1);
-
-        planBadge.textContent =
-            plan;
-
-        buildsUsed.textContent =
-            used;
-
-        buildLimit.textContent =
-            limit;
-
-        if(
-            data.user.blocked === true
-        ){
-
-            buildBtn.disabled = true;
-
-            showStatus(
-                "❌ Your account has been blocked. Please contact the administrator.",
-                "error"
-            );
-        }
-
-    }catch(error){
-
-        console.error(
-            "PROFILE ERROR:",
-            error
-        );
-
-        userEmail.textContent =
-            user.email || "";
-
-    }
-}
-
-
-/* =====================================================
-   AUTH STATE
-====================================================== */
-
-auth.onAuthStateChanged(
-    async (user) => {
-
-        if(user){
-
-            authCard.style.display =
-                "none";
-
-            userPanel.style.display =
-                "block";
-
-            builderCard.style.display =
-                "block";
-
-            await loadUserProfile(
-                user
-            );
-
-        }else{
-
-            authCard.style.display =
-                "block";
-
-            userPanel.style.display =
-                "none";
-
-            builderCard.style.display =
-                "none";
-        }
-
-    }
-);
-
-
-/* =====================================================
-   LOGOUT
-====================================================== */
-
-logoutBtn.addEventListener(
-    "click",
-    async () => {
-
-        try{
-
-            await auth.signOut();
-
-            statusBox.style.display =
-                "none";
-
-            downloadBtn.style.display =
-                "none";
-
-        }catch(error){
-
-            alert(
-                error.message ||
-                "Unable to logout."
-            );
-        }
-
-    }
-);
-
-
-/* =====================================================
-   FILE SELECT
-====================================================== */
-
-fileInput.addEventListener(
-    "change",
-    () => {
-
-        if(!fileInput.files.length){
-
-            fileName.textContent =
-                "No file selected";
-
-            return;
-        }
-
-        fileName.textContent =
-            fileInput.files[0].name;
-
-    }
-);
-
-
-/* =====================================================
-   PACKAGE VALIDATION
-====================================================== */
-
-function validPackageName(name){
-
-    return /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/
-        .test(name);
+};
 
 }
 
 
-/* =====================================================
-   STATUS
-====================================================== */
+function esc(s){
 
-function showStatus(
-    message,
-    type = ""
-){
+return String(s)
+.replace(/&/g,'&amp;')
+.replace(/</g,'&lt;')
+.replace(/>/g,'&gt;')
+.replace(/"/g,'&quot;');
 
-    statusBox.style.display =
-        "block";
-
-    statusText.className =
-        type;
-
-    statusText.textContent =
-        message;
 }
 
 
-/* =====================================================
-   BUILD APK
-====================================================== */
+function gen(){
 
-buildBtn.addEventListener(
-    "click",
-    async () => {
+let s=S(),
+p=s.packageName,
+path=p.replace(/\./g,'/');
 
-        const currentUser =
-            auth.currentUser;
 
-        if(!currentUser){
+G['settings.gradle']=`
 
-            alert(
-                "Please login first."
-            );
+pluginManagement {
+repositories {
+google()
+mavenCentral()
+gradlePluginPortal()
+}
+}
 
-            return;
-        }
+dependencyResolutionManagement {
+repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
-        const appName =
-            document
-                .getElementById(
-                    "appName"
-                )
-                .value
-                .trim();
+repositories {
+google()
+mavenCentral()
+}
+}
 
-        const packageName =
-            document
-                .getElementById(
-                    "packageName"
-                )
-                .value
-                .trim();
+rootProject.name="${s.appName}"
 
-        const file =
-            fileInput.files[0];
+include ':app'
 
-        downloadBtn.style.display =
-            "none";
+`;
 
-        if(!appName){
 
-            alert(
-                "Please enter an App Name."
-            );
+G['build.gradle']=`
 
-            return;
-        }
+plugins {
+id 'com.android.application' version '${s.agp}' apply false
+}
 
-        if(!validPackageName(
-            packageName
-        )){
+`;
 
-            alert(
-                "Please enter a valid package name.\n\nExample:\ncom.example.myapp"
-            );
 
-            return;
-        }
+G['app/build.gradle']=`
 
-        if(!file){
+plugins {
+id 'com.android.application'
+}
 
-            alert(
-                "Please select an HTML or ZIP file."
-            );
+android {
 
-            return;
-        }
+namespace '${p}'
 
-        const extension =
-            file.name
-                .split(".")
-                .pop()
-                .toLowerCase();
+compileSdk 35
 
-        if(
-            ![
-                "html",
-                "htm",
-                "zip"
-            ].includes(extension)
-        ){
+defaultConfig {
 
-            alert(
-                "Only HTML, HTM or ZIP files are supported."
-            );
+applicationId '${p}'
 
-            return;
-        }
+minSdk ${s.minSdk}
 
-        buildBtn.disabled = true;
+targetSdk 35
 
-        showStatus(
-            "Uploading your project..."
-        );
+versionCode ${s.versionCode}
 
-        progressBar.style.width =
-            "15%";
+versionName '${s.versionName}'
 
-        try{
+}
 
-            /* Get fresh Firebase ID token */
+buildTypes {
 
-            const token =
-                await currentUser.getIdToken(
-                    true
-                );
+release {
 
-            const formData =
-                new FormData();
+minifyEnabled false
 
-            formData.append(
-                "file",
-                file
-            );
+shrinkResources false
 
-            formData.append(
-                "appName",
-                appName
-            );
+}
 
-            formData.append(
-                "packageName",
-                packageName
-            );
+}
 
-            const response =
-                await fetch(
-                    "/.netlify/functions/start-build",
-                    {
-                        method:"POST",
+}
 
-                        headers:{
-                            "Authorization":
-                                "Bearer " + token
-                        },
+dependencies {
 
-                        body:
-                            formData
-                    }
-                );
+implementation 'androidx.appcompat:appcompat:1.7.1'
 
-            const result =
-                await response.json();
+implementation 'androidx.activity:activity:1.10.1'
 
-            if(!response.ok){
+implementation 'androidx.core:core:1.16.0'
 
-                throw new Error(
-                    result.error ||
-                    "Unable to start build."
-                );
+}
 
-            }
+`;
 
-            const buildId =
-                result.buildId;
 
-            progressBar.style.width =
-                "30%";
+G['gradle.properties']=`
 
-            statusText.className =
-                "";
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 
-            statusText.textContent =
-                "🚀 Build started. Preparing Android project...";
+android.useAndroidX=true
 
-            await checkBuild(
-                buildId
-            );
+android.nonTransitiveRClass=true
 
-        }catch(error){
+`;
 
-            console.error(error);
 
-            statusText.className =
-                "error";
+G['gradle-wrapper.properties']=`
 
-            statusText.textContent =
-                "❌ " +
-                error.message;
+distributionUrl=https\\://services.gradle.org/distributions/gradle-${s.gradleVersion}-bin.zip
 
-            progressBar.style.width =
-                "0%";
+`;
 
-            buildBtn.disabled =
-                false;
 
-        }
+G['app/src/main/AndroidManifest.xml']=`
 
-    }
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+${s.internet?'<uses-permission android:name="android.permission.INTERNET"/>':''}
+
+${s.camera?'<uses-permission android:name="android.permission.CAMERA"/>':''}
+
+${s.microphone?'<uses-permission android:name="android.permission.RECORD_AUDIO"/>':''}
+
+<application
+android:theme="@style/AppTheme"
+android:label="${esc(s.appName)}">
+
+<activity
+android:name=".MainActivity"
+android:screenOrientation="${s.orientation}"
+android:exported="true">
+
+<intent-filter>
+
+<action android:name="android.intent.action.MAIN"/>
+
+<category android:name="android.intent.category.LAUNCHER"/>
+
+</intent-filter>
+
+</activity>
+
+</application>
+
+</manifest>
+
+`;
+
+
+G['app/src/main/res/values/styles.xml']=`
+
+<resources>
+
+<style
+name="AppTheme"
+parent="Theme.AppCompat.DayNight.NoActionBar">
+
+<item name="android:colorAccent">
+#3B82F6
+</item>
+
+</style>
+
+</resources>
+
+`;
+
+
+G['app/src/main/java/'+path+'/MainActivity.java']=`
+
+package ${p};
+
+import android.os.Bundle;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+
+WebView w;
+
+@Override
+public void onCreate(Bundle b){
+
+super.onCreate(b);
+
+w=new WebView(this);
+
+setContentView(w);
+
+WebSettings s=w.getSettings();
+
+s.setJavaScriptEnabled(${s.javascript});
+
+s.setDomStorageEnabled(${s.domStorage});
+
+s.setDatabaseEnabled(${s.database});
+
+w.loadUrl("file:///android_asset/index.html");
+
+}
+
+}
+
+`;
+
+
+G['README.txt']='Generated by HTML TO APK BUILDER — Made by '+s.owner;
+
+
+let q=$('sel');
+
+q.innerHTML='';
+
+Object.keys(G).forEach(k=>{
+
+let o=document.createElement('option');
+
+o.value=k;
+
+o.textContent=k;
+
+q.appendChild(o);
+
+});
+
+show();
+
+}
+
+
+function show(){
+
+$('code').textContent=
+G[$('sel').value]||
+'Generate Project دبائیں۔';
+
+}
+
+
+$('sel').onchange=show;
+
+
+$('gen').onclick=()=>{
+
+gen();
+
+$('status').textContent=
+'✅ Project files تیار ہیں۔';
+
+};
+
+
+$('copy').onclick=async()=>{
+
+if(G[$('sel').value])
+await navigator.clipboard.writeText(
+G[$('sel').value]
+);
+
+};
+
+
+$('dproj').onclick=()=>{
+
+if(!Object.keys(G).length)
+gen();
+
+let t=Object.entries(G)
+.map(x=>'===== '+x[0]+' =====\n'+x[1])
+.join('\n\n');
+
+let a=document.createElement('a');
+
+a.href=URL.createObjectURL(
+new Blob([t],{type:'text/plain'})
+);
+
+a.download='android-project-files.txt';
+
+a.click();
+
+};
+
+
+$('reset').onclick=()=>location.reload();
+
+
+$('file').onchange=async e=>{
+
+let f=e.target.files[0];
+
+if(f){
+
+$('status').textContent=
+'📁 '+f.name+' منتخب ہے۔';
+
+if(/\.html?$/i.test(f.name))
+$('preview').srcdoc=await f.text();
+
+}
+
+};
+
+
+function stat(m,p,done){
+
+$('status').textContent=m;
+
+$('bar').style.width=p+'%';
+
+$('dl').style.opacity=
+done?'1':'.55';
+
+$('dl').style.pointerEvents=
+done?'auto':'none';
+
+}
+
+
+let id,t;
+
+
+async function poll(){
+
+try{
+
+let r=await fetch(
+'/.netlify/functions/apk-status?buildId='+
+encodeURIComponent(id)
+);
+
+let d=await r.json();
+
+
+if(d.status==='completed'&&d.downloadUrl){
+
+stat(
+'✅ APK تیار ہے — Download APK دبائیں۔',
+100,
+true
+);
+
+$('dl').href=d.downloadUrl;
+
+clearInterval(t);
+
+}
+
+
+else if(d.status==='failed'){
+
+stat(
+'❌ Build ناکام: '+
+(d.message||'Build error'),
+100,
+false
+);
+
+clearInterval(t);
+
+}
+
+
+else{
+
+stat(
+d.message||
+'⏳ APK build ہو رہی ہے…',
+d.progress||20,
+false
+);
+
+}
+
+}catch(e){
+
+stat(
+'⏳ Build status چیک ہو رہا ہے…',
+20,
+false
+);
+
+}
+
+}
+
+
+$('build').onclick=async()=>{
+
+let f=$('file').files[0];
+
+if(!f){
+
+stat(
+'⚠️ پہلے HTML یا ZIP فائل منتخب کریں۔',
+0,
+false
+);
+
+return;
+
+}
+
+
+try{
+
+stat(
+'📤 Build request بھیجی جا رہی ہے…',
+8,
+false
 );
 
 
-/* =====================================================
-   BUILD STATUS
-====================================================== */
+let b=new Uint8Array(
+await f.arrayBuffer()
+);
 
-async function checkBuild(
-    buildId
-){
+let x='';
 
-    const timer =
-        setInterval(
-            async () => {
 
-                try{
+for(
+let i=0;
+i<b.length;
+i+=32768
+)
 
-                    const response =
-                        await fetch(
-                            "/.netlify/functions/build-status?buildId=" +
-                            encodeURIComponent(
-                                buildId
-                            )
-                        );
+x+=String.fromCharCode(
+...b.subarray(i,i+32768)
+);
 
-                    const data =
-                        await response.json();
 
-                    if(!response.ok){
+let r=await fetch(
+'/.netlify/functions/build-apk',
+{
 
-                        throw new Error(
-                            data.error ||
-                            "Status check failed."
-                        );
+method:'POST',
 
-                    }
+headers:{
+'Content-Type':'application/json'
+},
 
-                    if(
-                        data.status ===
-                        "queued"
-                    ){
+body:JSON.stringify({
 
-                        progressBar.style.width =
-                            "40%";
+sourceName:f.name,
 
-                        statusText.textContent =
-                            "⏳ Build is queued...";
+sourceBase64:btoa(x),
 
-                    }
+settings:S()
 
-                    else if(
-                        data.status ===
-                        "building"
-                    ){
+})
 
-                        progressBar.style.width =
-                            "65%";
-
-                        statusText.textContent =
-                            "🔨 Building Android APK...";
-
-                    }
-
-                    else if(
-                        data.status ===
-                        "success"
-                    ){
-
-                        clearInterval(
-                            timer
-                        );
-
-                        progressBar.style.width =
-                            "100%";
-
-                        statusText.className =
-                            "success";
-
-                        statusText.textContent =
-                            "✅ APK successfully created!";
-
-                        if(
-                            data.downloadUrl
-                        ){
-
-                            downloadBtn.href =
-                                data.downloadUrl;
-
-                            downloadBtn.style.display =
-                                "block";
-
-                        }
-
-                        buildBtn.disabled =
-                            false;
-
-                        /* Refresh account stats */
-
-                        if(
-                            auth.currentUser
-                        ){
-
-                            await loadUserProfile(
-                                auth.currentUser
-                            );
-                        }
-
-                    }
-
-                    else if(
-                        data.status ===
-                        "failed"
-                    ){
-
-                        clearInterval(
-                            timer
-                        );
-
-                        progressBar.style.width =
-                            "0%";
-
-                        statusText.className =
-                            "error";
-
-                        statusText.textContent =
-                            "❌ APK build failed.";
-
-                        if(
-                            data.message
-                        ){
-
-                            statusText.textContent +=
-                                " " +
-                                data.message;
-
-                        }
-
-                        buildBtn.disabled =
-                            false;
-
-                    }
-
-                }catch(error){
-
-                    clearInterval(
-                        timer
-                    );
-
-                    statusText.className =
-                        "error";
-
-                    statusText.textContent =
-                        "❌ " +
-                        error.message;
-
-                    buildBtn.disabled =
-                        false;
-
-                }
-
-            },
-            5000
-        );
 }
+);
+
+
+let d=await r.json();
+
+
+if(!r.ok)
+throw Error(
+d.error||'Build request failed'
+);
+
+
+id=d.buildId;
+
+
+stat(
+'⏳ GitHub Actions نے APK build شروع کر دی ہے…',
+15,
+false
+);
+
+
+clearInterval(t);
+
+t=setInterval(
+poll,
+5000
+);
+
+poll();
+
+
+}catch(e){
+
+stat(
+'❌ '+e.message,
+0,
+false
+);
+
+}
+
+};
 
 </script>
 
