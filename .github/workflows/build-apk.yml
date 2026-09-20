@@ -14,84 +14,102 @@ jobs:
 
     steps:
 
-      # --------------------------------------------------
-      # 1. Checkout the user's build branch
-      # --------------------------------------------------
+      # ==================================================
+      # 1. Checkout user's build branch
+      # ==================================================
       - name: Checkout Build Branch
         uses: actions/checkout@v4
         with:
           ref: build/${{ inputs.buildId }}
           fetch-depth: 1
 
-      # --------------------------------------------------
-      # 2. Setup Java
-      # --------------------------------------------------
+      # ==================================================
+      # 2. Setup Java 17
+      # ==================================================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # --------------------------------------------------
+      # ==================================================
       # 3. Setup Android SDK
-      # --------------------------------------------------
+      # ==================================================
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+          packages: "platform-tools"
 
-      # --------------------------------------------------
-      # 4. Accept Android licenses
-      # --------------------------------------------------
+      # ==================================================
+      # 4. Accept Android SDK licenses
+      # ==================================================
       - name: Accept Android SDK Licenses
+        shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
+          set -e
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
-      # --------------------------------------------------
-      # 5. Install Android SDK packages
-      # --------------------------------------------------
-      - name: Install Android SDK
-        run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
-
-      # --------------------------------------------------
-      # 6. Read build metadata
-      # --------------------------------------------------
-      - name: Read Build Metadata
-        id: metadata
+      # ==================================================
+      # 5. Install required Android SDK
+      # ==================================================
+      - name: Install Android SDK Packages
         shell: bash
         run: |
           set -e
 
-          if [ -f build-meta.json ]; then
-            echo "Metadata file found:"
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.0"
+
+      # ==================================================
+      # 6. Read build metadata
+      # ==================================================
+      - name: Read Build Metadata
+        shell: bash
+        run: |
+          set -e
+
+          echo "Checking metadata files..."
+
+          if [ -f "build-meta.json" ]; then
+
+            echo "Found build-meta.json"
             cat build-meta.json
 
             APP_NAME=$(python3 -c "import json; print(json.load(open('build-meta.json')).get('appName','Cricket App'))")
             PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('build-meta.json')).get('packageName','com.cricketlovers.app'))")
 
-          elif [ -f metadata.json ]; then
-            echo "metadata.json found:"
+          elif [ -f "metadata.json" ]; then
+
+            echo "Found metadata.json"
             cat metadata.json
 
             APP_NAME=$(python3 -c "import json; print(json.load(open('metadata.json')).get('appName','Cricket App'))")
             PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('metadata.json')).get('packageName','com.cricketlovers.app'))")
 
           else
-            echo "No metadata file found."
+
+            echo "Metadata file not found."
+            echo "Using default values."
+
             APP_NAME="Cricket App"
             PACKAGE_NAME="com.cricketlovers.app"
+
           fi
 
           echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
 
-          echo "App Name: $APP_NAME"
-          echo "Package Name: $PACKAGE_NAME"
+          echo "--------------------------------"
+          echo "APP NAME: $APP_NAME"
+          echo "PACKAGE:  $PACKAGE_NAME"
+          echo "--------------------------------"
 
-      # --------------------------------------------------
-      # 7. Create Android project
-      # --------------------------------------------------
+      # ==================================================
+      # 7. Create Android project folders
+      # ==================================================
       - name: Create Android Project
         shell: bash
         run: |
@@ -99,17 +117,17 @@ jobs:
 
           rm -rf android-project
 
-          mkdir -p android-project/app/src/main/java/${PACKAGE_NAME//.//}
-          mkdir -p android-project/app/src/main/res/layout
-          mkdir -p android-project/app/src/main/res/mipmap-hdpi
-          mkdir -p android-project/app/src/main/res/mipmap-mdpi
-          mkdir -p android-project/app/src/main/res/mipmap-xhdpi
-          mkdir -p android-project/app/src/main/res/mipmap-xxhdpi
-          mkdir -p android-project/app/src/main/res/mipmap-xxxhdpi
+          PACKAGE_PATH="${PACKAGE_NAME//./\/}"
 
-      # --------------------------------------------------
-      # 8. Copy HTML project
-      # --------------------------------------------------
+          mkdir -p "android-project/app/src/main/java/$PACKAGE_PATH"
+          mkdir -p "android-project/app/src/main/res/values"
+          mkdir -p "android-project/app/src/main/res/layout"
+
+          echo "Android project folders created."
+
+      # ==================================================
+      # 8. Prepare HTML files
+      # ==================================================
       - name: Prepare Web Project
         shell: bash
         run: |
@@ -118,23 +136,40 @@ jobs:
           mkdir -p android-project/app/src/main/assets
 
           if [ -d "www" ]; then
+
+            echo "Using www folder..."
             cp -R www/. android-project/app/src/main/assets/
+
           elif [ -d "web" ]; then
+
+            echo "Using web folder..."
             cp -R web/. android-project/app/src/main/assets/
+
           elif [ -f "index.html" ]; then
-            cp -R . android-project/app/src/main/assets/
+
+            echo "Using root HTML project..."
+
+            find . -maxdepth 1 \
+              ! -name "." \
+              ! -name ".git" \
+              ! -name "android-project" \
+              -exec cp -R {} android-project/app/src/main/assets/ \;
+
           else
-            echo "ERROR: No HTML project found."
+
+            echo "ERROR: index.html not found."
             exit 1
+
           fi
 
-          echo "Web files:"
-          find android-project/app/src/main/assets -maxdepth 2 -type f | head -100
+          echo ""
+          echo "HTML files prepared:"
+          find android-project/app/src/main/assets -maxdepth 3 -type f | head -100
 
-      # --------------------------------------------------
+      # ==================================================
       # 9. Create settings.gradle
-      # --------------------------------------------------
-      - name: Create Gradle Settings
+      # ==================================================
+      - name: Create settings.gradle
         shell: bash
         run: |
           cat > android-project/settings.gradle <<'EOF'
@@ -148,6 +183,7 @@ jobs:
 
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
               repositories {
                   google()
                   mavenCentral()
@@ -155,13 +191,14 @@ jobs:
           }
 
           rootProject.name = "HtmlToApk"
+
           include(":app")
           EOF
 
-      # --------------------------------------------------
+      # ==================================================
       # 10. Create root build.gradle
-      # --------------------------------------------------
-      - name: Create Root Gradle File
+      # ==================================================
+      - name: Create root build.gradle
         shell: bash
         run: |
           cat > android-project/build.gradle <<'EOF'
@@ -170,10 +207,10 @@ jobs:
           }
           EOF
 
-      # --------------------------------------------------
+      # ==================================================
       # 11. Create app build.gradle
-      # --------------------------------------------------
-      - name: Create App Gradle File
+      # ==================================================
+      - name: Create app build.gradle
         shell: bash
         run: |
           cat > android-project/app/build.gradle <<EOF
@@ -194,6 +231,10 @@ jobs:
               }
 
               buildTypes {
+                  debug {
+                      minifyEnabled false
+                  }
+
                   release {
                       minifyEnabled false
                   }
@@ -206,16 +247,15 @@ jobs:
           }
           EOF
 
-      # --------------------------------------------------
-      # 12. Create AndroidManifest
-      # --------------------------------------------------
-      - name: Create Android Manifest
+      # ==================================================
+      # 12. Create AndroidManifest.xml
+      # ==================================================
+      - name: Create AndroidManifest.xml
         shell: bash
         run: |
-          mkdir -p android-project/app/src/main
-
           cat > android-project/app/src/main/AndroidManifest.xml <<EOF
           <?xml version="1.0" encoding="utf-8"?>
+
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
@@ -242,36 +282,42 @@ jobs:
           </manifest>
           EOF
 
-      # --------------------------------------------------
-      # 13. Create Android theme
-      # --------------------------------------------------
-      - name: Create Android Theme
+      # ==================================================
+      # 13. Create Android style
+      # ==================================================
+      - name: Create Android Style
         shell: bash
         run: |
-          mkdir -p android-project/app/src/main/res/values
-
           cat > android-project/app/src/main/res/values/styles.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <resources>
 
-              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+              <style
+                  name="AppTheme"
+                  parent="android:style/Theme.Material.Light.NoActionBar">
+
                   <item name="android:fontFamily">sans</item>
                   <item name="android:colorAccent">#10B981</item>
-                  <item name="android:navigationBarColor">#000000</item>
                   <item name="android:statusBarColor">#000000</item>
+                  <item name="android:navigationBarColor">#000000</item>
                   <item name="android:windowLightStatusBar">false</item>
+
               </style>
 
           </resources>
           EOF
 
-      # --------------------------------------------------
-      # 14. Create MainActivity
-      # --------------------------------------------------
+      # ==================================================
+      # 14. Create MainActivity.java
+      # ==================================================
       - name: Create MainActivity
         shell: bash
         run: |
-          PACKAGE_PATH="${PACKAGE_NAME//.//}"
+          set -e
+
+          PACKAGE_PATH="${PACKAGE_NAME//./\/}"
+
           mkdir -p "android-project/app/src/main/java/$PACKAGE_PATH"
 
           cat > "android-project/app/src/main/java/$PACKAGE_PATH/MainActivity.java" <<EOF
@@ -291,9 +337,11 @@ jobs:
               @SuppressLint("SetJavaScriptEnabled")
               @Override
               protected void onCreate(Bundle savedInstanceState) {
+
                   super.onCreate(savedInstanceState);
 
                   webView = new WebView(this);
+
                   setContentView(webView);
 
                   WebSettings settings = webView.getSettings();
@@ -301,8 +349,10 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setDatabaseEnabled(true);
+
                   settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(true);
+
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
                   webView.setWebViewClient(new WebViewClient());
@@ -312,61 +362,110 @@ jobs:
 
               @Override
               public void onBackPressed() {
+
                   if (webView.canGoBack()) {
+
                       webView.goBack();
+
                   } else {
+
                       super.onBackPressed();
+
                   }
               }
           }
           EOF
 
-      # --------------------------------------------------
-      # 15. Build APK
-      # --------------------------------------------------
+      # ==================================================
+      # 15. Verify Android project
+      # ==================================================
+      - name: Verify Android Project
+        shell: bash
+        run: |
+          set -e
+
+          echo "Android project:"
+          find android-project -maxdepth 6 -type f | sort
+
+          echo ""
+          echo "Checking index.html..."
+
+          if [ ! -f "android-project/app/src/main/assets/index.html" ]; then
+            echo "ERROR: index.html was not copied."
+            exit 1
+          fi
+
+          echo "index.html found successfully."
+
+      # ==================================================
+      # 16. Check Gradle
+      # ==================================================
+      - name: Check Gradle
+        shell: bash
+        run: |
+          set -e
+
+          echo "Gradle version:"
+          gradle --version
+
+      # ==================================================
+      # 17. Build Debug APK
+      # ==================================================
       - name: Build APK
         working-directory: android-project
         shell: bash
         run: |
           set -e
 
-          echo "Checking Gradle..."
-          gradle --version
+          echo "Starting Android APK build..."
 
-          echo "Building APK..."
+          gradle :app:assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            --warning-mode all
 
-          gradle :app:assembleDebug --no-daemon --stacktrace
-
-      # --------------------------------------------------
-      # 16. Find APK
-      # --------------------------------------------------
+      # ==================================================
+      # 18. Find APK
+      # ==================================================
       - name: Find APK
         shell: bash
         run: |
           set -e
 
-          echo "Searching APK..."
+          echo "Searching for APK..."
 
-          find android-project -type f -name "*.apk" -print
+          find android-project \
+            -type f \
+            -name "*.apk" \
+            -print
 
-          APK_FILE=$(find android-project -type f -name "*.apk" | head -1)
+          APK_FILE=$(find android-project \
+            -type f \
+            -name "*.apk" \
+            | head -1)
 
           if [ -z "$APK_FILE" ]; then
+
             echo "ERROR: APK was not created."
+
             exit 1
+
           fi
 
-          echo "APK found: $APK_FILE"
+          echo "APK found:"
+          echo "$APK_FILE"
 
           mkdir -p output
 
           cp "$APK_FILE" "output/${APP_NAME// /_}.apk"
 
+          echo ""
+          echo "Final APK:"
           ls -lh output/
 
-      # --------------------------------------------------
-      # 17. Upload APK artifact
-      # --------------------------------------------------
+      # ==================================================
+      # 19. Upload APK artifact
+      # ==================================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -375,14 +474,16 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      # --------------------------------------------------
-      # 18. Build completed
-      # --------------------------------------------------
+      # ==================================================
+      # 20. Build successful
+      # ==================================================
       - name: Build Complete
         run: |
-          echo "======================================"
-          echo "APK BUILD SUCCESSFUL"
+          echo ""
+          echo "========================================"
+          echo "       APK BUILD SUCCESSFUL"
+          echo "========================================"
           echo "Build ID: ${{ inputs.buildId }}"
           echo "App Name: $APP_NAME"
-          echo "Package: $PACKAGE_NAME"
-          echo "======================================"
+          echo "Package:  $PACKAGE_NAME"
+          echo "========================================"
