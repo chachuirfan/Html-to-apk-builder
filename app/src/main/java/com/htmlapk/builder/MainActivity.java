@@ -5,17 +5,14 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -32,7 +29,6 @@ import androidx.webkit.WebViewAssetLoader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -43,123 +39,86 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private WebViewAssetLoader assetLoader;
+    private PermissionRequest pendingWebPermissionRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         try {
-            startApplication();
+            setContentView(R.layout.activity_main);
+
+            webView = findViewById(R.id.webView);
+
+            if (webView == null) {
+                throw new IllegalStateException("WebView missing");
+            }
+
+            WebView.setWebContentsDebuggingEnabled(true);
+
+            assetLoader =
+                    new WebViewAssetLoader.Builder()
+                            .addPathHandler(
+                                    "/assets/",
+                                    new WebViewAssetLoader.AssetsPathHandler(this)
+                            )
+                            .build();
+
+            configureWebView();
+
+            requestRequiredPermissions();
+
+            webView.loadUrl(
+                    "https://appassets.androidplatform.net/assets/index.html"
+            );
+
         } catch (Throwable error) {
+
             showFatalError(error);
         }
-    }
-
-    private void startApplication() {
-
-        setContentView(R.layout.activity_main);
-
-        webView = findViewById(R.id.webView);
-
-        if (webView == null) {
-            throw new IllegalStateException(
-                    "WebView not found in activity_main.xml"
-            );
-        }
-
-        assetLoader = new WebViewAssetLoader.Builder()
-                .addPathHandler(
-                        "/assets/",
-                        new WebViewAssetLoader.AssetsPathHandler(this)
-                )
-                .build();
-
-        configureWebView();
-
-        requestRequiredPermissions();
-
-        webView.loadUrl(
-                "https://appassets.androidplatform.net/assets/index.html"
-        );
     }
 
     private void configureWebView() {
 
         WebSettings settings = webView.getSettings();
 
-        /*
-         * IMPORTANT:
-         * Full JavaScript support for the HTML application.
-         */
         settings.setJavaScriptEnabled(true);
-
-        /*
-         * localStorage / DOM storage.
-         */
         settings.setDomStorageEnabled(true);
-
         settings.setDatabaseEnabled(true);
 
-        /*
-         * Allow HTML file inputs and content URIs.
-         */
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
 
-        /*
-         * JavaScript window support.
-         */
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
-
         settings.setSupportMultipleWindows(false);
 
-        /*
-         * Required for audio/video features.
-         */
         settings.setMediaPlaybackRequiresUserGesture(false);
 
-        /*
-         * Normal mobile layout.
-         */
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(false);
 
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-        settings.setSupportZoom(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        /*
-         * Cache/network support.
-         */
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-
-        /*
-         * HTTPS page may access HTTPS/HTTP resources.
-         */
         if (android.os.Build.VERSION.SDK_INT >= 21) {
+
             settings.setMixedContentMode(
-                    WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                    WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             );
         }
 
-        /*
-         * Cookies for Firebase/web services.
-         */
         CookieManager cookieManager =
                 CookieManager.getInstance();
 
         cookieManager.setAcceptCookie(true);
 
         if (android.os.Build.VERSION.SDK_INT >= 21) {
+
             cookieManager.setAcceptThirdPartyCookies(
                     webView,
                     true
             );
         }
 
-        /*
-         * WebViewClient
-         */
         webView.setWebViewClient(
                 new WebViewClient() {
 
@@ -169,24 +128,13 @@ public class MainActivity extends Activity {
                             WebResourceRequest request
                     ) {
 
-                        try {
+                        WebResourceResponse response =
+                                assetLoader.shouldInterceptRequest(
+                                        request.getUrl()
+                                );
 
-                            WebResourceResponse response =
-                                    assetLoader.shouldInterceptRequest(
-                                            request.getUrl()
-                                    );
-
-                            if (response != null) {
-                                return response;
-                            }
-
-                        } catch (Throwable error) {
-
-                            Log.e(
-                                    TAG,
-                                    "Asset request error",
-                                    error
-                            );
+                        if (response != null) {
+                            return response;
                         }
 
                         return super.shouldInterceptRequest(
@@ -201,48 +149,18 @@ public class MainActivity extends Activity {
                             String url
                     ) {
 
-                        try {
+                        WebResourceResponse response =
+                                assetLoader.shouldInterceptRequest(
+                                        Uri.parse(url)
+                                );
 
-                            WebResourceResponse response =
-                                    assetLoader.shouldInterceptRequest(
-                                            Uri.parse(url)
-                                    );
-
-                            if (response != null) {
-                                return response;
-                            }
-
-                        } catch (Throwable error) {
-
-                            Log.e(
-                                    TAG,
-                                    "Asset URL error",
-                                    error
-                            );
+                        if (response != null) {
+                            return response;
                         }
 
                         return super.shouldInterceptRequest(
                                 view,
                                 url
-                        );
-                    }
-
-                    @Override
-                    public void onPageStarted(
-                            WebView view,
-                            String url,
-                            Bitmap favicon
-                    ) {
-
-                        Log.d(
-                                TAG,
-                                "PAGE STARTED: " + url
-                        );
-
-                        super.onPageStarted(
-                                view,
-                                url,
-                                favicon
                         );
                     }
 
@@ -257,98 +175,62 @@ public class MainActivity extends Activity {
                                 url
                         );
 
-                        Log.d(
-                                TAG,
-                                "PAGE FINISHED: " + url
-                        );
+                        String probe =
+                                "(function(){" +
+                                "var missing=[];" +
 
-                        /*
-                         * Verify JavaScript after page load.
-                         */
-                        try {
+                                "['populateDropdowns'," +
+                                "'triggerFileInput'," +
+                                "'checkScorerAuthBeforeAction'," +
+                                "'openSavedMatches'," +
+                                "'openPlayerStatsModal'," +
+                                "'openTeamLeaderboardModal'," +
+                                "'openGetLiveScoreModal'," +
+                                "'unlockScorerMode'," +
+                                "'loginAdminInline']" +
 
-                            view.evaluateJavascript(
-                                    "(function(){" +
-                                            "try{" +
-                                            "return JSON.stringify({" +
-                                            "url:location.href," +
-                                            "protocol:location.protocol," +
-                                            "secure:window.isSecureContext," +
-                                            "js:true," +
-                                            "firebase:(typeof firebase !== 'undefined')" +
-                                            "});" +
-                                            "}catch(e){" +
-                                            "return 'JS_TEST_ERROR:'+e.message;" +
-                                            "}" +
-                                            "})();",
+                                ".forEach(function(n){" +
+                                "if(typeof window[n]!=='function')" +
+                                "missing.push(n);" +
+                                "});" +
 
-                                    value -> Log.d(
+                                "return JSON.stringify({" +
+                                "ready:missing.length===0," +
+                                "missing:missing," +
+                                "href:location.href," +
+                                "secure:isSecureContext" +
+                                "});" +
+
+                                "})()";
+
+                        view.evaluateJavascript(
+                                probe,
+                                value -> {
+
+                                    Log.e(
                                             TAG,
-                                            "JS TEST = " + value
-                                    )
-                            );
+                                            "HTML_JS_PROBE=" + value
+                                    );
 
-                        } catch (Throwable error) {
+                                    if (
+                                            value != null &&
+                                            value.contains(
+                                                    "\\\"ready\\\":false"
+                                            )
+                                    ) {
 
-                            Log.e(
-                                    TAG,
-                                    "evaluateJavascript failed",
-                                    error
-                            );
-                        }
-                    }
-
-                    @Override
-                    public void onReceivedError(
-                            WebView view,
-                            WebResourceRequest request,
-                            WebResourceError error
-                    ) {
-
-                        super.onReceivedError(
-                                view,
-                                request,
-                                error
+                                        Toast.makeText(
+                                                MainActivity.this,
+                                                "HTML JavaScript did not initialize.",
+                                                Toast.LENGTH_LONG
+                                        ).show();
+                                    }
+                                }
                         );
-
-                        try {
-
-                            String description =
-                                    error != null
-                                            ? String.valueOf(
-                                                    error.getDescription()
-                                            )
-                                            : "Unknown";
-
-                            String url =
-                                    request != null
-                                            ? String.valueOf(
-                                                    request.getUrl()
-                                            )
-                                            : "Unknown";
-
-                            Log.e(
-                                    TAG,
-                                    "WEB ERROR: "
-                                            + description
-                                            + " URL="
-                                            + url
-                            );
-
-                        } catch (Throwable ignored) {
-                        }
                     }
                 }
         );
 
-        /*
-         * WebChromeClient
-         *
-         * Handles:
-         * JavaScript console
-         * permissions
-         * file chooser
-         */
         webView.setWebChromeClient(
                 new WebChromeClient() {
 
@@ -359,41 +241,17 @@ public class MainActivity extends Activity {
 
                         if (consoleMessage != null) {
 
-                            String message =
-                                    "JS "
-                                    + consoleMessage.messageLevel()
-                                    + ": "
-                                    + consoleMessage.message()
-                                    + " | LINE "
-                                    + consoleMessage.lineNumber()
-                                    + " | "
-                                    + consoleMessage.sourceId();
-
                             Log.e(
                                     TAG,
-                                    message
+                                    "JS "
+                                            + consoleMessage.messageLevel()
+                                            + ": "
+                                            + consoleMessage.message()
+                                            + " | line "
+                                            + consoleMessage.lineNumber()
+                                            + " | "
+                                            + consoleMessage.sourceId()
                             );
-
-                            /*
-                             * If JavaScript has an actual error,
-                             * show it briefly on screen too.
-                             */
-                            if (
-                                    consoleMessage.messageLevel()
-                                            == ConsoleMessage.MessageLevel.ERROR
-                            ) {
-
-                                runOnUiThread(
-                                        () -> Toast.makeText(
-                                                MainActivity.this,
-                                                "JavaScript Error:\n"
-                                                        + consoleMessage.message()
-                                                        + "\nLine: "
-                                                        + consoleMessage.lineNumber(),
-                                                Toast.LENGTH_LONG
-                                        ).show()
-                                );
-                            }
                         }
 
                         return true;
@@ -401,7 +259,7 @@ public class MainActivity extends Activity {
 
                     @Override
                     public void onPermissionRequest(
-                            final PermissionRequest request
+                            PermissionRequest request
                     ) {
 
                         if (request == null) {
@@ -409,7 +267,7 @@ public class MainActivity extends Activity {
                         }
 
                         runOnUiThread(
-                                () -> handleWebPermissionRequest(
+                                () -> grantOrRequestWebPermissions(
                                         request
                                 )
                         );
@@ -417,32 +275,37 @@ public class MainActivity extends Activity {
 
                     @Override
                     public boolean onShowFileChooser(
-                            WebView webView,
+                            WebView view,
                             ValueCallback<Uri[]> callback,
-                            FileChooserParams fileChooserParams
+                            FileChooserParams params
                     ) {
+
+                        if (filePathCallback != null) {
+
+                            filePathCallback.onReceiveValue(
+                                    null
+                            );
+                        }
+
+                        filePathCallback = callback;
 
                         try {
 
-                            if (filePathCallback != null) {
+                            Intent intent =
+                                    params.createIntent();
 
-                                filePathCallback.onReceiveValue(
-                                        null
-                                );
-                            }
+                            startActivityForResult(
+                                    intent,
+                                    FILE_CHOOSER_REQUEST_CODE
+                            );
 
-                            filePathCallback = callback;
+                            return true;
 
-                            Intent intent;
+                        } catch (Throwable firstError) {
 
                             try {
 
-                                intent =
-                                        fileChooserParams.createIntent();
-
-                            } catch (Throwable error) {
-
-                                intent =
+                                Intent intent =
                                         new Intent(
                                                 Intent.ACTION_GET_CONTENT
                                         );
@@ -452,9 +315,6 @@ public class MainActivity extends Activity {
                                 );
 
                                 intent.setType("*/*");
-                            }
-
-                            try {
 
                                 startActivityForResult(
                                         intent,
@@ -464,12 +324,10 @@ public class MainActivity extends Activity {
                                 return true;
 
                             } catch (
-                                    ActivityNotFoundException error
+                                    ActivityNotFoundException secondError
                             ) {
 
-                                if (
-                                        filePathCallback != null
-                                ) {
+                                if (filePathCallback != null) {
 
                                     filePathCallback.onReceiveValue(
                                             null
@@ -480,213 +338,204 @@ public class MainActivity extends Activity {
 
                                 return false;
                             }
-
-                        } catch (Throwable error) {
-
-                            Log.e(
-                                    TAG,
-                                    "File chooser error",
-                                    error
-                            );
-
-                            if (
-                                    filePathCallback != null
-                            ) {
-
-                                filePathCallback.onReceiveValue(
-                                        null
-                                );
-
-                                filePathCallback = null;
-                            }
-
-                            return false;
                         }
                     }
                 }
         );
-
-        /*
-         * WebView debugging.
-         * Useful while testing APK.
-         */
-        if (
-                android.os.Build.VERSION.SDK_INT >=
-                        android.os.Build.VERSION_CODES.KITKAT
-        ) {
-
-            WebView.setWebContentsDebuggingEnabled(
-                    true
-            );
-        }
     }
 
-    private void handleWebPermissionRequest(
+    private void grantOrRequestWebPermissions(
             PermissionRequest request
     ) {
 
-        try {
+        ArrayList<String> permissions =
+                new ArrayList<>();
 
-            List<String> allowedResources =
-                    new ArrayList<>();
+        boolean audioRequested = false;
+        boolean videoRequested = false;
 
-            ArrayList<String> androidPermissions =
-                    new ArrayList<>();
+        for (
+                String resource :
+                request.getResources()
+        ) {
 
-            for (
-                    String resource :
-                    request.getResources()
+            if (
+                    PermissionRequest
+                            .RESOURCE_AUDIO_CAPTURE
+                            .equals(resource)
             ) {
 
-                if (
-                        PermissionRequest
-                                .RESOURCE_AUDIO_CAPTURE
-                                .equals(resource)
-                ) {
-
-                    if (
-                            ContextCompat.checkSelfPermission(
-                                    this,
-                                    Manifest.permission.RECORD_AUDIO
-                            )
-                                    ==
-                            PackageManager.PERMISSION_GRANTED
-                    ) {
-
-                        allowedResources.add(
-                                PermissionRequest
-                                        .RESOURCE_AUDIO_CAPTURE
-                        );
-
-                    } else {
-
-                        androidPermissions.add(
-                                Manifest.permission.RECORD_AUDIO
-                        );
-                    }
-                }
-
-                if (
-                        PermissionRequest
-                                .RESOURCE_VIDEO_CAPTURE
-                                .equals(resource)
-                ) {
-
-                    if (
-                            ContextCompat.checkSelfPermission(
-                                    this,
-                                    Manifest.permission.CAMERA
-                            )
-                                    ==
-                            PackageManager.PERMISSION_GRANTED
-                    ) {
-
-                        allowedResources.add(
-                                PermissionRequest
-                                        .RESOURCE_VIDEO_CAPTURE
-                        );
-
-                    } else {
-
-                        androidPermissions.add(
-                                Manifest.permission.CAMERA
-                        );
-                    }
-                }
+                audioRequested = true;
             }
 
-            if (!allowedResources.isEmpty()) {
+            if (
+                    PermissionRequest
+                            .RESOURCE_VIDEO_CAPTURE
+                            .equals(resource)
+            ) {
 
-                request.grant(
-                        allowedResources.toArray(
-                                new String[0]
-                        )
-                );
-
-            } else {
-
-                request.deny();
+                videoRequested = true;
             }
+        }
 
-            if (!androidPermissions.isEmpty()) {
-
-                ActivityCompat.requestPermissions(
+        if (
+                audioRequested &&
+                ContextCompat.checkSelfPermission(
                         this,
-                        androidPermissions.toArray(
-                                new String[0]
-                        ),
-                        PERMISSION_REQUEST_CODE
-                );
-            }
+                        Manifest.permission.RECORD_AUDIO
+                )
+                        !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
 
-        } catch (Throwable error) {
+            permissions.add(
+                    Manifest.permission.RECORD_AUDIO
+            );
+        }
 
-            Log.e(
-                    TAG,
-                    "Web permission error",
-                    error
+        if (
+                videoRequested &&
+                ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.CAMERA
+                )
+                        !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+
+            permissions.add(
+                    Manifest.permission.CAMERA
+            );
+        }
+
+        if (permissions.isEmpty()) {
+
+            request.grant(
+                    request.getResources()
             );
 
-            try {
-                request.deny();
-            } catch (Throwable ignored) {
-            }
+        } else {
+
+            pendingWebPermissionRequest =
+                    request;
+
+            ActivityCompat.requestPermissions(
+                    this,
+                    permissions.toArray(
+                            new String[0]
+                    ),
+                    PERMISSION_REQUEST_CODE
+            );
         }
     }
 
     private void requestRequiredPermissions() {
 
-        try {
+        ArrayList<String> permissions =
+                new ArrayList<>();
 
-            ArrayList<String> permissions =
-                    new ArrayList<>();
-
-            if (
-                    ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.CAMERA
-                    )
-                            !=
-                    PackageManager.PERMISSION_GRANTED
-            ) {
-
-                permissions.add(
-                        Manifest.permission.CAMERA
-                );
-            }
-
-            if (
-                    ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.RECORD_AUDIO
-                    )
-                            !=
-                    PackageManager.PERMISSION_GRANTED
-            ) {
-
-                permissions.add(
-                        Manifest.permission.RECORD_AUDIO
-                );
-            }
-
-            if (!permissions.isEmpty()) {
-
-                ActivityCompat.requestPermissions(
+        if (
+                ContextCompat.checkSelfPermission(
                         this,
-                        permissions.toArray(
-                                new String[0]
-                        ),
-                        PERMISSION_REQUEST_CODE
-                );
+                        Manifest.permission.RECORD_AUDIO
+                )
+                        !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+
+            permissions.add(
+                    Manifest.permission.RECORD_AUDIO
+            );
+        }
+
+        if (
+                ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.CAMERA
+                )
+                        !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+
+            permissions.add(
+                    Manifest.permission.CAMERA
+            );
+        }
+
+        if (!permissions.isEmpty()) {
+
+            ActivityCompat.requestPermissions(
+                    this,
+                    permissions.toArray(
+                            new String[0]
+                    ),
+                    PERMISSION_REQUEST_CODE
+            );
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            String[] permissions,
+            int[] grantResults
+    ) {
+
+        super.onRequestPermissionsResult(
+                requestCode,
+                permissions,
+                grantResults
+        );
+
+        if (
+                requestCode !=
+                PERMISSION_REQUEST_CODE
+        ) {
+
+            return;
+        }
+
+        if (
+                pendingWebPermissionRequest != null
+        ) {
+
+            boolean allGranted = true;
+
+            for (
+                    int result :
+                    grantResults
+            ) {
+
+                if (
+                        result !=
+                        PackageManager.PERMISSION_GRANTED
+                ) {
+
+                    allGranted = false;
+
+                    break;
+                }
             }
 
-        } catch (Throwable error) {
+            try {
 
-            Log.e(
-                    TAG,
-                    "Android permission error",
-                    error
-            );
+                if (allGranted) {
+
+                    pendingWebPermissionRequest.grant(
+                            pendingWebPermissionRequest
+                                    .getResources()
+                    );
+
+                } else {
+
+                    pendingWebPermissionRequest.deny();
+                }
+
+            } catch (Throwable ignored) {
+            }
+
+            pendingWebPermissionRequest =
+                    null;
         }
     }
 
@@ -705,7 +554,7 @@ public class MainActivity extends Activity {
 
         if (
                 requestCode !=
-                        FILE_CHOOSER_REQUEST_CODE
+                FILE_CHOOSER_REQUEST_CODE
         ) {
 
             return;
@@ -713,56 +562,50 @@ public class MainActivity extends Activity {
 
         Uri[] results = null;
 
-        try {
+        if (
+                resultCode ==
+                Activity.RESULT_OK
+                &&
+                data != null
+        ) {
 
             if (
-                    resultCode == Activity.RESULT_OK
-                            &&
-                    data != null
+                    data.getClipData() != null
             ) {
 
-                if (data.getData() != null) {
+                int count =
+                        data.getClipData()
+                                .getItemCount();
 
-                    results =
-                            new Uri[]{
-                                    data.getData()
-                            };
+                results =
+                        new Uri[count];
 
-                } else if (
-                        data.getClipData() != null
+                for (
+                        int i = 0;
+                        i < count;
+                        i++
                 ) {
 
-                    int count =
+                    results[i] =
                             data.getClipData()
-                                    .getItemCount();
-
-                    results =
-                            new Uri[count];
-
-                    for (
-                            int i = 0;
-                            i < count;
-                            i++
-                    ) {
-
-                        results[i] =
-                                data.getClipData()
-                                        .getItemAt(i)
-                                        .getUri();
-                    }
+                                    .getItemAt(i)
+                                    .getUri();
                 }
+
+            } else if (
+                    data.getData() != null
+            ) {
+
+                results =
+                        new Uri[]{
+                                data.getData()
+                        };
             }
-
-        } catch (Throwable error) {
-
-            Log.e(
-                    TAG,
-                    "File result error",
-                    error
-            );
         }
 
-        if (filePathCallback != null) {
+        if (
+                filePathCallback != null
+        ) {
 
             filePathCallback.onReceiveValue(
                     results
@@ -797,34 +640,20 @@ public class MainActivity extends Activity {
             StringWriter writer =
                     new StringWriter();
 
-            PrintWriter printer =
+            error.printStackTrace(
                     new PrintWriter(
                             writer
-                    );
-
-            error.printStackTrace(
-                    printer
+                    )
             );
 
-            String errorText =
+            errorView.setText(
                     "HTML APK STARTUP ERROR\n\n"
                             +
-                    "ERROR TYPE:\n"
+                    error
                             +
-                    error.getClass().getName()
+                    "\n\n"
                             +
-                    "\n\nMESSAGE:\n"
-                            +
-                    String.valueOf(
-                            error.getMessage()
-                    )
-                            +
-                    "\n\nSTACK TRACE:\n"
-                            +
-                    writer.toString();
-
-            errorView.setText(
-                    errorText
+                    writer
             );
 
             setContentView(
@@ -840,31 +669,25 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
 
-        try {
+        if (
+                webView != null &&
+                webView.canGoBack()
+        ) {
 
-            if (
-                    webView != null
-                            &&
-                    webView.canGoBack()
-            ) {
+            webView.goBack();
 
-                webView.goBack();
+        } else {
 
-                return;
-            }
-
-        } catch (Throwable ignored) {
+            super.onBackPressed();
         }
-
-        super.onBackPressed();
     }
 
     @Override
     protected void onDestroy() {
 
-        try {
+        if (webView != null) {
 
-            if (webView != null) {
+            try {
 
                 webView.stopLoading();
 
@@ -872,22 +695,12 @@ public class MainActivity extends Activity {
                         "about:blank"
                 );
 
-                webView.clearHistory();
-
-                webView.setWebChromeClient(
-                        null
-                );
-
-                webView.setWebViewClient(
-                        null
-                );
-
                 webView.destroy();
 
-                webView = null;
+            } catch (Throwable ignored) {
             }
 
-        } catch (Throwable ignored) {
+            webView = null;
         }
 
         super.onDestroy();
