@@ -122,12 +122,11 @@ jobs:
                   applicationId "com.htmlapk.builder"
                   minSdk 23
                   targetSdk 35
-                  versionCode 2
-                  versionName "1.1"
+                  versionCode 3
+                  versionName "1.2"
               }
 
               buildTypes {
-
                   debug {
                       minifyEnabled false
                   }
@@ -145,9 +144,7 @@ jobs:
           }
 
           configurations.configureEach {
-
               resolutionStrategy {
-
                   force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
@@ -155,23 +152,14 @@ jobs:
           }
 
           dependencies {
-
               implementation('androidx.appcompat:appcompat:1.7.0') {
-
-                  exclude group: 'org.jetbrains.kotlin',
-                          module: 'kotlin-stdlib-jdk7'
-
-                  exclude group: 'org.jetbrains.kotlin',
-                          module: 'kotlin-stdlib-jdk8'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
               }
 
               implementation('androidx.webkit:webkit:1.12.1') {
-
-                  exclude group: 'org.jetbrains.kotlin',
-                          module: 'kotlin-stdlib-jdk7'
-
-                  exclude group: 'org.jetbrains.kotlin',
-                          module: 'kotlin-stdlib-jdk8'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
               }
 
               implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
@@ -180,21 +168,14 @@ jobs:
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
-
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
               <uses-permission android:name="android.permission.CAMERA" />
-
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-
               <uses-permission
                   android:name="android.permission.READ_EXTERNAL_STORAGE"
                   android:maxSdkVersion="32" />
@@ -213,11 +194,8 @@ jobs:
                       android:configChanges="orientation|screenSize|keyboardHidden">
 
                       <intent-filter>
-
                           <action android:name="android.intent.action.MAIN" />
-
                           <category android:name="android.intent.category.LAUNCHER" />
-
                       </intent-filter>
 
                   </activity>
@@ -229,23 +207,14 @@ jobs:
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-
           <resources>
 
-              <style
-                  name="AppTheme"
-                  parent="Theme.AppCompat.Light.NoActionBar">
-
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
                   <item name="android:fontFamily">sans</item>
-
                   <item name="colorAccent">#2196F3</item>
-
                   <item name="android:statusBarColor">#000000</item>
-
                   <item name="android:navigationBarColor">#000000</item>
-
                   <item name="android:windowLightStatusBar">false</item>
-
               </style>
 
           </resources>
@@ -253,7 +222,6 @@ jobs:
 
           cat > app/src/main/res/layout/activity_main.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-
           <FrameLayout
               xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -275,17 +243,13 @@ jobs:
           MAIN_ACTIVITY="app/src/main/java/com/htmlapk/builder/MainActivity.java"
 
           if [ ! -f "$MAIN_ACTIVITY" ]; then
-
             echo "ERROR: MainActivity.java is missing"
-
             echo "Expected path:"
-
             echo "$MAIN_ACTIVITY"
-
             exit 1
           fi
 
-          echo "MainActivity.java found."
+          echo "MainActivity.java found successfully."
 
       - name: Prepare HTML source
         shell: bash
@@ -293,16 +257,13 @@ jobs:
           set -e
 
           rm -rf app/src/main/assets/*
-
           mkdir -p app/src/main/assets
 
           if [ -f "index.html" ]; then
 
             echo "Root index.html found."
 
-            find . \
-              -maxdepth 1 \
-              -mindepth 1 \
+            find . -maxdepth 1 -mindepth 1 \
               ! -name ".git" \
               ! -name ".github" \
               ! -name "app" \
@@ -317,20 +278,15 @@ jobs:
             SOURCE_DIR=""
 
             for DIR in www web website public source src; do
-
               if [ -f "$DIR/index.html" ]; then
-
                 SOURCE_DIR="$DIR"
-
                 break
               fi
-
             done
 
             if [ -n "$SOURCE_DIR" ]; then
 
               echo "HTML source found in: $SOURCE_DIR"
-
               cp -a "$SOURCE_DIR"/. app/src/main/assets/
 
             else
@@ -338,40 +294,28 @@ jobs:
               ZIP_FILE=""
 
               for FILE in *.zip uploads/*.zip; do
-
                 if [ -f "$FILE" ]; then
-
                   ZIP_FILE="$FILE"
-
                   break
                 fi
-
               done
 
               if [ -z "$ZIP_FILE" ]; then
-
                 echo "ERROR: No index.html or ZIP file found."
-
                 exit 1
               fi
 
-              rm -rf /tmp/html-source
+              echo "ZIP found: $ZIP_FILE"
 
+              rm -rf /tmp/html-source
               mkdir -p /tmp/html-source
 
               unzip -q "$ZIP_FILE" -d /tmp/html-source
 
-              INDEX_PATH="$(
-                find /tmp/html-source \
-                -type f \
-                -iname "index.html" \
-                | head -n 1
-              )"
+              INDEX_PATH="$(find /tmp/html-source -type f -iname "index.html" | head -n 1)"
 
               if [ -z "$INDEX_PATH" ]; then
-
                 echo "ERROR: ZIP does not contain index.html"
-
                 exit 1
               fi
 
@@ -390,127 +334,143 @@ jobs:
           rm -f app/src/main/assets/gradle.properties
 
           if [ ! -f app/src/main/assets/index.html ]; then
-
             echo "ERROR: Final assets/index.html missing."
-
             exit 1
           fi
 
-          echo "HTML copied to APK assets."
+          echo "HTML source prepared successfully."
 
-      - name: WebView JavaScript compatibility fix
+      - name: Convert JavaScript for Android WebView
         shell: bash
         run: |
           set -e
 
-          python3 <<'PY'
-          from pathlib import Path
+          echo "Installing JavaScript compatibility compiler..."
 
-          html_file = Path("app/src/main/assets/index.html")
+          rm -rf /tmp/html-apk-babel
+          mkdir -p /tmp/html-apk-babel
 
-          text = html_file.read_text(
-              encoding="utf-8"
-          )
+          pushd /tmp/html-apk-babel >/dev/null
 
-          original = text
+          npm init -y >/dev/null 2>&1
 
-          # --------------------------------------------------
-          # Android WebView compatibility
-          #
-          # IMPORTANT:
-          # This edits ONLY app/src/main/assets/index.html.
-          #
-          # The original repository index.html is untouched.
-          # --------------------------------------------------
+          npm install \
+            --silent \
+            --no-audit \
+            --no-fund \
+            @babel/core@7 \
+            @babel/preset-env@7
 
-          text = text.replace(
-              "currentOverEvents[0]?.bowler||''",
-              "(currentOverEvents[0] ? currentOverEvents[0].bowler : '')||''"
-          )
+          popd >/dev/null
 
-          text = text.replace(
-              "currentOverEvents[0]?.bowler || ''",
-              "(currentOverEvents[0] ? currentOverEvents[0].bowler : '') || ''"
-          )
+          echo "Converting APK copy of JavaScript..."
 
-          html_file.write_text(
-              text,
-              encoding="utf-8"
-          )
+          NODE_PATH=/tmp/html-apk-babel/node_modules node <<'NODE'
+          const fs = require("fs");
+          const babel = require("@babel/core");
+          const presetEnv = require("@babel/preset-env");
 
-          print("Original HTML length:", len(original))
-          print("APK HTML length:", len(text))
+          const file = "app/src/main/assets/index.html";
 
-          if "?." in text:
-              print(
-                  "WARNING: Other optional-chaining syntax still exists."
-              )
-          else:
-              print(
-                  "Optional chaining removed from APK HTML."
-              )
+          let html = fs.readFileSync(file, "utf8");
+          let converted = 0;
 
-          print(
-              "Original repository HTML was NOT modified."
-          )
-          PY
+          html = html.replace(
+            /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi,
+            function(full, attrs, javascript) {
 
-      - name: Verify packaged HTML
-        shell: bash
-        run: |
-          set -e
+              if (/\bsrc\s*=/i.test(attrs)) {
+                return full;
+              }
+
+              if (!javascript.trim()) {
+                return full;
+              }
+
+              try {
+
+                const result = babel.transformSync(
+                  javascript,
+                  {
+                    presets: [
+                      [
+                        presetEnv,
+                        {
+                          targets: {
+                            chrome: "49"
+                          },
+                          modules: false,
+                          bugfixes: true
+                        }
+                      ]
+                    ],
+
+                    sourceType: "unambiguous",
+                    babelrc: false,
+                    configFile: false,
+                    comments: true,
+                    compact: false
+                  }
+                );
+
+                converted++;
+
+                return "<script" +
+                       attrs +
+                       ">\n" +
+                       result.code +
+                       "\n</script>";
+
+              } catch (error) {
+
+                console.error("JavaScript conversion failed:");
+                console.error(error.message);
+
+                process.exit(1);
+              }
+            }
+          );
+
+          fs.writeFileSync(file, html, "utf8");
+
+          console.log(
+            "Converted inline JavaScript blocks:",
+            converted
+          );
+
+          if (converted === 0) {
+            console.error(
+              "ERROR: No inline JavaScript was converted."
+            );
+            process.exit(1);
+          }
+
+          console.log(
+            "Android WebView compatibility conversion complete."
+          );
+          NODE
 
           test -f app/src/main/assets/index.html
 
-          echo "Checking packaged HTML..."
-
-          if grep -Fq "?." app/src/main/assets/index.html; then
-
-            echo "ERROR: Unsupported optional chaining still found."
-
-            grep -n -F "?." \
-              app/src/main/assets/index.html || true
-
-            exit 1
-          fi
-
-          grep -q "function triggerFileInput" \
-            app/src/main/assets/index.html
-
-          grep -q "function checkScorerAuthBeforeAction" \
-            app/src/main/assets/index.html
-
-          grep -q "function populateDropdowns" \
-            app/src/main/assets/index.html
-
-          echo "Required Cricket functions found."
-
-          echo "Packaged HTML compatibility check passed."
+          echo "APK HTML JavaScript converted successfully."
+          echo "Original repository index.html remains unchanged."
 
       - name: Setup Gradle 8.9
         shell: bash
         run: |
           set -e
 
-          curl \
-            -L \
-            --fail \
-            --retry 3 \
-            --retry-delay 2 \
+          curl -L --fail --retry 3 --retry-delay 2 \
             -o /tmp/gradle.zip \
             https://services.gradle.org/distributions/gradle-8.9-bin.zip
 
           rm -rf /tmp/gradle-8.9
 
-          unzip -q \
-            /tmp/gradle.zip \
-            -d /tmp
+          unzip -q /tmp/gradle.zip -d /tmp
 
-          test -x \
-            /tmp/gradle-8.9/bin/gradle
+          test -x /tmp/gradle-8.9/bin/gradle
 
-          /tmp/gradle-8.9/bin/gradle \
-            --version
+          /tmp/gradle-8.9/bin/gradle --version
 
       - name: Build Debug APK
         shell: bash
@@ -530,14 +490,11 @@ jobs:
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
-
             echo "ERROR: APK was not created."
-
             exit 1
           fi
 
           echo "APK BUILD SUCCESSFUL"
-
           ls -lh "$APK"
 
       - name: Upload APK
