@@ -6,10 +6,11 @@ const admin = require("firebase-admin");
 const GITHUB_API = "https://api.github.com";
 
 /* -------------------------------------------------------
-   Firebase Admin initialization
+   Firebase Admin initialization - Realtime Database
 ------------------------------------------------------- */
 
 function getFirebaseAdmin() {
+
   if (admin.apps.length) {
     return admin.app();
   }
@@ -34,9 +35,16 @@ function getFirebaseAdmin() {
     );
   }
 
+  const databaseURL =
+    process.env.FIREBASE_DATABASE_URL ||
+    `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`;
+
   return admin.initializeApp({
     credential:
-      admin.credential.cert(serviceAccount)
+      admin.credential.cert(serviceAccount),
+
+    databaseURL:
+      databaseURL
   });
 }
 
@@ -45,17 +53,26 @@ function getFirebaseAdmin() {
 ------------------------------------------------------- */
 
 function json(statusCode, data) {
+
   return {
     statusCode,
+
     headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      "Content-Type":
+        "application/json",
+
+      "Access-Control-Allow-Origin":
+        "*",
+
       "Access-Control-Allow-Headers":
         "Content-Type, Authorization",
+
       "Access-Control-Allow-Methods":
         "POST, OPTIONS"
     },
-    body: JSON.stringify(data)
+
+    body:
+      JSON.stringify(data)
   };
 }
 
@@ -64,6 +81,7 @@ function json(statusCode, data) {
 ------------------------------------------------------- */
 
 async function authenticateUser(event) {
+
   getFirebaseAdmin();
 
   const authHeader =
@@ -72,26 +90,35 @@ async function authenticateUser(event) {
     "";
 
   if (!authHeader.startsWith("Bearer ")) {
+
     throw new Error(
       "Authentication required. Please login first."
     );
   }
 
   const idToken =
-    authHeader.substring(7).trim();
+    authHeader
+      .substring(7)
+      .trim();
 
   if (!idToken) {
+
     throw new Error(
       "Authentication token is missing."
     );
   }
 
   try {
+
     const decoded =
-      await admin.auth().verifyIdToken(idToken);
+      await admin
+        .auth()
+        .verifyIdToken(idToken);
 
     return decoded;
+
   } catch (error) {
+
     console.error(
       "Firebase token verification failed:",
       error
@@ -104,50 +131,81 @@ async function authenticateUser(event) {
 }
 
 /* -------------------------------------------------------
-   Get customer profile from Firestore
+   Get customer profile from Realtime Database
 ------------------------------------------------------- */
 
-async function getUserProfile(uid, decodedUser) {
+async function getUserProfile(
+  uid,
+  decodedUser
+) {
+
+  getFirebaseAdmin();
+
   const db =
-    admin.firestore();
+    admin.database();
 
   const userRef =
-    db.collection("users").doc(uid);
+    db.ref(`users/${uid}`);
 
   const snapshot =
-    await userRef.get();
+    await userRef.once("value");
 
-  if (!snapshot.exists) {
+  if (!snapshot.exists()) {
 
     const email =
       decodedUser.email || "";
 
     const profile = {
+
       uid,
+
       email,
+
       name:
         decodedUser.name ||
-        email.split("@")[0] ||
-        "Customer",
-      role: "customer",
-      plan: "free",
-      buildLimit: 3,
-      buildsUsed: 0,
-      blocked: false,
+        (
+          email
+            ? email.split("@")[0]
+            : "Customer"
+        ),
+
+      role:
+        "customer",
+
+      plan:
+        "free",
+
+      buildLimit:
+        3,
+
+      buildsUsed:
+        0,
+
+      blocked:
+        false,
+
       createdAt:
-        admin.firestore.FieldValue.serverTimestamp(),
+        Date.now(),
+
       updatedAt:
-        admin.firestore.FieldValue.serverTimestamp()
+        Date.now()
     };
 
-    await userRef.set(profile);
+    await userRef.set(
+      profile
+    );
 
     return profile;
   }
 
+  const existingUser =
+    snapshot.val() || {};
+
   return {
+
     uid,
-    ...snapshot.data()
+
+    ...existingUser
   };
 }
 
@@ -156,6 +214,7 @@ async function getUserProfile(uid, decodedUser) {
 ------------------------------------------------------- */
 
 function getBoundary(contentType) {
+
   const match =
     contentType.match(
       /boundary=(?:"([^"]+)"|([^;]+))/i
@@ -170,17 +229,21 @@ function parseMultipart(
   buffer,
   contentType
 ) {
+
   const boundary =
     getBoundary(contentType);
 
   if (!boundary) {
+
     throw new Error(
       "Multipart boundary not found."
     );
   }
 
   const delimiter =
-    Buffer.from("--" + boundary);
+    Buffer.from(
+      "--" + boundary
+    );
 
   const parts = [];
 
@@ -199,7 +262,8 @@ function parseMultipart(
     }
 
     const nextStart =
-      index + delimiter.length;
+      index +
+      delimiter.length;
 
     if (
       buffer[nextStart] === 45 &&
@@ -215,6 +279,7 @@ function parseMultipart(
       buffer[partStart] === 13 &&
       buffer[partStart + 1] === 10
     ) {
+
       partStart += 2;
     }
 
@@ -239,23 +304,35 @@ function parseMultipart(
       part[part.length - 2] === 13 &&
       part[part.length - 1] === 10
     ) {
+
       part =
-        part.slice(0, -2);
+        part.slice(
+          0,
+          -2
+        );
     }
 
     const headerEnd =
       part.indexOf(
-        Buffer.from("\r\n\r\n")
+        Buffer.from(
+          "\r\n\r\n"
+        )
       );
 
     if (headerEnd === -1) {
-      start = nextBoundary;
+
+      start =
+        nextBoundary;
+
       continue;
     }
 
     const headerText =
       part
-        .slice(0, headerEnd)
+        .slice(
+          0,
+          headerEnd
+        )
         .toString("utf8");
 
     const body =
@@ -276,6 +353,7 @@ function parseMultipart(
     if (nameMatch) {
 
       parts.push({
+
         name:
           nameMatch[1],
 
@@ -284,11 +362,13 @@ function parseMultipart(
             ? filenameMatch[1]
             : null,
 
-        data: body
+        data:
+          body
       });
     }
 
-    start = nextBoundary;
+    start =
+      nextBoundary;
   }
 
   return parts;
@@ -307,6 +387,7 @@ async function githubRequest(
     process.env.GITHUB_TOKEN;
 
   if (!token) {
+
     throw new Error(
       "GITHUB_TOKEN is not configured in Netlify."
     );
@@ -316,9 +397,11 @@ async function githubRequest(
     await fetch(
       GITHUB_API + path,
       {
+
         ...options,
 
         headers: {
+
           "Accept":
             "application/vnd.github+json",
 
@@ -339,11 +422,14 @@ async function githubRequest(
   let data;
 
   try {
+
     data =
       text
         ? JSON.parse(text)
         : {};
+
   } catch {
+
     data = {
       raw: text
     };
@@ -365,126 +451,164 @@ async function githubRequest(
 ------------------------------------------------------- */
 
 exports.handler =
-  async function (event) {
+  async function(event) {
 
-    /* OPTIONS */
+  /* -----------------------------------------------------
+     OPTIONS
+  ----------------------------------------------------- */
 
-    if (
-      event.httpMethod ===
-      "OPTIONS"
-    ) {
-      return {
-        statusCode: 204,
+  if (
+    event.httpMethod ===
+    "OPTIONS"
+  ) {
 
-        headers: {
-          "Access-Control-Allow-Origin":
-            "*",
+    return {
 
-          "Access-Control-Allow-Headers":
-            "Content-Type, Authorization",
+      statusCode:
+        204,
 
-          "Access-Control-Allow-Methods":
-            "POST, OPTIONS"
-        },
+      headers: {
 
-        body: ""
-      };
-    }
+        "Access-Control-Allow-Origin":
+          "*",
 
-    /* Only POST */
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization",
 
-    if (
-      event.httpMethod !==
-      "POST"
-    ) {
-      return json(405, {
+        "Access-Control-Allow-Methods":
+          "POST, OPTIONS"
+      },
+
+      body:
+        ""
+    };
+  }
+
+  /* -----------------------------------------------------
+     Only POST
+  ----------------------------------------------------- */
+
+  if (
+    event.httpMethod !==
+    "POST"
+  ) {
+
+    return json(
+      405,
+      {
+        success:
+          false,
+
         error:
           "Only POST is allowed."
-      });
-    }
+      }
+    );
+  }
 
-    try {
+  try {
 
-      /* -------------------------------------------------
-         1. Authenticate customer
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       1. Authenticate customer
+    --------------------------------------------------- */
 
-      const decodedUser =
-        await authenticateUser(
-          event
-        );
+    const decodedUser =
+      await authenticateUser(
+        event
+      );
 
-      const uid =
-        decodedUser.uid;
+    const uid =
+      decodedUser.uid;
 
-      /* -------------------------------------------------
-         2. Get user profile
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       2. Get user profile
+    --------------------------------------------------- */
 
-      const user =
-        await getUserProfile(
-          uid,
-          decodedUser
-        );
+    const user =
+      await getUserProfile(
+        uid,
+        decodedUser
+      );
 
-      /* -------------------------------------------------
-         3. Check blocked account
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       3. Check blocked account
+    --------------------------------------------------- */
 
-      if (
-        user.blocked === true
-      ) {
+    if (
+      user.blocked === true
+    ) {
 
-        return json(403, {
-          success: false,
+      return json(
+        403,
+        {
+
+          success:
+            false,
+
           error:
             "Your account has been blocked. Please contact the administrator."
-        });
-      }
+        }
+      );
+    }
 
-      /* -------------------------------------------------
-         4. Check plan
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       4. Check plan
+    --------------------------------------------------- */
 
-      const plan =
-        String(
-          user.plan || "free"
-        ).toLowerCase();
+    const plan =
+      String(
+        user.plan ||
+        "free"
+      ).toLowerCase();
 
-      let buildLimit =
-        Number(
-          user.buildLimit
-        );
+    let buildLimit =
+      Number(
+        user.buildLimit
+      );
 
-      let buildsUsed =
-        Number(
-          user.buildsUsed || 0
-        );
+    let buildsUsed =
+      Number(
+        user.buildsUsed ||
+        0
+      );
 
-      if (
-        !Number.isFinite(buildLimit) ||
-        buildLimit < 0
-      ) {
-        buildLimit = 3;
-      }
+    if (
+      !Number.isFinite(
+        buildLimit
+      ) ||
+      buildLimit < 0
+    ) {
 
-      if (
-        !Number.isFinite(buildsUsed) ||
-        buildsUsed < 0
-      ) {
-        buildsUsed = 0;
-      }
+      buildLimit =
+        3;
+    }
 
-      /* -------------------------------------------------
-         5. Check build limit
-      ------------------------------------------------- */
+    if (
+      !Number.isFinite(
+        buildsUsed
+      ) ||
+      buildsUsed < 0
+    ) {
 
-      if (
-        buildsUsed >= buildLimit
-      ) {
+      buildsUsed =
+        0;
+    }
 
-        return json(403, {
-          success: false,
+    /* ---------------------------------------------------
+       5. Check build limit
+    --------------------------------------------------- */
+
+    if (
+      buildsUsed >=
+      buildLimit
+    ) {
+
+      return json(
+        403,
+        {
+
+          success:
+            false,
+
           code:
             "BUILD_LIMIT_REACHED",
 
@@ -492,436 +616,554 @@ exports.handler =
             `Your ${plan} plan build limit has been reached.`,
 
           plan,
+
           buildLimit,
+
           buildsUsed
-        });
-      }
+        }
+      );
+    }
 
-      /* -------------------------------------------------
-         6. GitHub settings
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       6. GitHub settings
+    --------------------------------------------------- */
 
-      const owner =
-        process.env.GITHUB_OWNER;
+    const owner =
+      process.env.GITHUB_OWNER;
 
-      const repo =
-        process.env.GITHUB_REPO;
+    const repo =
+      process.env.GITHUB_REPO;
 
-      const workflow =
-        process.env.GITHUB_WORKFLOW ||
-        "build-apk.yml";
+    const workflow =
+      process.env.GITHUB_WORKFLOW ||
+      "build-apk.yml";
 
-      if (!owner || !repo) {
+    if (
+      !owner ||
+      !repo
+    ) {
 
-        return json(500, {
+      return json(
+        500,
+        {
+
+          success:
+            false,
+
           error:
             "GITHUB_OWNER or GITHUB_REPO is not configured."
-        });
-      }
+        }
+      );
+    }
 
-      /* -------------------------------------------------
-         7. Check upload
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       7. Check upload
+    --------------------------------------------------- */
 
-      if (!event.body) {
+    if (!event.body) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "No upload data received."
-        });
-      }
+        }
+      );
+    }
 
-      let bodyBuffer;
+    let bodyBuffer;
 
-      if (
-        event.isBase64Encoded
-      ) {
+    if (
+      event.isBase64Encoded
+    ) {
 
-        bodyBuffer =
-          Buffer.from(
-            event.body,
-            "base64"
-          );
+      bodyBuffer =
+        Buffer.from(
+          event.body,
+          "base64"
+        );
 
-      } else {
+    } else {
 
-        bodyBuffer =
-          Buffer.from(
-            event.body,
-            "utf8"
-          );
-      }
+      bodyBuffer =
+        Buffer.from(
+          event.body,
+          "utf8"
+        );
+    }
 
-      const contentType =
-        event.headers[
-          "content-type"
-        ] ||
-        event.headers[
-          "Content-Type"
-        ] ||
-        "";
+    const contentType =
+      event.headers[
+        "content-type"
+      ] ||
+      event.headers[
+        "Content-Type"
+      ] ||
+      "";
 
-      if (
-        !contentType
-          .toLowerCase()
-          .includes(
-            "multipart/form-data"
-          )
-      ) {
+    if (
+      !contentType
+        .toLowerCase()
+        .includes(
+          "multipart/form-data"
+        )
+    ) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "Please upload an HTML or ZIP file."
-        });
-      }
+        }
+      );
+    }
 
-      /* -------------------------------------------------
-         8. Parse multipart
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       8. Parse multipart
+    --------------------------------------------------- */
 
-      const parts =
-        parseMultipart(
-          bodyBuffer,
-          contentType
-        );
+    const parts =
+      parseMultipart(
+        bodyBuffer,
+        contentType
+      );
 
-      const filePart =
-        parts.find(
-          p =>
-            p.name === "file" &&
-            p.filename
-        );
+    const filePart =
+      parts.find(
+        p =>
+          p.name ===
+          "file" &&
+          p.filename
+      );
 
-      const appNamePart =
-        parts.find(
-          p =>
-            p.name === "appName"
-        );
+    const appNamePart =
+      parts.find(
+        p =>
+          p.name ===
+          "appName"
+      );
 
-      const packageNamePart =
-        parts.find(
-          p =>
-            p.name ===
-            "packageName"
-        );
+    const packageNamePart =
+      parts.find(
+        p =>
+          p.name ===
+          "packageName"
+      );
 
-      if (!filePart) {
+    if (!filePart) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "No HTML or ZIP file was uploaded."
-        });
-      }
+        }
+      );
+    }
 
-      const appName =
-        appNamePart
-          ? appNamePart.data
-              .toString("utf8")
-              .trim()
-          : "";
+    const appName =
+      appNamePart
+        ? appNamePart.data
+            .toString("utf8")
+            .trim()
+        : "";
 
-      const packageName =
-        packageNamePart
-          ? packageNamePart.data
-              .toString("utf8")
-              .trim()
-          : "";
+    const packageName =
+      packageNamePart
+        ? packageNamePart.data
+            .toString("utf8")
+            .trim()
+        : "";
 
-      /* -------------------------------------------------
-         9. Validate app name
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       9. Validate app name
+    --------------------------------------------------- */
 
-      if (!appName) {
+    if (!appName) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "App name is required."
-        });
-      }
+        }
+      );
+    }
 
-      if (
-        appName.length > 60
-      ) {
+    if (
+      appName.length >
+      60
+    ) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "App name must be 60 characters or less."
-        });
-      }
+        }
+      );
+    }
 
-      /* -------------------------------------------------
-         10. Validate package name
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       10. Validate package name
+    --------------------------------------------------- */
 
-      if (
-        !/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/
-          .test(packageName)
-      ) {
+    if (
+      !/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/
+        .test(packageName)
+    ) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "Invalid Android package name. Example: com.example.myapp"
-        });
-      }
+        }
+      );
+    }
 
-      /* -------------------------------------------------
-         11. File name + extension
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       11. File name + extension
+    --------------------------------------------------- */
 
-      const originalName =
-        filePart.filename
-          .replace(
-            /[^a-zA-Z0-9._-]/g,
-            "_"
-          );
+    const originalName =
+      filePart.filename
+        .replace(
+          /[^a-zA-Z0-9._-]/g,
+          "_"
+        );
 
-      const extension =
-        originalName
-          .split(".")
-          .pop()
-          .toLowerCase();
+    const extension =
+      originalName
+        .split(".")
+        .pop()
+        .toLowerCase();
 
-      if (
-        ![
-          "html",
-          "htm",
-          "zip"
-        ].includes(extension)
-      ) {
+    if (
+      ![
+        "html",
+        "htm",
+        "zip"
+      ].includes(extension)
+    ) {
 
-        return json(400, {
+      return json(
+        400,
+        {
+
+          success:
+            false,
+
           error:
             "Only HTML, HTM and ZIP files are supported."
-        });
+        }
+      );
+    }
+
+    /* ---------------------------------------------------
+       12. Build ID
+    --------------------------------------------------- */
+
+    const buildId =
+      crypto.randomUUID();
+
+    /* ---------------------------------------------------
+       13. Temporary branch
+       
+       IMPORTANT:
+       build-status.js searches for:
+       build/{buildId}
+    --------------------------------------------------- */
+
+    const branchName =
+      "build/" +
+      buildId;
+
+    /* ---------------------------------------------------
+       14. Upload paths
+    --------------------------------------------------- */
+
+    const uploadPath =
+      `uploads/${buildId}/${originalName}`;
+
+    const metadataPath =
+      `uploads/${buildId}/build.json`;
+
+    /* ---------------------------------------------------
+       15. Check repository
+    --------------------------------------------------- */
+
+    const repository =
+      await githubRequest(
+        `/repos/${owner}/${repo}`
+      );
+
+    const defaultBranch =
+      repository.default_branch ||
+      "main";
+
+    /* ---------------------------------------------------
+       16. Get default branch SHA
+    --------------------------------------------------- */
+
+    const ref =
+      await githubRequest(
+        `/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`
+      );
+
+    const baseSha =
+      ref.object.sha;
+
+    /* ---------------------------------------------------
+       17. Create temporary branch
+    --------------------------------------------------- */
+
+    await githubRequest(
+      `/repos/${owner}/${repo}/git/refs`,
+      {
+
+        method:
+          "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+
+            ref:
+              `refs/heads/${branchName}`,
+
+            sha:
+              baseSha
+          })
       }
+    );
 
-      /* -------------------------------------------------
-         12. Build ID
-      ------------------------------------------------- */
+    /* ---------------------------------------------------
+       18. Upload HTML / ZIP
+    --------------------------------------------------- */
 
-      const buildId =
-        crypto.randomUUID();
+    await githubRequest(
+      `/repos/${owner}/${repo}/contents/${uploadPath}`,
+      {
 
-      /* -------------------------------------------------
-         13. Temporary branch
-      ------------------------------------------------- */
+        method:
+          "PUT",
 
-      const branchName =
-        "apk-build-" +
-        buildId;
+        headers: {
 
-      /* -------------------------------------------------
-         14. Upload paths
-      ------------------------------------------------- */
+          "Content-Type":
+            "application/json"
+        },
 
-      const uploadPath =
-        `uploads/${buildId}/${originalName}`;
+        body:
+          JSON.stringify({
 
-      const metadataPath =
-        `uploads/${buildId}/build.json`;
+            message:
+              `Upload project ${buildId}`,
 
-      /* -------------------------------------------------
-         15. Check repository
-      ------------------------------------------------- */
-
-      const repository =
-        await githubRequest(
-          `/repos/${owner}/${repo}`
-        );
-
-      const defaultBranch =
-        repository.default_branch ||
-        "main";
-
-      /* -------------------------------------------------
-         16. Get default branch SHA
-      ------------------------------------------------- */
-
-      const ref =
-        await githubRequest(
-          `/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`
-        );
-
-      const baseSha =
-        ref.object.sha;
-
-      /* -------------------------------------------------
-         17. Create temporary branch
-      ------------------------------------------------- */
-
-      await githubRequest(
-        `/repos/${owner}/${repo}/git/refs`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-              ref:
-                `refs/heads/${branchName}`,
-
-              sha:
-                baseSha
-            })
-        }
-      );
-
-      /* -------------------------------------------------
-         18. Upload HTML / ZIP
-      ------------------------------------------------- */
-
-      await githubRequest(
-        `/repos/${owner}/${repo}/contents/${uploadPath}`,
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              message:
-                `Upload project ${buildId}`,
-
-              content:
-                filePart.data
-                  .toString(
-                    "base64"
-                  ),
-
-              branch:
-                branchName
-            })
-        }
-      );
-
-      /* -------------------------------------------------
-         19. Save build metadata
-      ------------------------------------------------- */
-
-      const metadata = {
-
-        buildId,
-
-        uid,
-
-        email:
-          decodedUser.email ||
-          user.email ||
-          "",
-
-        appName,
-
-        packageName,
-
-        originalFileName:
-          originalName,
-
-        extension,
-
-        plan,
-
-        createdAt:
-          new Date()
-            .toISOString()
-      };
-
-      await githubRequest(
-        `/repos/${owner}/${repo}/contents/${metadataPath}`,
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              message:
-                `Save build metadata ${buildId}`,
-
-              content:
-                Buffer.from(
-                  JSON.stringify(
-                    metadata,
-                    null,
-                    2
-                  )
-                ).toString(
+            content:
+              filePart.data
+                .toString(
                   "base64"
                 ),
 
-              branch:
-                branchName
-            })
+            branch:
+              branchName
+          })
+      }
+    );
+
+    /* ---------------------------------------------------
+       19. Save build metadata
+    --------------------------------------------------- */
+
+    const metadata = {
+
+      buildId,
+
+      uid,
+
+      email:
+        decodedUser.email ||
+        user.email ||
+        "",
+
+      appName,
+
+      packageName,
+
+      originalFileName:
+        originalName,
+
+      extension,
+
+      plan,
+
+      createdAt:
+        new Date()
+          .toISOString()
+    };
+
+    await githubRequest(
+      `/repos/${owner}/${repo}/contents/${metadataPath}`,
+      {
+
+        method:
+          "PUT",
+
+        headers: {
+
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+
+            message:
+              `Save build metadata ${buildId}`,
+
+            content:
+              Buffer.from(
+                JSON.stringify(
+                  metadata,
+                  null,
+                  2
+                )
+              ).toString(
+                "base64"
+              ),
+
+            branch:
+              branchName
+          })
+      }
+    );
+
+    /* ---------------------------------------------------
+       20. Start GitHub Actions
+    --------------------------------------------------- */
+
+    await githubRequest(
+      `/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`,
+      {
+
+        method:
+          "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+
+            ref:
+              branchName,
+
+            inputs: {
+
+              buildId:
+                buildId
+            }
+          })
+      }
+    );
+
+    /* ---------------------------------------------------
+       21. Increase buildsUsed
+       
+       Realtime Database transaction
+    --------------------------------------------------- */
+
+    getFirebaseAdmin();
+
+    const db =
+      admin.database();
+
+    const buildsUsedRef =
+      db.ref(
+        `users/${uid}/buildsUsed`
+      );
+
+    const transactionResult =
+      await buildsUsedRef.transaction(
+        currentValue => {
+
+          const current =
+            Number(
+              currentValue || 0
+            );
+
+          return current + 1;
         }
       );
 
-      /* -------------------------------------------------
-         20. Start GitHub Actions
-      ------------------------------------------------- */
-
-      await githubRequest(
-        `/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              ref:
-                branchName,
-
-              inputs: {
-                buildId:
-                  buildId
-              }
-            })
-        }
+    await db
+      .ref(
+        `users/${uid}/updatedAt`
+      )
+      .set(
+        Date.now()
       );
 
-      /* -------------------------------------------------
-         21. Increase buildsUsed
-      ------------------------------------------------- */
+    let newBuildsUsed =
+      buildsUsed + 1;
 
-      await admin
-        .firestore()
-        .collection("users")
-        .doc(uid)
-        .update({
+    if (
+      transactionResult &&
+      transactionResult.snapshot
+    ) {
 
-          buildsUsed:
-            admin.firestore
-              .FieldValue
-              .increment(1),
+      newBuildsUsed =
+        Number(
+          transactionResult
+            .snapshot
+            .val()
+        ) || newBuildsUsed;
+    }
 
-          updatedAt:
-            admin.firestore
-              .FieldValue
-              .serverTimestamp()
-        });
+    /* ---------------------------------------------------
+       22. Success
+    --------------------------------------------------- */
 
-      /* -------------------------------------------------
-         22. Success
-      ------------------------------------------------- */
+    return json(
+      200,
+      {
 
-      return json(200, {
-
-        success: true,
+        success:
+          true,
 
         buildId,
 
@@ -933,23 +1175,28 @@ exports.handler =
         buildLimit,
 
         buildsUsed:
-          buildsUsed + 1
-      });
+          newBuildsUsed
+      }
+    );
 
-    } catch (error) {
+  } catch (error) {
 
-      console.error(
-        "START BUILD ERROR:",
-        error
-      );
+    console.error(
+      "START BUILD ERROR:",
+      error
+    );
 
-      return json(500, {
+    return json(
+      500,
+      {
 
-        success: false,
+        success:
+          false,
 
         error:
           error.message ||
           "Unable to start APK build."
-      });
-    }
-  };
+      }
+    );
+  }
+};
