@@ -1,6 +1,29 @@
-// netlify/functions/admin.js
-
 const admin = require("firebase-admin");
+
+function getFirebaseApp() {
+
+  if (admin.apps.length) {
+    return admin.app();
+  }
+
+  const serviceAccount =
+    JSON.parse(
+      process.env.FIREBASE_SERVICE_ACCOUNT
+    );
+
+  return admin.initializeApp({
+    credential:
+      admin.credential.cert(serviceAccount),
+
+    databaseURL:
+      process.env.FIREBASE_DATABASE_URL ||
+      `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`
+  });
+}
+
+getFirebaseApp();
+
+const db = admin.database();
 
 function json(statusCode, data) {
   return {
@@ -17,189 +40,39 @@ function json(statusCode, data) {
   };
 }
 
-function initializeFirebase() {
-  if (admin.apps.length > 0) {
-    return admin.app();
-  }
+async function verifyRequest(event) {
 
-  const serviceAccount =
-    process.env.FIREBASE_SERVICE_ACCOUNT;
+  const authHeader =
+    event.headers.authorization ||
+    event.headers.Authorization;
 
-  if (!serviceAccount) {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT is not configured in Netlify."
-    );
-  }
-
-  let credentials;
-
-  try {
-    credentials = JSON.parse(serviceAccount);
-  } catch {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT contains invalid JSON."
-    );
-  }
-
-  return admin.initializeApp({
-    credential:
-      admin.credential.cert(credentials)
-  });
-}
-
-async function verifyUser(event) {
-  const authorization =
-    event.headers?.authorization ||
-    event.headers?.Authorization ||
-    "";
-
-  if (!authorization.startsWith("Bearer ")) {
+  if (!authHeader ||
+      !authHeader.startsWith("Bearer ")) {
     throw new Error(
       "Authorization token is required."
     );
   }
 
   const token =
-    authorization.substring(7).trim();
+    authHeader.substring(7);
 
-  if (!token) {
-    throw new Error(
-      "Authorization token is missing."
-    );
-  }
-
-  const app = initializeFirebase();
-
-  return admin
-    .auth(app)
+  return await admin
+    .auth()
     .verifyIdToken(token);
 }
 
-async function verifyAdmin(event) {
-  const user =
-    await verifyUser(event);
+async function getUser(uid) {
 
-  const app = initializeFirebase();
+  const snapshot =
+    await db.ref(`users/${uid}`)
+      .once("value");
 
-  /*
-    The owner email is kept in Netlify
-    environment variables.
-
-    This prevents a normal customer from
-    making themselves an administrator.
-  */
-
-  const ownerEmail =
-    process.env.OWNER_EMAIL;
-
-  if (!ownerEmail) {
-    throw new Error(
-      "OWNER_EMAIL is not configured in Netlify."
-    );
-  }
-
-  const userEmail =
-    (user.email || "").toLowerCase();
-
-  const configuredOwner =
-    ownerEmail.toLowerCase().trim();
-
-  /*
-    Owner is always allowed.
-  */
-
-  if (userEmail === configuredOwner) {
-    return {
-      user,
-      role: "owner"
-    };
-  }
-
-  /*
-    Other administrators can be granted
-    admin role through Firestore.
-  */
-
-  const db =
-    admin.firestore(app);
-
-  const userDoc =
-    await db
-      .collection("users")
-      .doc(user.uid)
-      .get();
-
-  if (!userDoc.exists) {
-    throw new Error(
-      "Administrator account was not found."
-    );
-  }
-
-  const data =
-    userDoc.data() || {};
-
-  if (
-    data.blocked === true
-  ) {
-    throw new Error(
-      "This account is blocked."
-    );
-  }
-
-  if (
-    data.role !== "admin" &&
-    data.role !== "owner"
-  ) {
-    throw new Error(
-      "Administrator permission required."
-    );
-  }
-
-  return {
-    user,
-    role:
-      data.role || "admin"
-  };
+  return snapshot.exists()
+    ? snapshot.val()
+    : null;
 }
 
-function sanitizeUser(uid, data) {
-  return {
-    uid,
-
-    email:
-      data.email || "",
-
-    name:
-      data.name || "User",
-
-    plan:
-      data.plan || "free",
-
-    buildLimit:
-      Number(data.buildLimit ?? 3),
-
-    buildsUsed:
-      Number(data.buildsUsed ?? 0),
-
-    blocked:
-      data.blocked === true,
-
-    role:
-      data.role || "customer",
-
-    createdAt:
-      data.createdAt || null,
-
-    updatedAt:
-      data.updatedAt || null
-  };
-}
-
-exports.handler = async function (event) {
-
-  /*
-    CORS
-  */
+exports.handler = async function(event) {
 
   if (event.httpMethod === "OPTIONS") {
     return {
@@ -215,418 +88,296 @@ exports.handler = async function (event) {
     };
   }
 
-  if (
-    event.httpMethod !== "GET" &&
-    event.httpMethod !== "POST"
-  ) {
-    return json(405, {
-      success: false,
-      error:
-        "Only GET, POST and OPTIONS are allowed."
-    });
-  }
-
   try {
 
-    /*
-      Verify Owner/Admin
-    */
+    const decoded =
+      await verifyRequest(event);
 
-    const adminUser =
-      await verifyAdmin(event);
+    const ownerEmail =
+      process.env.OWNER_EMAIL || "";
 
-    const app =
-      initializeFirebase();
+    const isOwner =
+      decoded.email &&
+      decoded.email.toLowerCase() ===
+      ownerEmail.toLowerCase();
 
-    const db =
-      admin.firestore(app);
+    const currentUser =
+      await getUser(decoded.uid);
 
-    /*
-      GET
-      Returns customer/user list.
-    */
+    const isAdmin =
+      isOwner ||
+      (
+        currentUser &&
+        currentUser.role === "admin"
+      );
 
-    if (event.httpMethod === "GET") {
-
-      const snapshot =
-        await db
-          .collection("users")
-          .orderBy(
-            "createdAt",
-            "desc"
-          )
-          .limit(500)
-          .get();
-
-      const users =
-        snapshot.docs.map(doc =>
-          sanitizeUser(
-            doc.id,
-            doc.data()
-          )
-        );
-
-      return json(200, {
-        success: true,
-
-        admin: {
-          uid:
-            adminUser.user.uid,
-
-          email:
-            adminUser.user.email || "",
-
-          role:
-            adminUser.role
-        },
-
-        totalUsers:
-          users.length,
-
-        users
+    if (!isAdmin) {
+      return json(403, {
+        success: false,
+        error: "Admin access required."
       });
     }
 
     /*
-      POST
-      Admin actions.
-    */
+     * GET USERS
+     */
+
+    if (event.httpMethod === "GET") {
+
+      const snapshot =
+        await db.ref("users")
+          .once("value");
+
+      const data =
+        snapshot.val() || {};
+
+      const users =
+        Object.values(data)
+          .sort(
+            (a, b) =>
+              (b.createdAt || 0) -
+              (a.createdAt || 0)
+          )
+          .slice(0, 500);
+
+      return json(200, {
+        success: true,
+        users: users
+      });
+    }
+
+    /*
+     * POST ACTION
+     */
+
+    if (event.httpMethod !== "POST") {
+      return json(405, {
+        success: false,
+        error: "Method not allowed."
+      });
+    }
 
     let body = {};
 
     try {
       body =
-        event.body
-          ? JSON.parse(event.body)
-          : {};
+        JSON.parse(event.body || "{}");
     } catch {
       return json(400, {
         success: false,
-        error:
-          "Invalid JSON request body."
+        error: "Invalid JSON."
       });
     }
 
     const action =
       body.action;
 
-    /*
-      Required user ID for
-      user-management actions.
-    */
-
-    const uid =
-      typeof body.uid === "string"
-        ? body.uid.trim()
-        : "";
+    const targetUid =
+      body.uid ||
+      body.userId;
 
     if (!action) {
       return json(400, {
         success: false,
-        error:
-          "Admin action is required."
+        error: "Action is required."
       });
     }
 
+    if (!targetUid) {
+      return json(400, {
+        success: false,
+        error: "User ID is required."
+      });
+    }
+
+    const targetRef =
+      db.ref(`users/${targetUid}`);
+
+    const targetSnapshot =
+      await targetRef.once("value");
+
+    if (!targetSnapshot.exists()) {
+      return json(404, {
+        success: false,
+        error: "User not found."
+      });
+    }
+
+    const target =
+      targetSnapshot.val();
+
     /*
-      BLOCK USER
-    */
+     * BLOCK
+     */
 
     if (action === "blockUser") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          blocked: true,
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      await targetRef.update({
+        blocked: true,
+        updatedAt: Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
-        message:
-          "User has been blocked."
+        message: "User blocked."
       });
     }
 
     /*
-      UNBLOCK USER
-    */
+     * UNBLOCK
+     */
 
     if (action === "unblockUser") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          blocked: false,
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      await targetRef.update({
+        blocked: false,
+        updatedAt: Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
-        message:
-          "User has been unblocked."
+        message: "User unblocked."
       });
     }
 
     /*
-      CHANGE PLAN
-    */
+     * CHANGE PLAN
+     */
 
     if (action === "changePlan") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      const allowedPlans = [
-        "free",
-        "pro",
-        "premium"
-      ];
-
       const plan =
-        typeof body.plan === "string"
-          ? body.plan.toLowerCase().trim()
-          : "";
+        body.plan;
 
-      if (!allowedPlans.includes(plan)) {
+      if (
+        !["free", "pro", "premium"]
+          .includes(plan)
+      ) {
         return json(400, {
           success: false,
-          error:
-            "Invalid plan. Use free, pro or premium."
+          error: "Invalid plan."
         });
       }
 
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          plan,
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      const limits = {
+        free: 3,
+        pro: 30,
+        premium: 100
+      };
+
+      await targetRef.update({
+        plan: plan,
+        buildLimit:
+          limits[plan],
+        updatedAt:
+          Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
-        plan,
         message:
-          "User plan has been updated."
+          "Plan changed successfully."
       });
     }
 
     /*
-      CHANGE BUILD LIMIT
-    */
+     * CHANGE BUILD LIMIT
+     */
 
     if (action === "changeBuildLimit") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      const buildLimit =
+      const limit =
         Number(body.buildLimit);
 
       if (
-        !Number.isInteger(buildLimit) ||
-        buildLimit < 0 ||
-        buildLimit > 100000
+        !Number.isInteger(limit) ||
+        limit < 0
       ) {
         return json(400, {
           success: false,
-          error:
-            "Build limit must be a whole number between 0 and 100000."
+          error: "Invalid build limit."
         });
       }
 
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          buildLimit,
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      await targetRef.update({
+        buildLimit: limit,
+        updatedAt: Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
-        buildLimit,
         message:
-          "Build limit has been updated."
+          "Build limit changed."
       });
     }
 
     /*
-      RESET BUILD COUNTER
-    */
+     * RESET BUILDS
+     */
 
     if (action === "resetBuilds") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          buildsUsed: 0,
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      await targetRef.update({
+        buildsUsed: 0,
+        updatedAt: Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
         message:
-          "Build counter has been reset."
+          "Build count reset."
       });
     }
 
     /*
-      MAKE ADMIN
-    */
+     * MAKE ADMIN
+     */
 
     if (action === "makeAdmin") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      /*
-        Only the Owner can create another
-        administrator.
-      */
-
-      if (
-        adminUser.role !== "owner"
-      ) {
+      if (!isOwner) {
         return json(403, {
           success: false,
           error:
-            "Only the Owner can create administrators."
+            "Only the owner can make admins."
         });
       }
 
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          role: "admin",
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      await targetRef.update({
+        role: "admin",
+        updatedAt: Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
         message:
-          "User has been promoted to administrator."
+          "User is now an admin."
       });
     }
 
     /*
-      REMOVE ADMIN
-    */
+     * REMOVE ADMIN
+     */
 
     if (action === "removeAdmin") {
 
-      if (!uid) {
-        return json(400, {
-          success: false,
-          error:
-            "User UID is required."
-        });
-      }
-
-      if (
-        adminUser.role !== "owner"
-      ) {
+      if (!isOwner) {
         return json(403, {
           success: false,
           error:
-            "Only the Owner can remove administrators."
+            "Only the owner can remove admins."
         });
       }
 
-      if (
-        uid === adminUser.user.uid
-      ) {
-        return json(400, {
-          success: false,
-          error:
-            "The Owner cannot remove their own owner access."
-        });
-      }
-
-      await db
-        .collection("users")
-        .doc(uid)
-        .update({
-          role: "customer",
-          updatedAt:
-            admin.firestore.FieldValue
-              .serverTimestamp()
-        });
+      await targetRef.update({
+        role: "customer",
+        updatedAt: Date.now()
+      });
 
       return json(200, {
         success: true,
-        action,
-        uid,
         message:
-          "Administrator access has been removed."
+          "Admin removed."
       });
     }
 
@@ -643,27 +394,11 @@ exports.handler = async function (event) {
       error
     );
 
-    const message =
-      error.message ||
-      "Administrator request failed.";
-
-    const status =
-      message.includes(
-        "Administrator permission"
-      ) ||
-      message.includes(
-        "blocked"
-      )
-        ? 403
-        : message.includes(
-            "Authorization"
-          )
-        ? 401
-        : 500;
-
-    return json(status, {
+    return json(500, {
       success: false,
-      error: message
+      error:
+        error.message ||
+        "Admin operation failed."
     });
   }
 };
