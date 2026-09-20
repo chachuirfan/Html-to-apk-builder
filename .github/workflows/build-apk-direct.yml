@@ -12,6 +12,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -23,8 +24,11 @@ jobs:
         run: |
           set -e
           BUILD_ID="${GITHUB_REF_NAME#build/}"
-          [ -n "$BUILD_ID" ] || BUILD_ID="manual-build"
+          if [ -z "$BUILD_ID" ]; then
+            BUILD_ID="manual-build"
+          fi
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+          echo "BUILD ID: $BUILD_ID"
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -36,52 +40,80 @@ jobs:
         shell: bash
         run: |
           set -e
+
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+
           if [ -x "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
             SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
           else
             SDKMANAGER="$(command -v sdkmanager)"
           fi
-          test -n "$SDKMANAGER"
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager not found"
+            exit 1
+          fi
+
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+          "$SDKMANAGER" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Create Android project files
         shell: bash
         run: |
           set -e
-          mkdir -p app/src/main/java/com/htmlapk/builder app/src/main/res/layout app/src/main/res/values app/src/main/assets
 
-          cat > settings.gradle <<'GRADLE'
+          mkdir -p app/src/main/java/com/htmlapk/builder
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/assets
+
+          cat > settings.gradle <<'EOF'
           pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
           }
+
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
           }
+
           rootProject.name = "HtmlToApkBuilder"
           include(":app")
-          GRADLE
+          EOF
 
-          cat > build.gradle <<'GRADLE'
+          cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
-          GRADLE
+          EOF
 
-          cat > gradle.properties <<'PROPS'
+          cat > gradle.properties <<'EOF'
           org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
           android.useAndroidX=true
           android.nonTransitiveRClass=true
           android.enableJetifier=true
-          PROPS
+          EOF
 
-          cat > app/build.gradle <<'GRADLE'
-          plugins { id 'com.android.application' }
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
           android {
               namespace 'com.htmlapk.builder'
               compileSdk 35
+
               defaultConfig {
                   applicationId "com.htmlapk.builder"
                   minSdk 23
@@ -89,15 +121,24 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
+
               buildTypes {
-                  debug { minifyEnabled false }
-                  release { minifyEnabled false; shrinkResources false }
+                  debug {
+                      minifyEnabled false
+                  }
+
+                  release {
+                      minifyEnabled false
+                      shrinkResources false
+                  }
               }
+
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
               }
           }
+
           configurations.configureEach {
               resolutionStrategy {
                   force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
@@ -105,119 +146,239 @@ jobs:
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
               }
           }
+
           dependencies {
               implementation('androidx.appcompat:appcompat:1.7.0') {
                   exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
                   exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
               }
+
               implementation('androidx.webkit:webkit:1.12.1') {
                   exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
                   exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
               }
+
               implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
           }
-          GRADLE
+          EOF
 
-          cat > app/src/main/AndroidManifest.xml <<'XML'
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-              <application android:allowBackup="true" android:hardwareAccelerated="true" android:usesCleartextTraffic="true" android:label="HTML APK" android:theme="@style/AppTheme">
-                  <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="unspecified" android:configChanges="orientation|screenSize|keyboardHidden">
+              <uses-permission
+                  android:name="android.permission.READ_EXTERNAL_STORAGE"
+                  android:maxSdkVersion="32" />
+
+              <application
+                  android:allowBackup="true"
+                  android:hardwareAccelerated="true"
+                  android:usesCleartextTraffic="true"
+                  android:label="HTML APK"
+                  android:theme="@style/AppTheme">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="unspecified"
+                      android:configChanges="orientation|screenSize|keyboardHidden">
+
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          XML
 
-          cat > app/src/main/res/values/styles.xml <<'XML'
+                  </activity>
+
+              </application>
+
+          </manifest>
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
                   <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#2196F3</item>
+                  <item name="colorAccent">#2196F3</item>
                   <item name="android:statusBarColor">#000000</item>
                   <item name="android:navigationBarColor">#000000</item>
                   <item name="android:windowLightStatusBar">false</item>
               </style>
-          </resources>
-          XML
 
-          cat > app/src/main/res/layout/activity_main.xml <<'XML'
+          </resources>
+          EOF
+
+          cat > app/src/main/res/layout/activity_main.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
-              <WebView android:id="@+id/webView" android:layout_width="match_parent" android:layout_height="match_parent" />
+          <FrameLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+              <WebView
+                  android:id="@+id/webView"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" />
+
           </FrameLayout>
-          XML
+          EOF
 
       - name: Verify MainActivity.java
         shell: bash
         run: |
           set -e
-          test -f app/src/main/java/com/htmlapk/builder/MainActivity.java || { echo "ERROR: MainActivity.java missing"; exit 1; }
+
+          MAIN_ACTIVITY="app/src/main/java/com/htmlapk/builder/MainActivity.java"
+
+          if [ ! -f "$MAIN_ACTIVITY" ]; then
+            echo "ERROR: MainActivity.java is missing"
+            echo "Expected path:"
+            echo "$MAIN_ACTIVITY"
+            exit 1
+          fi
+
+          echo "MainActivity.java found successfully."
 
       - name: Prepare HTML source
         shell: bash
         run: |
           set -e
+
           rm -rf app/src/main/assets/*
           mkdir -p app/src/main/assets
-          if [ -f index.html ]; then
-            find . -maxdepth 1 -mindepth 1 ! -name '.git' ! -name '.github' ! -name 'app' ! -name 'build.gradle' ! -name 'settings.gradle' ! -name 'gradle.properties' -exec cp -a {} app/src/main/assets/ \;
+
+          if [ -f "index.html" ]; then
+
+            echo "Root index.html found."
+
+            find . -maxdepth 1 -mindepth 1 \
+              ! -name ".git" \
+              ! -name ".github" \
+              ! -name "app" \
+              ! -name "gradle" \
+              ! -name "build.gradle" \
+              ! -name "settings.gradle" \
+              ! -name "gradle.properties" \
+              -exec cp -a {} app/src/main/assets/ \;
+
           else
+
             SOURCE_DIR=""
+
             for DIR in www web website public source src; do
-              if [ -f "$DIR/index.html" ]; then SOURCE_DIR="$DIR"; break; fi
+              if [ -f "$DIR/index.html" ]; then
+                SOURCE_DIR="$DIR"
+                break
+              fi
             done
+
             if [ -n "$SOURCE_DIR" ]; then
+
+              echo "HTML source found in: $SOURCE_DIR"
               cp -a "$SOURCE_DIR"/. app/src/main/assets/
+
             else
+
               ZIP_FILE=""
+
               for FILE in *.zip uploads/*.zip; do
-                if [ -f "$FILE" ]; then ZIP_FILE="$FILE"; break; fi
+                if [ -f "$FILE" ]; then
+                  ZIP_FILE="$FILE"
+                  break
+                fi
               done
-              [ -n "$ZIP_FILE" ] || { echo "ERROR: No index.html or ZIP found"; exit 1; }
-              rm -rf /tmp/html-source && mkdir -p /tmp/html-source
+
+              if [ -z "$ZIP_FILE" ]; then
+                echo "ERROR: No index.html or ZIP file found."
+                exit 1
+              fi
+
+              echo "ZIP found: $ZIP_FILE"
+
+              rm -rf /tmp/html-source
+              mkdir -p /tmp/html-source
+
               unzip -q "$ZIP_FILE" -d /tmp/html-source
-              INDEX_PATH="$(find /tmp/html-source -type f -iname index.html | head -n 1)"
-              [ -n "$INDEX_PATH" ] || { echo "ERROR: ZIP has no index.html"; exit 1; }
-              cp -a "$(dirname "$INDEX_PATH")"/. app/src/main/assets/
+
+              INDEX_PATH="$(find /tmp/html-source -type f -iname "index.html" | head -n 1)"
+
+              if [ -z "$INDEX_PATH" ]; then
+                echo "ERROR: ZIP does not contain index.html"
+                exit 1
+              fi
+
+              INDEX_DIR="$(dirname "$INDEX_PATH")"
+
+              echo "index.html found inside ZIP:"
+              echo "$INDEX_PATH"
+
+              cp -a "$INDEX_DIR"/. app/src/main/assets/
+
             fi
           fi
-          rm -rf app/src/main/assets/.git app/src/main/assets/.github
-          rm -f app/src/main/assets/build.gradle app/src/main/assets/settings.gradle app/src/main/assets/gradle.properties
-          test -f app/src/main/assets/index.html
+
+          rm -rf app/src/main/assets/.git
+          rm -rf app/src/main/assets/.github
+
+          rm -f app/src/main/assets/build.gradle
+          rm -f app/src/main/assets/settings.gradle
+          rm -f app/src/main/assets/gradle.properties
+
+          if [ ! -f app/src/main/assets/index.html ]; then
+            echo "ERROR: Final assets/index.html missing."
+            exit 1
+          fi
+
+          echo "HTML source prepared successfully."
 
       - name: Setup Gradle 8.9
         shell: bash
         run: |
           set -e
-          curl -L --fail --retry 3 --retry-delay 2 -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
+
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o /tmp/gradle.zip \
+            https://services.gradle.org/distributions/gradle-8.9-bin.zip
+
           rm -rf /tmp/gradle-8.9
+
           unzip -q /tmp/gradle.zip -d /tmp
+
           test -x /tmp/gradle-8.9/bin/gradle
+
+          /tmp/gradle-8.9/bin/gradle --version
 
       - name: Build Debug APK
         shell: bash
         run: |
           set -e
-          /tmp/gradle-8.9/bin/gradle --no-daemon clean assembleDebug
+
+          /tmp/gradle-8.9/bin/gradle \
+            --no-daemon \
+            clean \
+            assembleDebug
 
       - name: Verify APK
         shell: bash
         run: |
           set -e
+
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK"
+
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not created."
+            exit 1
+          fi
+
+          echo "APK BUILD SUCCESSFUL"
           ls -lh "$APK"
 
       - name: Upload APK
