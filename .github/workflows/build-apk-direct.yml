@@ -15,8 +15,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ============================================================
+      # CHECKOUT
+      # ============================================================
+
       - name: Checkout Build
         uses: actions/checkout@v4
+
+
+      # ============================================================
+      # BUILD ID
+      # ============================================================
 
       - name: Get Build ID
         id: build_info
@@ -32,10 +42,15 @@ jobs:
 
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
 
-          echo "================================"
-          echo "Build ID: $BUILD_ID"
-          echo "Branch: $BRANCH"
-          echo "================================"
+          echo "========================================"
+          echo "BUILD ID: $BUILD_ID"
+          echo "BRANCH:   $BRANCH"
+          echo "========================================"
+
+
+      # ============================================================
+      # JAVA
+      # ============================================================
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -43,8 +58,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+
+      # ============================================================
+      # ANDROID SDK
+      # ============================================================
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
+
 
       - name: Install Android SDK
         shell: bash
@@ -56,9 +77,15 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
+
+      # ============================================================
+      # READ BUILD METADATA
+      # ============================================================
+
       - name: Read Build Metadata
         shell: bash
         run: |
+
           META=""
 
           if [ -f "build-meta.json" ]; then
@@ -67,8 +94,11 @@ jobs:
             META="metadata.json"
           fi
 
+
           if [ -n "$META" ]; then
+
             echo "Metadata file found: $META"
+
 
             APP_NAME=$(python3 -c '
           import json
@@ -76,11 +106,13 @@ jobs:
           print(d.get("appName","Irfan Web App"))
           ')
 
+
             PACKAGE_NAME=$(python3 -c '
           import json
           d=json.load(open("'"$META"'"))
           print(d.get("packageName","com.irfan.webapp"))
           ')
+
 
             VERSION_NAME=$(python3 -c '
           import json
@@ -88,11 +120,13 @@ jobs:
           print(d.get("versionName","1.0"))
           ')
 
+
             VERSION_CODE=$(python3 -c '
           import json
           d=json.load(open("'"$META"'"))
           print(d.get("versionCode",1))
           ')
+
 
             MIN_SDK=$(python3 -c '
           import json
@@ -100,17 +134,20 @@ jobs:
           print(d.get("minSdk",23))
           ')
 
+
             ORIENTATION=$(python3 -c '
           import json
           d=json.load(open("'"$META"'"))
           print(d.get("orientation","portrait"))
           ')
 
+
             BUILD_TYPE=$(python3 -c '
           import json
           d=json.load(open("'"$META"'"))
           print(d.get("buildType","debug"))
           ')
+
 
             AGP=$(python3 -c '
           import json
@@ -119,6 +156,7 @@ jobs:
           ')
 
           else
+
             echo "No metadata file found. Using defaults."
 
             APP_NAME="Irfan Web App"
@@ -129,7 +167,9 @@ jobs:
             ORIENTATION="portrait"
             BUILD_TYPE="debug"
             AGP="8.7.3"
+
           fi
+
 
           echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
@@ -140,363 +180,721 @@ jobs:
           echo "BUILD_TYPE=$BUILD_TYPE" >> "$GITHUB_ENV"
           echo "AGP=$AGP" >> "$GITHUB_ENV"
 
+
+      # ============================================================
+      # PREPARE WEB SOURCE
+      #
+      # Supports:
+      # - index.html
+      # - CSS
+      # - JS
+      # - images
+      # - audio
+      # - video
+      # - folders
+      # - www/
+      # - web/
+      # - public/
+      # - source/
+      # - ZIP files
+      # ============================================================
+
       - name: Prepare Web Source
         shell: bash
         run: |
+
           rm -rf app/src/main/assets
+
           mkdir -p app/src/main/assets
 
-          SOURCE_DIR=""
+          SOURCE_READY=0
 
-          echo "================================"
-          echo "Preparing Web Source"
-          echo "================================"
 
-          # ---------------------------------------------------------
-          # 1. ZIP SOURCE
-          # ---------------------------------------------------------
-          ZIP_FILE=$(find . -maxdepth 1 -type f \( -iname "*.zip" \) | head -n 1 || true)
+          echo "========================================"
+          echo "PREPARING WEB SOURCE"
+          echo "========================================"
+
+
+          # ----------------------------------------------------------
+          # OPTION 1: ZIP FILE
+          # ----------------------------------------------------------
+
+          ZIP_FILE=$(find . \
+            -maxdepth 1 \
+            -type f \
+            \( -iname "*.zip" \) \
+            | head -n 1 || true)
+
 
           if [ -n "$ZIP_FILE" ]; then
-            echo "ZIP source found: $ZIP_FILE"
+
+            echo "ZIP FILE FOUND:"
+            echo "$ZIP_FILE"
+
 
             rm -rf /tmp/html-source
+
             mkdir -p /tmp/html-source
+
 
             unzip -q "$ZIP_FILE" -d /tmp/html-source
 
-            INDEX_FILE=$(find /tmp/html-source -type f \( -iname "index.html" -o -iname "index.htm" \) | head -n 1 || true)
+
+            INDEX_FILE=$(find /tmp/html-source \
+              -type f \
+              \( -iname "index.html" -o -iname "index.htm" \) \
+              | head -n 1 || true)
+
 
             if [ -n "$INDEX_FILE" ]; then
+
               SOURCE_DIR=$(dirname "$INDEX_FILE")
-              echo "ZIP web root: $SOURCE_DIR"
+
+              echo "ZIP WEB ROOT:"
+              echo "$SOURCE_DIR"
+
 
               cp -R "$SOURCE_DIR"/. app/src/main/assets/
+
+
+              SOURCE_READY=1
+
             fi
+
           fi
 
-          # ---------------------------------------------------------
-          # 2. ROOT HTML SOURCE
-          # ---------------------------------------------------------
-          if [ -z "$SOURCE_DIR" ] && [ -f "index.html" ]; then
-            echo "Root index.html found."
+
+          # ----------------------------------------------------------
+          # OPTION 2: ROOT index.html
+          #
+          # IMPORTANT:
+          # Copy ALL companion files too.
+          #
+          # Example:
+          # index.html
+          # style.css
+          # app.js
+          # images/
+          # audio/
+          # video/
+          # etc.
+          # ----------------------------------------------------------
+
+          if [ "$SOURCE_READY" -eq 0 ] && [ -f "index.html" ]; then
+
+            echo "ROOT index.html FOUND"
 
             shopt -s dotglob nullglob
 
+
             for ITEM in *; do
+
               case "$ITEM" in
+
                 .git)
                   continue
                   ;;
+
                 .github)
                   continue
                   ;;
+
                 app)
                   continue
                   ;;
+
                 final-apk)
                   continue
                   ;;
+
                 build-meta.json)
                   continue
                   ;;
+
                 metadata.json)
                   continue
                   ;;
+
                 build.gradle)
                   continue
                   ;;
+
                 settings.gradle)
                   continue
                   ;;
+
                 gradle.properties)
                   continue
                   ;;
+
                 *)
                   cp -R "$ITEM" app/src/main/assets/
                   ;;
+
               esac
+
             done
 
-            SOURCE_DIR="ROOT"
+
+            SOURCE_READY=1
+
           fi
 
-          # ---------------------------------------------------------
-          # 3. COMMON WEB FOLDERS
-          # ---------------------------------------------------------
-          if [ -z "$SOURCE_DIR" ]; then
+
+          # ----------------------------------------------------------
+          # OPTION 3: COMMON WEB FOLDERS
+          # ----------------------------------------------------------
+
+          if [ "$SOURCE_READY" -eq 0 ]; then
+
             for DIR in www web website public source src; do
+
               if [ -d "$DIR" ]; then
-                INDEX_FILE=$(find "$DIR" -type f \( -iname "index.html" -o -iname "index.htm" \) | head -n 1 || true)
+
+                INDEX_FILE=$(find "$DIR" \
+                  -type f \
+                  \( -iname "index.html" -o -iname "index.htm" \) \
+                  | head -n 1 || true)
+
 
                 if [ -n "$INDEX_FILE" ]; then
-                  echo "Using web folder: $DIR"
+
+                  echo "WEB FOLDER FOUND:"
+                  echo "$DIR"
+
+
                   cp -R "$DIR"/. app/src/main/assets/
-                  SOURCE_DIR="$DIR"
+
+
+                  SOURCE_READY=1
+
                   break
+
                 fi
+
               fi
+
             done
+
           fi
 
-          # ---------------------------------------------------------
-          # 4. UPLOADS FOLDER
-          # ---------------------------------------------------------
-          if [ -z "$SOURCE_DIR" ] && [ -d "uploads" ]; then
-            echo "Checking uploads folder..."
 
-            FIRST_DIR=$(find uploads -mindepth 1 -maxdepth 1 -type d | head -n 1 || true)
+          # ----------------------------------------------------------
+          # OPTION 4: uploads/
+          # ----------------------------------------------------------
+
+          if [ "$SOURCE_READY" -eq 0 ] && [ -d "uploads" ]; then
+
+            echo "CHECKING uploads/"
+
+            FIRST_DIR=$(find uploads \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -type d \
+              | head -n 1 || true)
+
 
             if [ -n "$FIRST_DIR" ]; then
-              INDEX_FILE=$(find "$FIRST_DIR" -type f \( -iname "index.html" -o -iname "index.htm" \) | head -n 1 || true)
+
+              INDEX_FILE=$(find "$FIRST_DIR" \
+                -type f \
+                \( -iname "index.html" -o -iname "index.htm" \) \
+                | head -n 1 || true)
+
 
               if [ -n "$INDEX_FILE" ]; then
-                echo "Using uploaded source: $FIRST_DIR"
+
+                echo "UPLOAD SOURCE:"
+                echo "$FIRST_DIR"
+
+
                 cp -R "$FIRST_DIR"/. app/src/main/assets/
-                SOURCE_DIR="$FIRST_DIR"
+
+
+                SOURCE_READY=1
+
               fi
+
             fi
+
           fi
 
-          # ---------------------------------------------------------
-          # 5. FINAL CHECK
-          # ---------------------------------------------------------
+
+          # ----------------------------------------------------------
+          # FINAL CHECK
+          # ----------------------------------------------------------
+
           if [ ! -f "app/src/main/assets/index.html" ]; then
-            FIRST_HTML=$(find app/src/main/assets -type f \( -iname "index.html" -o -iname "index.htm" \) | head -n 1 || true)
+
+            FIRST_HTML=$(find app/src/main/assets \
+              -type f \
+              \( -iname "index.html" -o -iname "index.htm" \) \
+              | head -n 1 || true)
+
 
             if [ -n "$FIRST_HTML" ]; then
-              cp "$FIRST_HTML" "app/src/main/assets/index.html"
+
+              cp "$FIRST_HTML" \
+                "app/src/main/assets/index.html"
+
             fi
+
           fi
+
 
           if [ ! -f "app/src/main/assets/index.html" ]; then
+
             echo ""
-            echo "ERROR: No index.html found."
+            echo "========================================"
+            echo "ERROR: index.html NOT FOUND"
+            echo "========================================"
             echo ""
-            echo "Repository files:"
+
             find . -maxdepth 4 -type f | sort
+
             exit 1
+
           fi
 
+
           echo ""
-          echo "================================"
+          echo "========================================"
           echo "WEB SOURCE READY"
-          echo "================================"
-
-          echo "index.html:"
-          ls -lh app/src/main/assets/index.html
-
+          echo "========================================"
           echo ""
-          echo "Web files:"
-          find app/src/main/assets -maxdepth 4 -type f | sort
+
+          find app/src/main/assets \
+            -maxdepth 6 \
+            -type f \
+            -print | sort
+
+
+      # ============================================================
+      # CREATE ANDROID PROJECT
+      # ============================================================
 
       - name: Create Android Project
         shell: bash
         run: |
+
           mkdir -p app/src/main/java
+
           mkdir -p app/src/main/res/layout
+
           mkdir -p app/src/main/res/values
 
+
           JAVA_PATH=$(echo "$PACKAGE_NAME" | tr '.' '/')
+
           mkdir -p "app/src/main/java/$JAVA_PATH"
 
+
+          # ----------------------------------------------------------
+          # SETTINGS
+          # ----------------------------------------------------------
+
           cat > settings.gradle <<'EOF'
+
           pluginManagement {
+
               repositories {
+
                   google()
+
                   mavenCentral()
+
                   gradlePluginPortal()
+
               }
+
           }
+
 
           dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+              repositoriesMode.set(
+                  RepositoriesMode.FAIL_ON_PROJECT_REPOS
+              )
 
               repositories {
+
                   google()
+
                   mavenCentral()
+
               }
+
           }
+
 
           rootProject.name = "HTMLToAPKBuilder"
 
           include(":app")
+
           EOF
+
+
+          # ----------------------------------------------------------
+          # ROOT BUILD
+          # ----------------------------------------------------------
 
           cat > build.gradle <<EOF
+
           plugins {
+
               id "com.android.application" version "$AGP" apply false
+
           }
+
           EOF
+
+
+          # ----------------------------------------------------------
+          # GRADLE PROPERTIES
+          # ----------------------------------------------------------
 
           cat > gradle.properties <<'EOF'
+
           org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+
           android.useAndroidX=true
+
           android.nonTransitiveRClass=true
+
           EOF
 
+
+          # ----------------------------------------------------------
+          # APP BUILD
+          # ----------------------------------------------------------
+
           cat > app/build.gradle <<EOF
+
           plugins {
+
               id "com.android.application"
+
           }
 
+
           android {
+
               namespace "$PACKAGE_NAME"
 
               compileSdk 35
 
+
               defaultConfig {
+
                   applicationId "$PACKAGE_NAME"
+
                   minSdk $MIN_SDK
+
                   targetSdk 35
+
                   versionCode $VERSION_CODE
+
                   versionName "$VERSION_NAME"
+
               }
+
           }
+
 
           dependencies {
+
               implementation "androidx.appcompat:appcompat:1.7.1"
+
               implementation "androidx.activity:activity:1.10.1"
+
+              implementation "androidx.webkit:webkit:1.12.1"
+
           }
+
           EOF
 
+
+          # ----------------------------------------------------------
+          # ORIENTATION
+          # ----------------------------------------------------------
+
           case "$ORIENTATION" in
+
             landscape)
               SCREEN_ORIENTATION="landscape"
               ;;
+
             sensor)
               SCREEN_ORIENTATION="fullSensor"
               ;;
+
             *)
               SCREEN_ORIENTATION="portrait"
               ;;
+
           esac
 
+
+          # ----------------------------------------------------------
+          # ANDROID MANIFEST
+          # ----------------------------------------------------------
+
           cat > app/src/main/AndroidManifest.xml <<EOF
+
           <?xml version="1.0" encoding="utf-8"?>
 
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <manifest
+              xmlns:android="http://schemas.android.com/apk/res/android">
 
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-              <uses-permission android:name="android.permission.CAMERA"/>
-              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+              <uses-permission
+                  android:name="android.permission.INTERNET"/>
+
+
+              <uses-permission
+                  android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+
+              <uses-permission
+                  android:name="android.permission.CAMERA"/>
+
+
+              <uses-permission
+                  android:name="android.permission.RECORD_AUDIO"/>
+
 
               <application
+
                   android:allowBackup="false"
-                  android:usesCleartextTraffic="true"
+
                   android:hardwareAccelerated="true"
+
+                  android:usesCleartextTraffic="true"
+
                   android:label="@string/app_name"
+
                   android:theme="@style/AppTheme">
 
+
                   <activity
+
                       android:name=".MainActivity"
+
                       android:screenOrientation="$SCREEN_ORIENTATION"
+
                       android:exported="true">
 
+
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
+
+                          <action
+                              android:name="android.intent.action.MAIN"/>
+
+                          <category
+                              android:name="android.intent.category.LAUNCHER"/>
+
                       </intent-filter>
+
 
                   </activity>
 
+
               </application>
 
+
           </manifest>
+
           EOF
+
+
+          # ----------------------------------------------------------
+          # LAYOUT
+          # ----------------------------------------------------------
 
           cat > app/src/main/res/layout/activity_main.xml <<'EOF'
+
           <?xml version="1.0" encoding="utf-8"?>
 
-          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <FrameLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+
               android:layout_width="match_parent"
+
               android:layout_height="match_parent">
 
+
               <WebView
+
                   android:id="@+id/webView"
+
                   android:layout_width="match_parent"
+
                   android:layout_height="match_parent"/>
 
+
           </FrameLayout>
+
           EOF
 
+
+          # ----------------------------------------------------------
+          # STYLE
+          # ----------------------------------------------------------
+
           cat > app/src/main/res/values/styles.xml <<'EOF'
+
           <resources>
 
-              <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+              <style
+                  name="AppTheme"
+                  parent="Theme.AppCompat.NoActionBar">
 
-                  <item name="android:fontFamily">sans</item>
+                  <item
+                      name="android:fontFamily">
+                      sans
+                  </item>
 
-                  <item name="android:colorAccent">#12D6A0</item>
+                  <item
+                      name="android:colorAccent">
+                      #12D6A0
+                  </item>
 
-                  <item name="android:statusBarColor">#05090D</item>
+                  <item
+                      name="android:statusBarColor">
+                      #05090D
+                  </item>
 
-                  <item name="android:navigationBarColor">#05090D</item>
+                  <item
+                      name="android:navigationBarColor">
+                      #05090D
+                  </item>
 
-                  <item name="android:windowLightStatusBar">false</item>
-
-                  <item name="android:windowActionModeOverlay">true</item>
+                  <item
+                      name="android:windowLightStatusBar">
+                      false
+                  </item>
 
               </style>
 
           </resources>
+
           EOF
 
+
+          # ----------------------------------------------------------
+          # APP NAME
+          # ----------------------------------------------------------
+
           python3 - <<PY
+
           import html
 
           app_name = html.escape("""$APP_NAME""")
+
 
           with open(
               "app/src/main/res/values/strings.xml",
               "w",
               encoding="utf-8"
           ) as f:
+
               f.write(
                   '<resources>\n'
                   f'    <string name="app_name">{app_name}</string>\n'
                   '</resources>\n'
               )
+
           PY
+
+
+      # ============================================================
+      # MAIN ACTIVITY
+      #
+      # IMPORTANT:
+      #
+      # HTML is NOT loaded with file:// anymore.
+      #
+      # WebViewAssetLoader gives it:
+      #
+      # https://appassets.androidplatform.net/assets/index.html
+      #
+      # This makes it a secure HTTPS origin for Web APIs such as:
+      # - getUserMedia
+      # - MediaRecorder
+      # - Firebase
+      # - localStorage
+      # - DOM storage
+      # ============================================================
 
       - name: Create MainActivity
         shell: bash
         run: |
+
           JAVA_PATH=$(echo "$PACKAGE_NAME" | tr '.' '/')
 
+
           cat > "app/src/main/java/$JAVA_PATH/MainActivity.java" <<EOF
+
           package $PACKAGE_NAME;
 
+
           import android.Manifest;
+
           import android.app.DownloadManager;
+
           import android.content.Intent;
+
           import android.content.pm.PackageManager;
+
           import android.net.Uri;
+
           import android.os.Build;
+
           import android.os.Bundle;
+
           import android.os.Environment;
-          import android.view.View;
+
           import android.webkit.CookieManager;
+
           import android.webkit.PermissionRequest;
+
           import android.webkit.ValueCallback;
+
           import android.webkit.WebChromeClient;
+
           import android.webkit.WebResourceRequest;
+
+          import android.webkit.WebResourceResponse;
+
           import android.webkit.WebSettings;
+
           import android.webkit.WebView;
+
           import android.webkit.WebViewClient;
+
 
           import androidx.appcompat.app.AppCompatActivity;
 
+          import androidx.webkit.WebViewAssetLoader;
+
+
           public class MainActivity extends AppCompatActivity {
+
 
               private WebView webView;
 
+
               private ValueCallback<Uri[]> fileCallback;
+
+
+              private WebViewAssetLoader assetLoader;
+
 
               private static final int FILE_CHOOSER_REQUEST = 1001;
 
+
               private static final int PERMISSION_REQUEST = 2001;
+
 
 
               @Override
@@ -504,81 +902,118 @@ jobs:
 
                   super.onCreate(savedInstanceState);
 
+
                   setContentView(R.layout.activity_main);
+
 
                   webView = findViewById(R.id.webView);
 
 
-                  // -------------------------------------------------
-                  // ANDROID RUNTIME PERMISSIONS
-                  // -------------------------------------------------
+
+                  // ==================================================
+                  // WEBVIEW ASSET LOADER
+                  //
+                  // This is the most important change.
+                  //
+                  // The HTML is served as:
+                  //
+                  // https://appassets.androidplatform.net/assets/
+                  //
+                  // instead of:
+                  //
+                  // file:///android_asset/
+                  // ==================================================
+
+                  assetLoader =
+                      new WebViewAssetLoader.Builder()
+
+                          .addPathHandler(
+                              "/assets/",
+                              new WebViewAssetLoader.AssetsPathHandler(this)
+                          )
+
+                          .build();
+
+
+
+                  // ==================================================
+                  // REQUEST CAMERA + MICROPHONE
+                  // ==================================================
 
                   requestAppPermissions();
 
 
-                  // -------------------------------------------------
-                  // WEBVIEW SETTINGS
-                  // -------------------------------------------------
 
-                  WebSettings settings = webView.getSettings();
+                  // ==================================================
+                  // WEBVIEW SETTINGS
+                  // ==================================================
+
+                  WebSettings settings =
+                      webView.getSettings();
+
 
                   settings.setJavaScriptEnabled(true);
 
+
                   settings.setDomStorageEnabled(true);
+
 
                   settings.setDatabaseEnabled(true);
 
+
                   settings.setAllowFileAccess(true);
+
 
                   settings.setAllowContentAccess(true);
 
+
                   settings.setLoadsImagesAutomatically(true);
+
 
                   settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
+
                   settings.setSupportMultipleWindows(false);
+
 
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
+
                   settings.setBuiltInZoomControls(false);
+
 
                   settings.setDisplayZoomControls(false);
 
-                  settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+                  settings.setCacheMode(
+                      WebSettings.LOAD_DEFAULT
+                  );
 
 
-                  // -------------------------------------------------
-                  // IMPORTANT FOR HTML + FIREBASE FROM FILE://
-                  // -------------------------------------------------
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-
-                      settings.setAllowFileAccessFromFileURLs(true);
-
-                      settings.setAllowUniversalAccessFromFileURLs(true);
-                  }
-
-
-                  // -------------------------------------------------
-                  // HTTPS / HTTP COMPATIBILITY
-                  // -------------------------------------------------
+                  // ==================================================
+                  // HTTPS / WEB SECURITY
+                  // ==================================================
 
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
                       settings.setMixedContentMode(
                           WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                       );
+
                   }
 
 
-                  // -------------------------------------------------
+
+                  // ==================================================
                   // COOKIES
-                  // -------------------------------------------------
+                  // ==================================================
 
                   CookieManager cookieManager =
                       CookieManager.getInstance();
 
+
                   cookieManager.setAcceptCookie(true);
+
 
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
@@ -586,142 +1021,234 @@ jobs:
                           webView,
                           true
                       );
+
                   }
 
 
-                  // -------------------------------------------------
+
+                  // ==================================================
                   // WEBVIEW CLIENT
-                  // -------------------------------------------------
+                  // ==================================================
 
-                  webView.setWebViewClient(new WebViewClient() {
-
-                      @Override
-                      public boolean shouldOverrideUrlLoading(
-                              WebView view,
-                              WebResourceRequest request) {
-
-                          return false;
-                      }
-
-                      @Override
-                      public boolean shouldOverrideUrlLoading(
-                              WebView view,
-                              String url) {
-
-                          return false;
-                      }
-                  });
+                  webView.setWebViewClient(
+                      new WebViewClient() {
 
 
-                  // -------------------------------------------------
-                  // WEB CHROME CLIENT
-                  // -------------------------------------------------
+                          @Override
+                          public WebResourceResponse shouldInterceptRequest(
+                                  WebView view,
+                                  WebResourceRequest request) {
 
-                  webView.setWebChromeClient(new WebChromeClient() {
-
-                      @Override
-                      public boolean onShowFileChooser(
-                              WebView webView,
-                              ValueCallback<Uri[]> filePathCallback,
-                              FileChooserParams fileChooserParams) {
-
-                          if (fileCallback != null) {
-
-                              fileCallback.onReceiveValue(null);
-                          }
-
-                          fileCallback = filePathCallback;
-
-                          try {
-
-                              Intent intent =
-                                  fileChooserParams.createIntent();
-
-                              startActivityForResult(
-                                  intent,
-                                  FILE_CHOOSER_REQUEST
+                              return assetLoader.shouldInterceptRequest(
+                                  request.getUrl()
                               );
 
-                              return true;
+                          }
 
-                          } catch (Exception e) {
 
-                              fileCallback = null;
+                          @Override
+                          public WebResourceResponse shouldInterceptRequest(
+                                  WebView view,
+                                  String url) {
+
+                              return assetLoader.shouldInterceptRequest(
+                                  Uri.parse(url)
+                              );
+
+                          }
+
+
+                          @Override
+                          public boolean shouldOverrideUrlLoading(
+                                  WebView view,
+                                  WebResourceRequest request) {
 
                               return false;
+
                           }
+
+
+                          @Override
+                          public boolean shouldOverrideUrlLoading(
+                                  WebView view,
+                                  String url) {
+
+                              return false;
+
+                          }
+
                       }
+                  );
 
 
-                      @Override
-                      public void onPermissionRequest(
-                              final PermissionRequest request) {
 
-                          runOnUiThread(() -> {
+                  // ==================================================
+                  // WEB CHROME CLIENT
+                  // ==================================================
 
-                              boolean cameraAllowed =
-                                  Build.VERSION.SDK_INT < 23 ||
-                                  checkSelfPermission(
-                                      Manifest.permission.CAMERA
-                                  ) == PackageManager.PERMISSION_GRANTED;
+                  webView.setWebChromeClient(
+                      new WebChromeClient() {
 
 
-                              boolean microphoneAllowed =
-                                  Build.VERSION.SDK_INT < 23 ||
-                                  checkSelfPermission(
-                                      Manifest.permission.RECORD_AUDIO
-                                  ) == PackageManager.PERMISSION_GRANTED;
+                          // ------------------------------------------
+                          // FILE CHOOSER
+                          // ------------------------------------------
+
+                          @Override
+                          public boolean onShowFileChooser(
+                                  WebView webView,
+                                  ValueCallback<Uri[]> filePathCallback,
+                                  FileChooserParams fileChooserParams) {
 
 
-                              String[] resources =
-                                  request.getResources();
+                              if (fileCallback != null) {
 
+                                  fileCallback.onReceiveValue(null);
 
-                              boolean allowed = true;
-
-
-                              for (String resource : resources) {
-
-                                  if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
-                                      && !cameraAllowed) {
-
-                                      allowed = false;
-                                  }
-
-
-                                  if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
-                                      && !microphoneAllowed) {
-
-                                      allowed = false;
-                                  }
                               }
 
 
-                              if (allowed) {
+                              fileCallback =
+                                  filePathCallback;
 
-                                  request.grant(resources);
 
-                              } else {
+                              try {
 
-                                  request.deny();
+                                  Intent intent =
+                                      fileChooserParams.createIntent();
+
+
+                                  startActivityForResult(
+                                      intent,
+                                      FILE_CHOOSER_REQUEST
+                                  );
+
+
+                                  return true;
+
+
+                              } catch (Exception e) {
+
+                                  fileCallback = null;
+
+                                  return false;
+
                               }
-                          });
+
+                          }
+
+
+
+                          // ------------------------------------------
+                          // CAMERA + MICROPHONE
+                          // ------------------------------------------
+
+                          @Override
+                          public void onPermissionRequest(
+                                  final PermissionRequest request) {
+
+
+                              runOnUiThread(
+                                  () -> {
+
+
+                                      boolean cameraAllowed =
+                                          Build.VERSION.SDK_INT < 23 ||
+
+                                          checkSelfPermission(
+                                              Manifest.permission.CAMERA
+                                          )
+                                          ==
+                                          PackageManager.PERMISSION_GRANTED;
+
+
+
+                                      boolean microphoneAllowed =
+                                          Build.VERSION.SDK_INT < 23 ||
+
+                                          checkSelfPermission(
+                                              Manifest.permission.RECORD_AUDIO
+                                          )
+                                          ==
+                                          PackageManager.PERMISSION_GRANTED;
+
+
+
+                                      String[] resources =
+                                          request.getResources();
+
+
+                                      boolean allowed = true;
+
+
+
+                                      for (String resource : resources) {
+
+
+                                          if (
+                                              PermissionRequest.RESOURCE_VIDEO_CAPTURE
+                                                  .equals(resource)
+
+                                              && !cameraAllowed
+                                          ) {
+
+                                              allowed = false;
+
+                                          }
+
+
+
+                                          if (
+                                              PermissionRequest.RESOURCE_AUDIO_CAPTURE
+                                                  .equals(resource)
+
+                                              && !microphoneAllowed
+                                          ) {
+
+                                              allowed = false;
+
+                                          }
+
+                                      }
+
+
+
+                                      if (allowed) {
+
+                                          request.grant(resources);
+
+                                      } else {
+
+                                          request.deny();
+
+                                      }
+
+                                  }
+                              );
+
+                          }
+
                       }
-                  });
+                  );
 
 
-                  // -------------------------------------------------
+
+                  // ==================================================
                   // DOWNLOAD SUPPORT
-                  // -------------------------------------------------
+                  // ==================================================
 
                   webView.setDownloadListener(
-                      (url,
-                       userAgent,
-                       contentDisposition,
-                       mimeType,
-                       contentLength) -> {
+                      (
+                          url,
+                          userAgent,
+                          contentDisposition,
+                          mimeType,
+                          contentLength
+                      ) -> {
+
 
                           try {
+
 
                               DownloadManager.Request request =
                                   new DownloadManager.Request(
@@ -745,11 +1272,12 @@ jobs:
 
 
                               String fileName =
-                                  android.webkit.URLUtil.guessFileName(
-                                      url,
-                                      contentDisposition,
-                                      mimeType
-                                  );
+                                  android.webkit.URLUtil
+                                      .guessFileName(
+                                          url,
+                                          contentDisposition,
+                                          mimeType
+                                      );
 
 
                               request.setDestinationInExternalPublicDir(
@@ -768,67 +1296,99 @@ jobs:
                               if (manager != null) {
 
                                   manager.enqueue(request);
+
                               }
 
+
                           } catch (Exception ignored) {
+
                           }
+
                       }
                   );
 
 
-                  // -------------------------------------------------
-                  // LOAD HTML APP
-                  // -------------------------------------------------
+
+                  // ==================================================
+                  // LOAD THE WEB APP
+                  //
+                  // NOT file://
+                  //
+                  // HTTPS LOCAL ORIGIN
+                  // ==================================================
 
                   webView.loadUrl(
-                      "file:///android_asset/index.html"
+                      "https://appassets.androidplatform.net/assets/index.html"
                   );
+
               }
 
 
-              // -----------------------------------------------------
-              // REQUEST CAMERA + MICROPHONE
-              // -----------------------------------------------------
+
+              // ======================================================
+              // CAMERA + MICROPHONE RUNTIME PERMISSIONS
+              // ======================================================
 
               private void requestAppPermissions() {
 
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+                  if (
+                      Build.VERSION.SDK_INT >=
+                      Build.VERSION_CODES.M
+                  ) {
+
 
                       boolean camera =
                           checkSelfPermission(
                               Manifest.permission.CAMERA
-                          ) == PackageManager.PERMISSION_GRANTED;
+                          )
+                          ==
+                          PackageManager.PERMISSION_GRANTED;
+
 
 
                       boolean microphone =
                           checkSelfPermission(
                               Manifest.permission.RECORD_AUDIO
-                          ) == PackageManager.PERMISSION_GRANTED;
+                          )
+                          ==
+                          PackageManager.PERMISSION_GRANTED;
+
 
 
                       if (!camera || !microphone) {
 
+
                           requestPermissions(
                               new String[] {
+
                                   Manifest.permission.CAMERA,
+
                                   Manifest.permission.RECORD_AUDIO
+
                               },
+
                               PERMISSION_REQUEST
                           );
+
                       }
+
                   }
+
               }
 
 
-              // -----------------------------------------------------
+
+              // ======================================================
               // FILE CHOOSER RESULT
-              // -----------------------------------------------------
+              // ======================================================
 
               @Override
               protected void onActivityResult(
                       int requestCode,
                       int resultCode,
                       Intent data) {
+
 
                   super.onActivityResult(
                       requestCode,
@@ -837,146 +1397,290 @@ jobs:
                   );
 
 
-                  if (requestCode == FILE_CHOOSER_REQUEST
-                      && fileCallback != null) {
+                  if (
+                      requestCode ==
+                      FILE_CHOOSER_REQUEST
+
+                      && fileCallback != null
+                  ) {
+
 
                       Uri[] results =
-                          WebChromeClient.FileChooserParams.parseResult(
-                              resultCode,
-                              data
-                          );
+                          WebChromeClient
+                              .FileChooserParams
+                              .parseResult(
+                                  resultCode,
+                                  data
+                              );
 
 
                       fileCallback.onReceiveValue(results);
 
+
                       fileCallback = null;
+
                   }
+
               }
 
 
-              // -----------------------------------------------------
+
+              // ======================================================
               // BACK BUTTON
-              // -----------------------------------------------------
+              // ======================================================
 
               @Override
               public void onBackPressed() {
 
-                  if (webView != null && webView.canGoBack()) {
+
+                  if (
+                      webView != null
+                      &&
+                      webView.canGoBack()
+                  ) {
+
 
                       webView.goBack();
 
                       return;
+
                   }
 
+
                   super.onBackPressed();
+
               }
 
 
-              // -----------------------------------------------------
+
+              // ======================================================
               // CLEANUP
-              // -----------------------------------------------------
+              // ======================================================
 
               @Override
               protected void onDestroy() {
 
+
                   if (webView != null) {
+
 
                       webView.stopLoading();
 
+
                       webView.setWebChromeClient(null);
+
 
                       webView.setWebViewClient(null);
 
+
                       webView.destroy();
 
+
                       webView = null;
+
                   }
 
+
                   super.onDestroy();
+
               }
+
           }
+
           EOF
+
+
+      # ============================================================
+      # GRADLE
+      # ============================================================
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
         with:
           gradle-version: "8.9"
+
+
+      # ============================================================
+      # GRADLE WRAPPER
+      # ============================================================
 
       - name: Generate Gradle Wrapper
         shell: bash
         run: |
-          gradle wrapper --gradle-version 8.9
+
+          gradle wrapper \
+            --gradle-version 8.9
+
+
+      # ============================================================
+      # BUILD APK
+      # ============================================================
 
       - name: Build Debug APK
         shell: bash
         run: |
+
           chmod +x ./gradlew
+
 
           ./gradlew \
             --no-daemon \
             clean \
             assembleDebug
 
+
+      # ============================================================
+      # FIND APK
+      # ============================================================
+
       - name: Find APK
         shell: bash
         run: |
-          echo "================================"
+
+          echo "========================================"
+
           echo "APK FILES"
-          echo "================================"
+
+          echo "========================================"
+
 
           find app/build/outputs/apk \
             -type f \
             -name "*.apk" \
             -print
 
+
           APK=$(find app/build/outputs/apk \
             -type f \
             -name "*.apk" \
             | head -n 1)
 
+
           if [ -z "$APK" ]; then
+
             echo "ERROR: APK was not created."
+
             exit 1
+
           fi
 
+
           mkdir -p final-apk
+
 
           SAFE_APP_NAME=$(echo "$APP_NAME" \
             | tr -cd '[:alnum:]_-')
 
+
           cp "$APK" \
             "final-apk/${SAFE_APP_NAME}-${BUILD_ID}.apk"
 
+
           echo ""
-          echo "Final APK:"
+
+          echo "FINAL APK:"
+
           ls -lh final-apk/
+
+
+
+      # ============================================================
+      # UPLOAD APK
+      # ============================================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+
         with:
+
           name: APK-${{ env.BUILD_ID }}
+
           path: final-apk/*.apk
+
           retention-days: 7
+
+
+
+      # ============================================================
+      # BUILD SUMMARY
+      # ============================================================
 
       - name: Build Summary
         shell: bash
         run: |
-          echo "## 📱 APK BUILD SUCCESSFUL" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
 
-          echo "**App Name:** $APP_NAME" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Package:** $PACKAGE_NAME" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Version:** $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Build ID:** $BUILD_ID" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 📱 APK BUILD SUCCESSFUL" \
+            >> "$GITHUB_STEP_SUMMARY"
 
-          echo "### WebView" >> "$GITHUB_STEP_SUMMARY"
-          echo "- JavaScript: Enabled" >> "$GITHUB_STEP_SUMMARY"
-          echo "- DOM Storage: Enabled" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Firebase/network access: Enabled" >> "$GITHUB_STEP_SUMMARY"
-          echo "- File chooser: Enabled" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Camera/microphone permissions: Enabled" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
 
-          echo "### APK Artifact" >> "$GITHUB_STEP_SUMMARY"
-          echo "Download the APK from the Artifacts section of this workflow run." >> "$GITHUB_STEP_SUMMARY"
+          echo "" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "**App Name:** $APP_NAME" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "**Package:** $PACKAGE_NAME" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "**Version:** $VERSION_NAME" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "**Build ID:** $BUILD_ID" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "### WebView Compatibility" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- HTTPS local asset origin" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- JavaScript enabled" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- DOM Storage enabled" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- Firebase/network access supported" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- Camera permission supported" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- Microphone permission supported" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- File chooser supported" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "- CSS/JS/images/audio/video assets included" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "### APK Artifact" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+
+          echo "Download the APK from the Artifacts section." \
+            >> "$GITHUB_STEP_SUMMARY"
