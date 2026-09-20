@@ -15,15 +15,25 @@ jobs:
 
     steps:
 
+      # ============================================================
+      # CHECKOUT
+      # ============================================================
+
       - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
+
+      # ============================================================
+      # BUILD ID
+      # ============================================================
+
       - name: Get Build ID
         shell: bash
         run: |
           set -e
+
           BUILD_ID="${GITHUB_REF_NAME#build/}"
 
           if [ -z "$BUILD_ID" ]; then
@@ -31,8 +41,16 @@ jobs:
           fi
 
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+
+          echo "======================================"
           echo "BUILD ID: $BUILD_ID"
           echo "BRANCH: $GITHUB_REF_NAME"
+          echo "======================================"
+
+
+      # ============================================================
+      # JAVA 17
+      # ============================================================
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -40,8 +58,9 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+
       # ============================================================
-      # ANDROID SDK - NO setup-android ACTION
+      # ANDROID SDK 35
       # ============================================================
 
       - name: Setup Android SDK 35
@@ -62,6 +81,11 @@ jobs:
             SDKMANAGER="$(command -v sdkmanager)"
           fi
 
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager not found."
+            exit 1
+          fi
+
           echo "SDK Manager: $SDKMANAGER"
 
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
@@ -71,7 +95,12 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-          echo "Android SDK ready."
+          echo "Android SDK 35 ready."
+
+
+      # ============================================================
+      # CREATE ANDROID DIRECTORIES
+      # ============================================================
 
       - name: Create Android project
         shell: bash
@@ -82,6 +111,11 @@ jobs:
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
+
+
+      # ============================================================
+      # SETTINGS.GRADLE
+      # ============================================================
 
       - name: Create settings.gradle
         shell: bash
@@ -97,6 +131,7 @@ jobs:
 
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
               repositories {
                   google()
                   mavenCentral()
@@ -104,8 +139,14 @@ jobs:
           }
 
           rootProject.name = "HtmlToApkBuilder"
+
           include(":app")
           EOF
+
+
+      # ============================================================
+      # ROOT BUILD.GRADLE
+      # ============================================================
 
       - name: Create root build.gradle
         shell: bash
@@ -116,6 +157,11 @@ jobs:
           }
           EOF
 
+
+      # ============================================================
+      # GRADLE PROPERTIES
+      # ============================================================
+
       - name: Create gradle.properties
         shell: bash
         run: |
@@ -123,7 +169,16 @@ jobs:
           org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
           android.useAndroidX=true
           android.nonTransitiveRClass=true
+          android.enableJetifier=true
           EOF
+
+
+      # ============================================================
+      # APP BUILD.GRADLE
+      #
+      # Kotlin dependencies are aligned here to prevent:
+      # checkDebugDuplicateClasses
+      # ============================================================
 
       - name: Create app build.gradle
         shell: bash
@@ -139,13 +194,16 @@ jobs:
 
               defaultConfig {
                   applicationId "com.htmlapk.builder"
+
                   minSdk 23
                   targetSdk 35
+
                   versionCode 1
                   versionName "1.0"
               }
 
               buildTypes {
+
                   debug {
                       minifyEnabled false
                   }
@@ -162,11 +220,38 @@ jobs:
               }
           }
 
+
+          configurations.configureEach {
+
+              resolutionStrategy {
+
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+              }
+          }
+
+
           dependencies {
-              implementation 'androidx.appcompat:appcompat:1.7.0'
-              implementation 'androidx.webkit:webkit:1.12.1'
+
+              implementation('androidx.appcompat:appcompat:1.7.0') {
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+              }
+
+              implementation('androidx.webkit:webkit:1.12.1') {
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+              }
+
+              implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
           }
           EOF
+
+
+      # ============================================================
+      # ANDROID MANIFEST
+      # ============================================================
 
       - name: Create AndroidManifest.xml
         shell: bash
@@ -176,10 +261,15 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
+
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
               <uses-permission android:name="android.permission.CAMERA" />
+
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
               <uses-permission
@@ -200,8 +290,11 @@ jobs:
                       android:configChanges="orientation|screenSize|keyboardHidden">
 
                       <intent-filter>
+
                           <action android:name="android.intent.action.MAIN" />
+
                           <category android:name="android.intent.category.LAUNCHER" />
+
                       </intent-filter>
 
                   </activity>
@@ -210,6 +303,11 @@ jobs:
 
           </manifest>
           EOF
+
+
+      # ============================================================
+      # STYLE
+      # ============================================================
 
       - name: Create styles.xml
         shell: bash
@@ -223,15 +321,24 @@ jobs:
                   parent="android:style/Theme.Material.Light.NoActionBar">
 
                   <item name="android:fontFamily">sans</item>
+
                   <item name="android:colorAccent">#2196F3</item>
+
                   <item name="android:statusBarColor">#000000</item>
+
                   <item name="android:navigationBarColor">#000000</item>
+
                   <item name="android:windowLightStatusBar">false</item>
 
               </style>
 
           </resources>
           EOF
+
+
+      # ============================================================
+      # WEBVIEW LAYOUT
+      # ============================================================
 
       - name: Create activity_main.xml
         shell: bash
@@ -251,6 +358,11 @@ jobs:
           </FrameLayout>
           EOF
 
+
+      # ============================================================
+      # MAIN ACTIVITY
+      # ============================================================
+
       - name: Create MainActivity.java
         shell: bash
         run: |
@@ -264,6 +376,7 @@ jobs:
           import android.content.pm.PackageManager;
           import android.net.Uri;
           import android.os.Bundle;
+
           import android.webkit.CookieManager;
           import android.webkit.DownloadListener;
           import android.webkit.PermissionRequest;
@@ -284,22 +397,33 @@ jobs:
           import java.util.ArrayList;
           import java.util.List;
 
+
           public class MainActivity extends AppCompatActivity {
 
               private static final int PERMISSION_REQUEST_CODE = 2001;
+
               private static final int FILE_CHOOSER_REQUEST_CODE = 3001;
 
               private WebView webView;
+
               private ValueCallback<Uri[]> filePathCallback;
+
               private WebViewAssetLoader assetLoader;
+
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
+
                   super.onCreate(savedInstanceState);
 
                   setContentView(R.layout.activity_main);
 
                   webView = findViewById(R.id.webView);
+
+
+                  // =================================================
+                  // HTTPS-LIKE LOCAL ASSET LOADER
+                  // =================================================
 
                   assetLoader =
                       new WebViewAssetLoader.Builder()
@@ -309,152 +433,273 @@ jobs:
                           )
                           .build();
 
+
+                  // =================================================
+                  // WEBVIEW SETTINGS
+                  // =================================================
+
                   WebSettings settings = webView.getSettings();
 
                   settings.setJavaScriptEnabled(true);
+
                   settings.setDomStorageEnabled(true);
+
                   settings.setDatabaseEnabled(true);
+
                   settings.setAllowFileAccess(true);
+
                   settings.setAllowContentAccess(true);
+
                   settings.setJavaScriptCanOpenWindowsAutomatically(true);
-                  settings.setSupportMultipleWindows(true);
+
+                  settings.setSupportMultipleWindows(false);
+
                   settings.setMediaPlaybackRequiresUserGesture(false);
+
                   settings.setBuiltInZoomControls(false);
+
                   settings.setDisplayZoomControls(false);
+
                   settings.setLoadWithOverviewMode(false);
+
                   settings.setUseWideViewPort(true);
+
                   settings.setSupportZoom(false);
 
-                  CookieManager cookies = CookieManager.getInstance();
-                  cookies.setAcceptCookie(true);
+
+                  // =================================================
+                  // COOKIES
+                  // =================================================
+
+                  CookieManager cookieManager =
+                      CookieManager.getInstance();
+
+                  cookieManager.setAcceptCookie(true);
 
                   if (android.os.Build.VERSION.SDK_INT >=
                       android.os.Build.VERSION_CODES.LOLLIPOP) {
 
-                      cookies.setAcceptThirdPartyCookies(webView, true);
+                      cookieManager.setAcceptThirdPartyCookies(
+                          webView,
+                          true
+                      );
                   }
 
-                  webView.setWebViewClient(new WebViewClient() {
 
-                      @Override
-                      public WebResourceResponse shouldInterceptRequest(
-                          WebView view,
-                          WebResourceRequest request
-                      ) {
-                          WebResourceResponse response =
-                              assetLoader.shouldInterceptRequest(request.getUrl());
+                  // =================================================
+                  // WEBVIEW CLIENT
+                  // =================================================
 
-                          if (response != null) {
-                              return response;
-                          }
+                  webView.setWebViewClient(
+                      new WebViewClient() {
 
-                          return super.shouldInterceptRequest(view, request);
-                      }
+                          @Override
+                          public WebResourceResponse shouldInterceptRequest(
+                              WebView view,
+                              WebResourceRequest request
+                          ) {
 
-                      @Override
-                      public WebResourceResponse shouldInterceptRequest(
-                          WebView view,
-                          String url
-                      ) {
-                          WebResourceResponse response =
-                              assetLoader.shouldInterceptRequest(Uri.parse(url));
-
-                          if (response != null) {
-                              return response;
-                          }
-
-                          return super.shouldInterceptRequest(view, url);
-                      }
-                  });
-
-                  webView.setWebChromeClient(new WebChromeClient() {
-
-                      @Override
-                      public void onPermissionRequest(
-                          final PermissionRequest request
-                      ) {
-                          runOnUiThread(() -> {
-
-                              List<String> allowed = new ArrayList<>();
-
-                              for (String resource : request.getResources()) {
-
-                                  if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
-
-                                      if (ContextCompat.checkSelfPermission(
-                                          MainActivity.this,
-                                          Manifest.permission.RECORD_AUDIO
-                                      ) == PackageManager.PERMISSION_GRANTED) {
-
-                                          allowed.add(
-                                              PermissionRequest.RESOURCE_AUDIO_CAPTURE
-                                          );
-                                      }
-                                  }
-
-                                  if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
-
-                                      if (ContextCompat.checkSelfPermission(
-                                          MainActivity.this,
-                                          Manifest.permission.CAMERA
-                                      ) == PackageManager.PERMISSION_GRANTED) {
-
-                                          allowed.add(
-                                              PermissionRequest.RESOURCE_VIDEO_CAPTURE
-                                          );
-                                      }
-                                  }
-                              }
-
-                              if (!allowed.isEmpty()) {
-                                  request.grant(
-                                      allowed.toArray(new String[0])
+                              WebResourceResponse response =
+                                  assetLoader.shouldInterceptRequest(
+                                      request.getUrl()
                                   );
-                              } else {
-                                  request.deny();
+
+                              if (response != null) {
+
+                                  return response;
                               }
-                          });
-                      }
 
-                      @Override
-                      public boolean onShowFileChooser(
-                          WebView view,
-                          ValueCallback<Uri[]> callback,
-                          FileChooserParams params
-                      ) {
-
-                          if (filePathCallback != null) {
-                              filePathCallback.onReceiveValue(null);
-                          }
-
-                          filePathCallback = callback;
-
-                          Intent intent;
-
-                          try {
-                              intent = params.createIntent();
-                          } catch (Exception e) {
-                              intent = new Intent(Intent.ACTION_GET_CONTENT);
-                              intent.setType("*/*");
-                              intent.addCategory(Intent.CATEGORY_OPENABLE);
-                          }
-
-                          try {
-                              startActivityForResult(
-                                  intent,
-                                  FILE_CHOOSER_REQUEST_CODE
+                              return super.shouldInterceptRequest(
+                                  view,
+                                  request
                               );
-                          } catch (ActivityNotFoundException e) {
-                              filePathCallback = null;
-                              return false;
                           }
 
-                          return true;
+
+                          @Override
+                          public WebResourceResponse shouldInterceptRequest(
+                              WebView view,
+                              String url
+                          ) {
+
+                              WebResourceResponse response =
+                                  assetLoader.shouldInterceptRequest(
+                                      Uri.parse(url)
+                                  );
+
+                              if (response != null) {
+
+                                  return response;
+                              }
+
+                              return super.shouldInterceptRequest(
+                                  view,
+                                  url
+                              );
+                          }
                       }
-                  });
+                  );
+
+
+                  // =================================================
+                  // WEB CHROME CLIENT
+                  // CAMERA / MICROPHONE / FILE CHOOSER
+                  // =================================================
+
+                  webView.setWebChromeClient(
+                      new WebChromeClient() {
+
+                          @Override
+                          public void onPermissionRequest(
+                              final PermissionRequest request
+                          ) {
+
+                              runOnUiThread(() -> {
+
+                                  List<String> allowed =
+                                      new ArrayList<>();
+
+
+                                  for (
+                                      String resource :
+                                      request.getResources()
+                                  ) {
+
+                                      if (
+                                          PermissionRequest
+                                              .RESOURCE_AUDIO_CAPTURE
+                                              .equals(resource)
+                                      ) {
+
+                                          if (
+                                              ContextCompat
+                                                  .checkSelfPermission(
+                                                      MainActivity.this,
+                                                      Manifest.permission.RECORD_AUDIO
+                                                  )
+                                              ==
+                                              PackageManager.PERMISSION_GRANTED
+                                          ) {
+
+                                              allowed.add(
+                                                  PermissionRequest
+                                                      .RESOURCE_AUDIO_CAPTURE
+                                              );
+                                          }
+                                      }
+
+
+                                      if (
+                                          PermissionRequest
+                                              .RESOURCE_VIDEO_CAPTURE
+                                              .equals(resource)
+                                      ) {
+
+                                          if (
+                                              ContextCompat
+                                                  .checkSelfPermission(
+                                                      MainActivity.this,
+                                                      Manifest.permission.CAMERA
+                                                  )
+                                              ==
+                                              PackageManager.PERMISSION_GRANTED
+                                          ) {
+
+                                              allowed.add(
+                                                  PermissionRequest
+                                                      .RESOURCE_VIDEO_CAPTURE
+                                              );
+                                          }
+                                      }
+                                  }
+
+
+                                  if (!allowed.isEmpty()) {
+
+                                      request.grant(
+                                          allowed.toArray(
+                                              new String[0]
+                                          )
+                                      );
+
+                                  } else {
+
+                                      request.deny();
+                                  }
+                              });
+                          }
+
+
+                          @Override
+                          public boolean onShowFileChooser(
+                              WebView view,
+                              ValueCallback<Uri[]> callback,
+                              FileChooserParams params
+                          ) {
+
+                              if (filePathCallback != null) {
+
+                                  filePathCallback
+                                      .onReceiveValue(null);
+                              }
+
+
+                              filePathCallback = callback;
+
+
+                              Intent intent;
+
+
+                              try {
+
+                                  intent =
+                                      params.createIntent();
+
+                              } catch (Exception e) {
+
+                                  intent =
+                                      new Intent(
+                                          Intent.ACTION_GET_CONTENT
+                                      );
+
+                                  intent.setType("*/*");
+
+                                  intent.addCategory(
+                                      Intent.CATEGORY_OPENABLE
+                                  );
+                              }
+
+
+                              try {
+
+                                  startActivityForResult(
+                                      intent,
+                                      FILE_CHOOSER_REQUEST_CODE
+                                  );
+
+                              } catch (
+                                  ActivityNotFoundException e
+                              ) {
+
+                                  filePathCallback = null;
+
+                                  return false;
+                              }
+
+
+                              return true;
+                          }
+                      }
+                  );
+
+
+                  // =================================================
+                  // DOWNLOAD SUPPORT
+                  // =================================================
 
                   webView.setDownloadListener(
                       new DownloadListener() {
+
                           @Override
                           public void onDownloadStart(
                               String url,
@@ -463,54 +708,100 @@ jobs:
                               String mimetype,
                               long contentLength
                           ) {
-                              try {
-                                  Intent intent =
-                                      new Intent(Intent.ACTION_VIEW);
 
-                                  intent.setData(Uri.parse(url));
+                              try {
+
+                                  Intent intent =
+                                      new Intent(
+                                          Intent.ACTION_VIEW
+                                      );
+
+                                  intent.setData(
+                                      Uri.parse(url)
+                                  );
+
                                   startActivity(intent);
+
                               } catch (Exception ignored) {
                               }
                           }
                       }
                   );
 
+
+                  // =================================================
+                  // ANDROID PERMISSIONS
+                  // =================================================
+
                   requestRequiredPermissions();
+
+
+                  // =================================================
+                  // LOAD LOCAL HTML THROUGH HTTPS ORIGIN
+                  // =================================================
 
                   webView.loadUrl(
                       "https://appassets.androidplatform.net/assets/index.html"
                   );
               }
 
+
+              // =====================================================
+              // REQUEST CAMERA + MICROPHONE
+              // =====================================================
+
               private void requestRequiredPermissions() {
 
-                  ArrayList<String> permissions = new ArrayList<>();
+                  ArrayList<String> permissions =
+                      new ArrayList<>();
 
-                  if (ContextCompat.checkSelfPermission(
-                      this,
-                      Manifest.permission.CAMERA
-                  ) != PackageManager.PERMISSION_GRANTED) {
 
-                      permissions.add(Manifest.permission.CAMERA);
+                  if (
+                      ContextCompat.checkSelfPermission(
+                          this,
+                          Manifest.permission.CAMERA
+                      )
+                      !=
+                      PackageManager.PERMISSION_GRANTED
+                  ) {
+
+                      permissions.add(
+                          Manifest.permission.CAMERA
+                      );
                   }
 
-                  if (ContextCompat.checkSelfPermission(
-                      this,
-                      Manifest.permission.RECORD_AUDIO
-                  ) != PackageManager.PERMISSION_GRANTED) {
 
-                      permissions.add(Manifest.permission.RECORD_AUDIO);
+                  if (
+                      ContextCompat.checkSelfPermission(
+                          this,
+                          Manifest.permission.RECORD_AUDIO
+                      )
+                      !=
+                      PackageManager.PERMISSION_GRANTED
+                  ) {
+
+                      permissions.add(
+                          Manifest.permission.RECORD_AUDIO
+                      );
                   }
+
 
                   if (!permissions.isEmpty()) {
 
                       ActivityCompat.requestPermissions(
                           this,
-                          permissions.toArray(new String[0]),
+                          permissions.toArray(
+                              new String[0]
+                          ),
                           PERMISSION_REQUEST_CODE
                       );
                   }
               }
+
+
+              // =====================================================
+              // FILE CHOOSER RESULT
+              // =====================================================
 
               @Override
               protected void onActivityResult(
@@ -518,30 +809,62 @@ jobs:
                   int resultCode,
                   @Nullable Intent data
               ) {
-                  super.onActivityResult(requestCode, resultCode, data);
 
-                  if (requestCode != FILE_CHOOSER_REQUEST_CODE) {
+                  super.onActivityResult(
+                      requestCode,
+                      resultCode,
+                      data
+                  );
+
+
+                  if (
+                      requestCode !=
+                      FILE_CHOOSER_REQUEST_CODE
+                  ) {
+
                       return;
                   }
 
+
                   Uri[] results = null;
 
-                  if (resultCode == Activity.RESULT_OK && data != null) {
 
-                      if (data.getDataString() != null) {
+                  if (
+                      resultCode == Activity.RESULT_OK
+                      &&
+                      data != null
+                  ) {
 
-                          results = new Uri[] {
-                              Uri.parse(data.getDataString())
-                          };
+                      if (
+                          data.getDataString() != null
+                      ) {
 
-                      } else if (data.getClipData() != null) {
+                          results =
+                              new Uri[] {
+                                  Uri.parse(
+                                      data.getDataString()
+                                  )
+                              };
+
+                      } else if (
+                          data.getClipData() != null
+                      ) {
 
                           int count =
-                              data.getClipData().getItemCount();
+                              data.getClipData()
+                                  .getItemCount();
 
-                          results = new Uri[count];
 
-                          for (int i = 0; i < count; i++) {
+                          results =
+                              new Uri[count];
+
+
+                          for (
+                              int i = 0;
+                              i < count;
+                              i++
+                          ) {
+
                               results[i] =
                                   data.getClipData()
                                       .getItemAt(i)
@@ -550,29 +873,54 @@ jobs:
                       }
                   }
 
+
                   if (filePathCallback != null) {
-                      filePathCallback.onReceiveValue(results);
+
+                      filePathCallback
+                          .onReceiveValue(results);
+
                       filePathCallback = null;
                   }
               }
 
+
+              // =====================================================
+              // BACK BUTTON
+              // =====================================================
+
               @Override
               public void onBackPressed() {
 
-                  if (webView != null && webView.canGoBack()) {
+                  if (
+                      webView != null
+                      &&
+                      webView.canGoBack()
+                  ) {
+
                       webView.goBack();
+
                   } else {
+
                       super.onBackPressed();
                   }
               }
+
+
+              // =====================================================
+              // CLEANUP
+              // =====================================================
 
               @Override
               protected void onDestroy() {
 
                   if (webView != null) {
+
                       webView.stopLoading();
+
                       webView.setWebChromeClient(null);
+
                       webView.setWebViewClient(null);
+
                       webView.destroy();
                   }
 
@@ -581,16 +929,26 @@ jobs:
           }
           EOF
 
+
+      # ============================================================
+      # PREPARE HTML / ZIP SOURCE
+      # ============================================================
+
       - name: Prepare HTML source
         shell: bash
         run: |
           set -e
 
           rm -rf app/src/main/assets/*
+
           mkdir -p app/src/main/assets
 
-          echo "Preparing web application..."
+          echo "======================================"
+          echo "Preparing HTML application"
+          echo "======================================"
 
+
+          # ROOT index.html
           if [ -f "index.html" ]; then
 
               echo "Root index.html found."
@@ -611,113 +969,239 @@ jobs:
 
               SOURCE_DIR=""
 
-              for DIR in www web website public source src; do
+              for DIR in \
+                  www \
+                  web \
+                  website \
+                  public \
+                  source \
+                  src
+              do
+
                   if [ -f "$DIR/index.html" ]; then
+
                       SOURCE_DIR="$DIR"
+
                       break
                   fi
               done
 
+
               if [ -n "$SOURCE_DIR" ]; then
 
-                  echo "Web source found in: $SOURCE_DIR"
-                  cp -a "$SOURCE_DIR"/. app/src/main/assets/
+                  echo "Web source found in:"
+                  echo "$SOURCE_DIR"
+
+                  cp -a \
+                    "$SOURCE_DIR"/. \
+                    app/src/main/assets/
 
               else
 
                   ZIP_FILE=""
 
-                  for FILE in *.zip uploads/*.zip; do
+
+                  for FILE in \
+                      *.zip \
+                      uploads/*.zip
+                  do
+
                       if [ -f "$FILE" ]; then
+
                           ZIP_FILE="$FILE"
+
                           break
                       fi
                   done
 
+
                   if [ -n "$ZIP_FILE" ]; then
 
-                      echo "ZIP found: $ZIP_FILE"
+                      echo "ZIP found:"
+                      echo "$ZIP_FILE"
 
                       rm -rf /tmp/html-source
+
                       mkdir -p /tmp/html-source
 
-                      unzip -q "$ZIP_FILE" -d /tmp/html-source
+                      unzip -q \
+                        "$ZIP_FILE" \
+                        -d /tmp/html-source
+
 
                       INDEX_PATH="$(
-                        find /tmp/html-source \
-                          -type f \
-                          -iname "index.html" \
-                          | head -n 1
+                          find /tmp/html-source \
+                              -type f \
+                              -iname "index.html" \
+                              | head -n 1
                       )"
 
+
                       if [ -z "$INDEX_PATH" ]; then
-                          echo "ERROR: ZIP does not contain index.html"
+
+                          echo "ERROR:"
+                          echo "ZIP does not contain index.html"
+
                           exit 1
                       fi
 
-                      INDEX_DIR="$(dirname "$INDEX_PATH")"
 
-                      echo "Using: $INDEX_DIR"
+                      INDEX_DIR="$(
+                          dirname "$INDEX_PATH"
+                      )"
 
-                      cp -a "$INDEX_DIR"/. app/src/main/assets/
+
+                      echo "Using HTML directory:"
+                      echo "$INDEX_DIR"
+
+
+                      cp -a \
+                        "$INDEX_DIR"/. \
+                        app/src/main/assets/
 
                   else
 
-                      echo "ERROR: No index.html or ZIP found."
+                      echo "ERROR:"
+                      echo "No index.html or ZIP found."
+
+                      echo ""
+                      echo "Repository files:"
+
+                      find . \
+                        -maxdepth 3 \
+                        -type f \
+                        | sort \
+                        | head -300
+
                       exit 1
                   fi
               fi
           fi
 
+
+          # Remove repository/build files
           rm -rf app/src/main/assets/.git
+
           rm -rf app/src/main/assets/.github
 
-          if [ ! -f "app/src/main/assets/index.html" ]; then
-              echo "ERROR: Final assets/index.html does not exist."
+          rm -f app/src/main/assets/build.gradle
+
+          rm -f app/src/main/assets/settings.gradle
+
+          rm -f app/src/main/assets/gradle.properties
+
+
+          # Verify index
+          if [
+              ! -f "app/src/main/assets/index.html"
+          ]; then
+
+              echo "ERROR:"
+              echo "Final assets/index.html does not exist."
+
               exit 1
           fi
 
+
+          echo ""
           echo "======================================"
-          echo "WEB FILES INCLUDED"
+          echo "FILES INCLUDED IN APK"
           echo "======================================"
 
+
           find app/src/main/assets \
-            -maxdepth 4 \
-            -type f \
-            | sort \
-            | head -300
+              -maxdepth 4 \
+              -type f \
+              | sort \
+              | head -300
+
+
+      # ============================================================
+      # GRADLE 8.9
+      # ============================================================
 
       - name: Setup Gradle 8.9
         shell: bash
         run: |
           set -e
 
+          echo "Downloading Gradle 8.9..."
+
           curl -L \
             --fail \
             --retry 3 \
+            --retry-delay 2 \
             -o /tmp/gradle.zip \
             https://services.gradle.org/distributions/gradle-8.9-bin.zip
 
           rm -rf /tmp/gradle-8.9
 
-          unzip -q /tmp/gradle.zip -d /tmp
+          unzip -q \
+            /tmp/gradle.zip \
+            -d /tmp
 
-          test -x /tmp/gradle-8.9/bin/gradle
+          test -x \
+            /tmp/gradle-8.9/bin/gradle
 
-          /tmp/gradle-8.9/bin/gradle --version
+          /tmp/gradle-8.9/bin/gradle \
+            --version
+
+
+      # ============================================================
+      # CHECK DEPENDENCIES
+      # ============================================================
+
+      - name: Check Android dependencies
+        shell: bash
+        run: |
+          set -e
+
+          echo "Checking dependency tree..."
+
+          /tmp/gradle-8.9/bin/gradle \
+            --no-daemon \
+            app:dependencies \
+            --configuration debugRuntimeClasspath \
+            > /tmp/dependencies.txt
+
+          echo "Kotlin dependencies:"
+
+          grep \
+            "org.jetbrains.kotlin" \
+            /tmp/dependencies.txt \
+            || true
+
+
+      # ============================================================
+      # VALIDATE GENERATED FILES
+      # ============================================================
 
       - name: Validate generated files
         shell: bash
         run: |
           set -e
 
-          test -f app/src/main/AndroidManifest.xml
-          test -f app/src/main/res/layout/activity_main.xml
-          test -f app/src/main/res/values/styles.xml
-          test -f app/src/main/java/com/htmlapk/builder/MainActivity.java
-          test -f app/src/main/assets/index.html
+          test -f \
+            app/src/main/AndroidManifest.xml
 
-          echo "Generated files OK."
+          test -f \
+            app/src/main/res/layout/activity_main.xml
+
+          test -f \
+            app/src/main/res/values/styles.xml
+
+          test -f \
+            app/src/main/java/com/htmlapk/builder/MainActivity.java
+
+          test -f \
+            app/src/main/assets/index.html
+
+          echo "Generated Android files OK."
+
+
+      # ============================================================
+      # BUILD APK
+      # ============================================================
 
       - name: Build Debug APK
         shell: bash
@@ -729,6 +1213,11 @@ jobs:
             clean \
             assembleDebug
 
+
+      # ============================================================
+      # VERIFY APK
+      # ============================================================
+
       - name: Verify APK
         shell: bash
         run: |
@@ -737,15 +1226,25 @@ jobs:
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
-              echo "ERROR: APK was not generated."
+
+              echo "ERROR:"
+              echo "APK was not generated."
+
               exit 1
           fi
 
+
+          echo ""
           echo "======================================"
           echo "APK BUILD SUCCESSFUL"
           echo "======================================"
 
           ls -lh "$APK"
+
+
+      # ============================================================
+      # UPLOAD APK
+      # ============================================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
