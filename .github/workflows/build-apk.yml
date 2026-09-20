@@ -40,7 +40,6 @@ jobs:
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
-          packages: "platform-tools"
 
       # ==================================================
       # 4. Accept Android SDK licenses
@@ -49,10 +48,11 @@ jobs:
         shell: bash
         run: |
           set -e
+
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
       # ==================================================
-      # 5. Install required Android SDK
+      # 5. Install Android SDK
       # ==================================================
       - name: Install Android SDK Packages
         shell: bash
@@ -203,7 +203,7 @@ jobs:
         run: |
           cat > android-project/build.gradle <<'EOF'
           plugins {
-              id 'com.android.application' version '8.6.1' apply false
+              id 'com.android.application' version '8.7.3' apply false
           }
           EOF
 
@@ -283,7 +283,7 @@ jobs:
           EOF
 
       # ==================================================
-      # 13. Create Android style
+      # 13. Create Android Style
       # ==================================================
       - name: Create Android Style
         shell: bash
@@ -364,20 +364,16 @@ jobs:
               public void onBackPressed() {
 
                   if (webView.canGoBack()) {
-
                       webView.goBack();
-
                   } else {
-
                       super.onBackPressed();
-
                   }
               }
           }
           EOF
 
       # ==================================================
-      # 15. Verify Android project
+      # 15. Verify Android Project
       # ==================================================
       - name: Verify Android Project
         shell: bash
@@ -398,18 +394,29 @@ jobs:
           echo "index.html found successfully."
 
       # ==================================================
-      # 16. Check Gradle
+      # 16. Install Gradle 8.9
       # ==================================================
-      - name: Check Gradle
+      - name: Install Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      # ==================================================
+      # 17. Verify Gradle Version
+      # ==================================================
+      - name: Verify Gradle Version
         shell: bash
         run: |
           set -e
 
-          echo "Gradle version:"
+          echo "========================================"
+          echo "Gradle version being used:"
+          echo "========================================"
+
           gradle --version
 
       # ==================================================
-      # 17. Build Debug APK
+      # 18. Build Debug APK
       # ==================================================
       - name: Build APK
         working-directory: android-project
@@ -418,6 +425,8 @@ jobs:
           set -e
 
           echo "Starting Android APK build..."
+          echo "Using Gradle 8.9"
+          echo "Using Android Gradle Plugin 8.7.3"
 
           gradle :app:assembleDebug \
             --no-daemon \
@@ -425,7 +434,7 @@ jobs:
             --warning-mode all
 
       # ==================================================
-      # 18. Find APK
+      # 19. Find APK
       # ==================================================
       - name: Find APK
         shell: bash
@@ -464,7 +473,7 @@ jobs:
           ls -lh output/
 
       # ==================================================
-      # 19. Upload APK artifact
+      # 20. Upload APK artifact
       # ==================================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -475,7 +484,7 @@ jobs:
           retention-days: 7
 
       # ==================================================
-      # 20. Build successful
+      # 21. Build successful
       # ==================================================
       - name: Build Complete
         run: |
@@ -486,4 +495,6 @@ jobs:
           echo "Build ID: ${{ inputs.buildId }}"
           echo "App Name: $APP_NAME"
           echo "Package:  $PACKAGE_NAME"
+          echo "Gradle:   8.9"
+          echo "AGP:      8.7.3"
           echo "========================================"
