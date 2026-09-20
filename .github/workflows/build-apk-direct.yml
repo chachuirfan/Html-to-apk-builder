@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "build/**"
-
   workflow_dispatch:
 
 permissions:
@@ -16,43 +15,24 @@ jobs:
 
     steps:
 
-      # ============================================================
-      # CHECKOUT
-      # ============================================================
-
       - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-
-      # ============================================================
-      # BUILD ID
-      # ============================================================
-
       - name: Get Build ID
         shell: bash
         run: |
           set -e
-
           BUILD_ID="${GITHUB_REF_NAME#build/}"
 
           if [ -z "$BUILD_ID" ]; then
-            echo "ERROR: Build ID is empty"
-            exit 1
+            BUILD_ID="manual-build"
           fi
 
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
-
-          echo "======================================"
           echo "BUILD ID: $BUILD_ID"
           echo "BRANCH: $GITHUB_REF_NAME"
-          echo "======================================"
-
-
-      # ============================================================
-      # JAVA
-      # ============================================================
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -60,18 +40,38 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-
       # ============================================================
-      # ANDROID SDK
+      # ANDROID SDK - NO setup-android ACTION
       # ============================================================
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK 35
+        shell: bash
+        run: |
+          set -e
 
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
 
-      # ============================================================
-      # CREATE PROJECT DIRECTORIES
-      # ============================================================
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+
+          echo "Using Android SDK: $SDK_ROOT"
+
+          if [ -x "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+            SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          else
+            SDKMANAGER="$(command -v sdkmanager)"
+          fi
+
+          echo "SDK Manager: $SDKMANAGER"
+
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+
+          "$SDKMANAGER" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+          echo "Android SDK ready."
 
       - name: Create Android project
         shell: bash
@@ -82,11 +82,6 @@ jobs:
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
-
-
-      # ============================================================
-      # SETTINGS.GRADLE
-      # ============================================================
 
       - name: Create settings.gradle
         shell: bash
@@ -102,7 +97,6 @@ jobs:
 
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-
               repositories {
                   google()
                   mavenCentral()
@@ -110,14 +104,8 @@ jobs:
           }
 
           rootProject.name = "HtmlToApkBuilder"
-
           include(":app")
           EOF
-
-
-      # ============================================================
-      # ROOT BUILD.GRADLE
-      # ============================================================
 
       - name: Create root build.gradle
         shell: bash
@@ -128,11 +116,6 @@ jobs:
           }
           EOF
 
-
-      # ============================================================
-      # GRADLE PROPERTIES
-      # ============================================================
-
       - name: Create gradle.properties
         shell: bash
         run: |
@@ -141,11 +124,6 @@ jobs:
           android.useAndroidX=true
           android.nonTransitiveRClass=true
           EOF
-
-
-      # ============================================================
-      # APP BUILD.GRADLE
-      # ============================================================
 
       - name: Create app build.gradle
         shell: bash
@@ -190,11 +168,6 @@ jobs:
           }
           EOF
 
-
-      # ============================================================
-      # ANDROID MANIFEST
-      # ============================================================
-
       - name: Create AndroidManifest.xml
         shell: bash
         run: |
@@ -204,20 +177,14 @@ jobs:
 
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
               <uses-permission
                   android:name="android.permission.READ_EXTERNAL_STORAGE"
                   android:maxSdkVersion="32" />
-
-              <uses-permission
-                  android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-                  android:maxSdkVersion="28" />
 
               <application
                   android:allowBackup="true"
@@ -244,11 +211,6 @@ jobs:
           </manifest>
           EOF
 
-
-      # ============================================================
-      # STYLE
-      # ============================================================
-
       - name: Create styles.xml
         shell: bash
         run: |
@@ -271,11 +233,6 @@ jobs:
           </resources>
           EOF
 
-
-      # ============================================================
-      # ACTIVITY LAYOUT
-      # ============================================================
-
       - name: Create activity_main.xml
         shell: bash
         run: |
@@ -293,11 +250,6 @@ jobs:
 
           </FrameLayout>
           EOF
-
-
-      # ============================================================
-      # MAIN ACTIVITY
-      # ============================================================
 
       - name: Create MainActivity.java
         shell: bash
@@ -343,7 +295,6 @@ jobs:
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
-
                   super.onCreate(savedInstanceState);
 
                   setContentView(R.layout.activity_main);
@@ -363,36 +314,24 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setDatabaseEnabled(true);
-
                   settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(true);
-
                   settings.setJavaScriptCanOpenWindowsAutomatically(true);
                   settings.setSupportMultipleWindows(true);
-
                   settings.setMediaPlaybackRequiresUserGesture(false);
-
                   settings.setBuiltInZoomControls(false);
                   settings.setDisplayZoomControls(false);
-
                   settings.setLoadWithOverviewMode(false);
                   settings.setUseWideViewPort(true);
                   settings.setSupportZoom(false);
 
-                  settings.setAllowUniversalAccessFromFileURLs(true);
-                  settings.setAllowFileAccessFromFileURLs(true);
-
                   CookieManager cookies = CookieManager.getInstance();
-
                   cookies.setAcceptCookie(true);
 
                   if (android.os.Build.VERSION.SDK_INT >=
                       android.os.Build.VERSION_CODES.LOLLIPOP) {
 
-                      cookies.setAcceptThirdPartyCookies(
-                          webView,
-                          true
-                      );
+                      cookies.setAcceptThirdPartyCookies(webView, true);
                   }
 
                   webView.setWebViewClient(new WebViewClient() {
@@ -402,20 +341,14 @@ jobs:
                           WebView view,
                           WebResourceRequest request
                       ) {
-
                           WebResourceResponse response =
-                              assetLoader.shouldInterceptRequest(
-                                  request.getUrl()
-                              );
+                              assetLoader.shouldInterceptRequest(request.getUrl());
 
                           if (response != null) {
                               return response;
                           }
 
-                          return super.shouldInterceptRequest(
-                              view,
-                              request
-                          );
+                          return super.shouldInterceptRequest(view, request);
                       }
 
                       @Override
@@ -423,20 +356,14 @@ jobs:
                           WebView view,
                           String url
                       ) {
-
                           WebResourceResponse response =
-                              assetLoader.shouldInterceptRequest(
-                                  Uri.parse(url)
-                              );
+                              assetLoader.shouldInterceptRequest(Uri.parse(url));
 
                           if (response != null) {
                               return response;
                           }
 
-                          return super.shouldInterceptRequest(
-                              view,
-                              url
-                          );
+                          return super.shouldInterceptRequest(view, url);
                       }
                   });
 
@@ -446,60 +373,44 @@ jobs:
                       public void onPermissionRequest(
                           final PermissionRequest request
                       ) {
-
                           runOnUiThread(() -> {
 
-                              List<String> allowed =
-                                  new ArrayList<>();
+                              List<String> allowed = new ArrayList<>();
 
-                              for (String resource :
-                                  request.getResources()) {
+                              for (String resource : request.getResources()) {
 
-                                  if (PermissionRequest
-                                      .RESOURCE_AUDIO_CAPTURE
-                                      .equals(resource)) {
+                                  if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
 
                                       if (ContextCompat.checkSelfPermission(
                                           MainActivity.this,
                                           Manifest.permission.RECORD_AUDIO
-                                      ) ==
-                                          PackageManager.PERMISSION_GRANTED) {
+                                      ) == PackageManager.PERMISSION_GRANTED) {
 
                                           allowed.add(
-                                              PermissionRequest
-                                                  .RESOURCE_AUDIO_CAPTURE
+                                              PermissionRequest.RESOURCE_AUDIO_CAPTURE
                                           );
                                       }
                                   }
 
-                                  if (PermissionRequest
-                                      .RESOURCE_VIDEO_CAPTURE
-                                      .equals(resource)) {
+                                  if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
 
                                       if (ContextCompat.checkSelfPermission(
                                           MainActivity.this,
                                           Manifest.permission.CAMERA
-                                      ) ==
-                                          PackageManager.PERMISSION_GRANTED) {
+                                      ) == PackageManager.PERMISSION_GRANTED) {
 
                                           allowed.add(
-                                              PermissionRequest
-                                                  .RESOURCE_VIDEO_CAPTURE
+                                              PermissionRequest.RESOURCE_VIDEO_CAPTURE
                                           );
                                       }
                                   }
                               }
 
                               if (!allowed.isEmpty()) {
-
                                   request.grant(
-                                      allowed.toArray(
-                                          new String[0]
-                                      )
+                                      allowed.toArray(new String[0])
                                   );
-
                               } else {
-
                                   request.deny();
                               }
                           });
@@ -521,34 +432,20 @@ jobs:
                           Intent intent;
 
                           try {
-
                               intent = params.createIntent();
-
                           } catch (Exception e) {
-
-                              intent =
-                                  new Intent(
-                                      Intent.ACTION_GET_CONTENT
-                                  );
-
+                              intent = new Intent(Intent.ACTION_GET_CONTENT);
                               intent.setType("*/*");
-
-                              intent.addCategory(
-                                  Intent.CATEGORY_OPENABLE
-                              );
+                              intent.addCategory(Intent.CATEGORY_OPENABLE);
                           }
 
                           try {
-
                               startActivityForResult(
                                   intent,
                                   FILE_CHOOSER_REQUEST_CODE
                               );
-
                           } catch (ActivityNotFoundException e) {
-
                               filePathCallback = null;
-
                               return false;
                           }
 
@@ -558,7 +455,6 @@ jobs:
 
                   webView.setDownloadListener(
                       new DownloadListener() {
-
                           @Override
                           public void onDownloadStart(
                               String url,
@@ -567,20 +463,12 @@ jobs:
                               String mimetype,
                               long contentLength
                           ) {
-
                               try {
-
                                   Intent intent =
-                                      new Intent(
-                                          Intent.ACTION_VIEW
-                                      );
+                                      new Intent(Intent.ACTION_VIEW);
 
-                                  intent.setData(
-                                      Uri.parse(url)
-                                  );
-
+                                  intent.setData(Uri.parse(url));
                                   startActivity(intent);
-
                               } catch (Exception ignored) {
                               }
                           }
@@ -596,17 +484,14 @@ jobs:
 
               private void requestRequiredPermissions() {
 
-                  ArrayList<String> permissions =
-                      new ArrayList<>();
+                  ArrayList<String> permissions = new ArrayList<>();
 
                   if (ContextCompat.checkSelfPermission(
                       this,
                       Manifest.permission.CAMERA
                   ) != PackageManager.PERMISSION_GRANTED) {
 
-                      permissions.add(
-                          Manifest.permission.CAMERA
-                      );
+                      permissions.add(Manifest.permission.CAMERA);
                   }
 
                   if (ContextCompat.checkSelfPermission(
@@ -614,9 +499,7 @@ jobs:
                       Manifest.permission.RECORD_AUDIO
                   ) != PackageManager.PERMISSION_GRANTED) {
 
-                      permissions.add(
-                          Manifest.permission.RECORD_AUDIO
-                      );
+                      permissions.add(Manifest.permission.RECORD_AUDIO);
                   }
 
                   if (!permissions.isEmpty()) {
@@ -635,29 +518,20 @@ jobs:
                   int resultCode,
                   @Nullable Intent data
               ) {
+                  super.onActivityResult(requestCode, resultCode, data);
 
-                  super.onActivityResult(
-                      requestCode,
-                      resultCode,
-                      data
-                  );
-
-                  if (requestCode !=
-                      FILE_CHOOSER_REQUEST_CODE) {
+                  if (requestCode != FILE_CHOOSER_REQUEST_CODE) {
                       return;
                   }
 
                   Uri[] results = null;
 
-                  if (resultCode == Activity.RESULT_OK &&
-                      data != null) {
+                  if (resultCode == Activity.RESULT_OK && data != null) {
 
                       if (data.getDataString() != null) {
 
                           results = new Uri[] {
-                              Uri.parse(
-                                  data.getDataString()
-                              )
+                              Uri.parse(data.getDataString())
                           };
 
                       } else if (data.getClipData() != null) {
@@ -668,7 +542,6 @@ jobs:
                           results = new Uri[count];
 
                           for (int i = 0; i < count; i++) {
-
                               results[i] =
                                   data.getClipData()
                                       .getItemAt(i)
@@ -678,11 +551,7 @@ jobs:
                   }
 
                   if (filePathCallback != null) {
-
-                      filePathCallback.onReceiveValue(
-                          results
-                      );
-
+                      filePathCallback.onReceiveValue(results);
                       filePathCallback = null;
                   }
               }
@@ -690,13 +559,9 @@ jobs:
               @Override
               public void onBackPressed() {
 
-                  if (webView != null &&
-                      webView.canGoBack()) {
-
+                  if (webView != null && webView.canGoBack()) {
                       webView.goBack();
-
                   } else {
-
                       super.onBackPressed();
                   }
               }
@@ -705,12 +570,9 @@ jobs:
               protected void onDestroy() {
 
                   if (webView != null) {
-
                       webView.stopLoading();
-
                       webView.setWebChromeClient(null);
                       webView.setWebViewClient(null);
-
                       webView.destroy();
                   }
 
@@ -718,11 +580,6 @@ jobs:
               }
           }
           EOF
-
-
-      # ============================================================
-      # PREPARE HTML / ZIP
-      # ============================================================
 
       - name: Prepare HTML source
         shell: bash
@@ -734,11 +591,6 @@ jobs:
 
           echo "Preparing web application..."
 
-
-          # ----------------------------------------------------------
-          # ROOT INDEX.HTML
-          # ----------------------------------------------------------
-
           if [ -f "index.html" ]; then
 
               echo "Root index.html found."
@@ -747,12 +599,9 @@ jobs:
                 -maxdepth 1 \
                 -mindepth 1 \
                 ! -name ".git" \
+                ! -name ".github" \
                 ! -name "app" \
                 ! -name "gradle" \
-                ! -name "gradle-wrapper.zip" \
-                ! -name "gradle-8.9" \
-                ! -name "gradlew" \
-                ! -name "gradlew.bat" \
                 ! -name "build.gradle" \
                 ! -name "settings.gradle" \
                 ! -name "gradle.properties" \
@@ -760,124 +609,76 @@ jobs:
 
           else
 
-              # ------------------------------------------------------
-              # COMMON DIRECTORIES
-              # ------------------------------------------------------
-
               SOURCE_DIR=""
 
               for DIR in www web website public source src; do
-
                   if [ -f "$DIR/index.html" ]; then
                       SOURCE_DIR="$DIR"
                       break
                   fi
-
               done
-
 
               if [ -n "$SOURCE_DIR" ]; then
 
-                  echo "Web source found in $SOURCE_DIR"
-
-                  cp -a "$SOURCE_DIR"/. \
-                    app/src/main/assets/
+                  echo "Web source found in: $SOURCE_DIR"
+                  cp -a "$SOURCE_DIR"/. app/src/main/assets/
 
               else
-
-                  # --------------------------------------------------
-                  # ZIP
-                  # --------------------------------------------------
 
                   ZIP_FILE=""
 
                   for FILE in *.zip uploads/*.zip; do
-
                       if [ -f "$FILE" ]; then
                           ZIP_FILE="$FILE"
                           break
                       fi
-
                   done
-
 
                   if [ -n "$ZIP_FILE" ]; then
 
                       echo "ZIP found: $ZIP_FILE"
 
                       rm -rf /tmp/html-source
-
                       mkdir -p /tmp/html-source
 
-                      unzip -q \
-                        "$ZIP_FILE" \
-                        -d /tmp/html-source
+                      unzip -q "$ZIP_FILE" -d /tmp/html-source
 
-                      INDEX_PATH=$(
+                      INDEX_PATH="$(
                         find /tmp/html-source \
                           -type f \
                           -iname "index.html" \
                           | head -n 1
-                      )
+                      )"
 
                       if [ -z "$INDEX_PATH" ]; then
-
                           echo "ERROR: ZIP does not contain index.html"
-
                           exit 1
                       fi
 
-                      INDEX_DIR=$(dirname "$INDEX_PATH")
+                      INDEX_DIR="$(dirname "$INDEX_PATH")"
 
-                      echo "Using:"
-                      echo "$INDEX_DIR"
+                      echo "Using: $INDEX_DIR"
 
-                      cp -a "$INDEX_DIR"/. \
-                        app/src/main/assets/
+                      cp -a "$INDEX_DIR"/. app/src/main/assets/
 
                   else
 
                       echo "ERROR: No index.html or ZIP found."
-
-                      find . \
-                        -maxdepth 3 \
-                        -type f \
-                        | sort
-
                       exit 1
                   fi
               fi
           fi
 
-
-          # ----------------------------------------------------------
-          # REMOVE BUILD FILES FROM WEB ASSETS
-          # ----------------------------------------------------------
-
           rm -rf app/src/main/assets/.git
           rm -rf app/src/main/assets/.github
 
-          rm -f app/src/main/assets/build.gradle
-          rm -f app/src/main/assets/settings.gradle
-          rm -f app/src/main/assets/gradle.properties
-
-
-          # ----------------------------------------------------------
-          # VERIFY
-          # ----------------------------------------------------------
-
           if [ ! -f "app/src/main/assets/index.html" ]; then
-
-              echo "ERROR:"
-              echo "Final assets/index.html does not exist."
-
+              echo "ERROR: Final assets/index.html does not exist."
               exit 1
           fi
 
-
-          echo ""
           echo "======================================"
-          echo "WEB FILES"
+          echo "WEB FILES INCLUDED"
           echo "======================================"
 
           find app/src/main/assets \
@@ -886,11 +687,6 @@ jobs:
             | sort \
             | head -300
 
-
-      # ============================================================
-      # DOWNLOAD GRADLE
-      # ============================================================
-
       - name: Setup Gradle 8.9
         shell: bash
         run: |
@@ -898,56 +694,30 @@ jobs:
 
           curl -L \
             --fail \
+            --retry 3 \
             -o /tmp/gradle.zip \
             https://services.gradle.org/distributions/gradle-8.9-bin.zip
 
           rm -rf /tmp/gradle-8.9
 
-          unzip -q \
-            /tmp/gradle.zip \
-            -d /tmp
+          unzip -q /tmp/gradle.zip -d /tmp
 
           test -x /tmp/gradle-8.9/bin/gradle
 
-          echo "Gradle 8.9 ready."
+          /tmp/gradle-8.9/bin/gradle --version
 
-
-      # ============================================================
-      # VALIDATE XML
-      # ============================================================
-
-      - name: Validate generated Android files
+      - name: Validate generated files
         shell: bash
         run: |
           set -e
 
-          echo "Checking activity_main.xml..."
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/res/layout/activity_main.xml
+          test -f app/src/main/res/values/styles.xml
+          test -f app/src/main/java/com/htmlapk/builder/MainActivity.java
+          test -f app/src/main/assets/index.html
 
-          head -n 5 \
-            app/src/main/res/layout/activity_main.xml
-
-          echo ""
-
-          echo "Checking AndroidManifest.xml..."
-
-          head -n 8 \
-            app/src/main/AndroidManifest.xml
-
-          echo ""
-
-          echo "Checking styles.xml..."
-
-          head -n 8 \
-            app/src/main/res/values/styles.xml
-
-          echo ""
-
-          echo "Android source files are present."
-
-
-      # ============================================================
-      # BUILD
-      # ============================================================
+          echo "Generated files OK."
 
       - name: Build Debug APK
         shell: bash
@@ -956,14 +726,8 @@ jobs:
 
           /tmp/gradle-8.9/bin/gradle \
             --no-daemon \
-            --stacktrace \
             clean \
             assembleDebug
-
-
-      # ============================================================
-      # VERIFY APK
-      # ============================================================
 
       - name: Verify APK
         shell: bash
@@ -973,21 +737,15 @@ jobs:
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated."
-            exit 1
+              echo "ERROR: APK was not generated."
+              exit 1
           fi
 
-          echo ""
           echo "======================================"
           echo "APK BUILD SUCCESSFUL"
           echo "======================================"
 
           ls -lh "$APK"
-
-
-      # ============================================================
-      # UPLOAD APK
-      # ============================================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
