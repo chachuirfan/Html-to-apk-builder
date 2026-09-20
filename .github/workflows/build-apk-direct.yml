@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout source
         uses: actions/checkout@v4
         with:
@@ -23,10 +24,13 @@ jobs:
         shell: bash
         run: |
           set -e
+
           BUILD_ID="${GITHUB_REF_NAME#build/}"
+
           if [ -z "$BUILD_ID" ]; then
             BUILD_ID="manual-build"
           fi
+
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
           echo "BUILD ID: $BUILD_ID"
 
@@ -118,11 +122,12 @@ jobs:
                   applicationId "com.htmlapk.builder"
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName "1.0"
+                  versionCode 2
+                  versionName "1.1"
               }
 
               buildTypes {
+
                   debug {
                       minifyEnabled false
                   }
@@ -140,7 +145,9 @@ jobs:
           }
 
           configurations.configureEach {
+
               resolutionStrategy {
+
                   force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
@@ -148,14 +155,23 @@ jobs:
           }
 
           dependencies {
+
               implementation('androidx.appcompat:appcompat:1.7.0') {
-                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+
+                  exclude group: 'org.jetbrains.kotlin',
+                          module: 'kotlin-stdlib-jdk7'
+
+                  exclude group: 'org.jetbrains.kotlin',
+                          module: 'kotlin-stdlib-jdk8'
               }
 
               implementation('androidx.webkit:webkit:1.12.1') {
-                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+
+                  exclude group: 'org.jetbrains.kotlin',
+                          module: 'kotlin-stdlib-jdk7'
+
+                  exclude group: 'org.jetbrains.kotlin',
+                          module: 'kotlin-stdlib-jdk8'
               }
 
               implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
@@ -164,14 +180,21 @@ jobs:
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
+
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
               <uses-permission android:name="android.permission.CAMERA" />
+
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
               <uses-permission
                   android:name="android.permission.READ_EXTERNAL_STORAGE"
                   android:maxSdkVersion="32" />
@@ -180,7 +203,7 @@ jobs:
                   android:allowBackup="true"
                   android:hardwareAccelerated="true"
                   android:usesCleartextTraffic="true"
-                  android:label="HTML APK"
+                  android:label="Cricket Lovers"
                   android:theme="@style/AppTheme">
 
                   <activity
@@ -190,8 +213,11 @@ jobs:
                       android:configChanges="orientation|screenSize|keyboardHidden">
 
                       <intent-filter>
+
                           <action android:name="android.intent.action.MAIN" />
+
                           <category android:name="android.intent.category.LAUNCHER" />
+
                       </intent-filter>
 
                   </activity>
@@ -203,14 +229,23 @@ jobs:
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <resources>
 
-              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+              <style
+                  name="AppTheme"
+                  parent="Theme.AppCompat.Light.NoActionBar">
+
                   <item name="android:fontFamily">sans</item>
+
                   <item name="colorAccent">#2196F3</item>
+
                   <item name="android:statusBarColor">#000000</item>
+
                   <item name="android:navigationBarColor">#000000</item>
+
                   <item name="android:windowLightStatusBar">false</item>
+
               </style>
 
           </resources>
@@ -218,6 +253,7 @@ jobs:
 
           cat > app/src/main/res/layout/activity_main.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <FrameLayout
               xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -239,13 +275,17 @@ jobs:
           MAIN_ACTIVITY="app/src/main/java/com/htmlapk/builder/MainActivity.java"
 
           if [ ! -f "$MAIN_ACTIVITY" ]; then
+
             echo "ERROR: MainActivity.java is missing"
+
             echo "Expected path:"
+
             echo "$MAIN_ACTIVITY"
+
             exit 1
           fi
 
-          echo "MainActivity.java found successfully."
+          echo "MainActivity.java found."
 
       - name: Prepare HTML source
         shell: bash
@@ -253,13 +293,16 @@ jobs:
           set -e
 
           rm -rf app/src/main/assets/*
+
           mkdir -p app/src/main/assets
 
           if [ -f "index.html" ]; then
 
             echo "Root index.html found."
 
-            find . -maxdepth 1 -mindepth 1 \
+            find . \
+              -maxdepth 1 \
+              -mindepth 1 \
               ! -name ".git" \
               ! -name ".github" \
               ! -name "app" \
@@ -274,15 +317,20 @@ jobs:
             SOURCE_DIR=""
 
             for DIR in www web website public source src; do
+
               if [ -f "$DIR/index.html" ]; then
+
                 SOURCE_DIR="$DIR"
+
                 break
               fi
+
             done
 
             if [ -n "$SOURCE_DIR" ]; then
 
               echo "HTML source found in: $SOURCE_DIR"
+
               cp -a "$SOURCE_DIR"/. app/src/main/assets/
 
             else
@@ -290,35 +338,44 @@ jobs:
               ZIP_FILE=""
 
               for FILE in *.zip uploads/*.zip; do
+
                 if [ -f "$FILE" ]; then
+
                   ZIP_FILE="$FILE"
+
                   break
                 fi
+
               done
 
               if [ -z "$ZIP_FILE" ]; then
+
                 echo "ERROR: No index.html or ZIP file found."
+
                 exit 1
               fi
 
-              echo "ZIP found: $ZIP_FILE"
-
               rm -rf /tmp/html-source
+
               mkdir -p /tmp/html-source
 
               unzip -q "$ZIP_FILE" -d /tmp/html-source
 
-              INDEX_PATH="$(find /tmp/html-source -type f -iname "index.html" | head -n 1)"
+              INDEX_PATH="$(
+                find /tmp/html-source \
+                -type f \
+                -iname "index.html" \
+                | head -n 1
+              )"
 
               if [ -z "$INDEX_PATH" ]; then
+
                 echo "ERROR: ZIP does not contain index.html"
+
                 exit 1
               fi
 
               INDEX_DIR="$(dirname "$INDEX_PATH")"
-
-              echo "index.html found inside ZIP:"
-              echo "$INDEX_PATH"
 
               cp -a "$INDEX_DIR"/. app/src/main/assets/
 
@@ -333,28 +390,127 @@ jobs:
           rm -f app/src/main/assets/gradle.properties
 
           if [ ! -f app/src/main/assets/index.html ]; then
+
             echo "ERROR: Final assets/index.html missing."
+
             exit 1
           fi
 
-          echo "HTML source prepared successfully."
+          echo "HTML copied to APK assets."
+
+      - name: WebView JavaScript compatibility fix
+        shell: bash
+        run: |
+          set -e
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          html_file = Path("app/src/main/assets/index.html")
+
+          text = html_file.read_text(
+              encoding="utf-8"
+          )
+
+          original = text
+
+          # --------------------------------------------------
+          # Android WebView compatibility
+          #
+          # IMPORTANT:
+          # This edits ONLY app/src/main/assets/index.html.
+          #
+          # The original repository index.html is untouched.
+          # --------------------------------------------------
+
+          text = text.replace(
+              "currentOverEvents[0]?.bowler||''",
+              "(currentOverEvents[0] ? currentOverEvents[0].bowler : '')||''"
+          )
+
+          text = text.replace(
+              "currentOverEvents[0]?.bowler || ''",
+              "(currentOverEvents[0] ? currentOverEvents[0].bowler : '') || ''"
+          )
+
+          html_file.write_text(
+              text,
+              encoding="utf-8"
+          )
+
+          print("Original HTML length:", len(original))
+          print("APK HTML length:", len(text))
+
+          if "?." in text:
+              print(
+                  "WARNING: Other optional-chaining syntax still exists."
+              )
+          else:
+              print(
+                  "Optional chaining removed from APK HTML."
+              )
+
+          print(
+              "Original repository HTML was NOT modified."
+          )
+          PY
+
+      - name: Verify packaged HTML
+        shell: bash
+        run: |
+          set -e
+
+          test -f app/src/main/assets/index.html
+
+          echo "Checking packaged HTML..."
+
+          if grep -Fq "?." app/src/main/assets/index.html; then
+
+            echo "ERROR: Unsupported optional chaining still found."
+
+            grep -n -F "?." \
+              app/src/main/assets/index.html || true
+
+            exit 1
+          fi
+
+          grep -q "function triggerFileInput" \
+            app/src/main/assets/index.html
+
+          grep -q "function checkScorerAuthBeforeAction" \
+            app/src/main/assets/index.html
+
+          grep -q "function populateDropdowns" \
+            app/src/main/assets/index.html
+
+          echo "Required Cricket functions found."
+
+          echo "Packaged HTML compatibility check passed."
 
       - name: Setup Gradle 8.9
         shell: bash
         run: |
           set -e
 
-          curl -L --fail --retry 3 --retry-delay 2 \
+          curl \
+            -L \
+            --fail \
+            --retry 3 \
+            --retry-delay 2 \
             -o /tmp/gradle.zip \
             https://services.gradle.org/distributions/gradle-8.9-bin.zip
 
           rm -rf /tmp/gradle-8.9
 
-          unzip -q /tmp/gradle.zip -d /tmp
+          unzip -q \
+            /tmp/gradle.zip \
+            -d /tmp
 
-          test -x /tmp/gradle-8.9/bin/gradle
+          test -x \
+            /tmp/gradle-8.9/bin/gradle
 
-          /tmp/gradle-8.9/bin/gradle --version
+          /tmp/gradle-8.9/bin/gradle \
+            --version
 
       - name: Build Debug APK
         shell: bash
@@ -374,11 +530,14 @@ jobs:
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
+
             echo "ERROR: APK was not created."
+
             exit 1
           fi
 
           echo "APK BUILD SUCCESSFUL"
+
           ls -lh "$APK"
 
       - name: Upload APK
