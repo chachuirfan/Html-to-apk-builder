@@ -1265,10 +1265,7 @@ function syncScoreToFirebase() {
     inningsHistory: inningsHistory || [],
     updatedAt: firebase.database.ServerValue.TIMESTAMP
   };
-  var updates = {};
-  updates['liveMatchState'] = state;
-  updates['liveScore'] = state;
-  db.ref().update(updates).catch(function(err) {
+  db.ref('liveMatchState').set(state).catch(function(err) {
     console.error("Live score Firebase sync failed:", err);
   });
 }
@@ -1359,28 +1356,14 @@ function applyRemoteLiveState(state) {
   }
 }
 
-var latestFirebaseLiveScore = null;
 function setupFirebaseLiveScoreListener() {
   if (!db || window.__liveScoreListenerReady) return;
   window.__liveScoreListenerReady = true;
-
-  function receiveLiveState(state) {
-    if (!state) return;
-    latestFirebaseLiveScore = state;
-    try { applyRemoteLiveState(state); }
-    catch(err) { console.error("Live score state error:", err); }
-    var modal = document.getElementById('getLiveScoreModal');
-    if (modal && modal.style.display === 'flex') renderLiveScoreDashboard();
-  }
-
   db.ref('liveMatchState').on('value', function(snapshot) {
-    receiveLiveState(snapshot.val());
+    try { applyRemoteLiveState(snapshot.val()); }
+    catch(err) { console.error("Live score state error:", err); }
   }, function(err) {
     console.error("Firebase live score read failed:", err);
-  });
-
-  db.ref('liveScore').on('value', function(snapshot) {
-    if (!latestFirebaseLiveScore) receiveLiveState(snapshot.val());
   });
 }
 
@@ -1732,7 +1715,7 @@ html+='</table>';document.getElementById('oversTableContainer').innerHTML=html;
 
 function sendChatMessageToFirebase(sender, content, lang, type) {
 if (!db) return;
-return db.ref('liveChatMessages').push({ sender: sender, user: sender, content: content, text: content, lang: lang, type: type, timestamp: Date.now() });
+db.ref('liveChatMessages').push({ sender: sender, content: content, lang: lang, type: type, timestamp: Date.now() });
 }
 
 setupFirebaseLiveScoreListener();
@@ -1768,17 +1751,15 @@ function renderOneChatMessage(id, msg) {
   var sender = document.createElement('div');
   var msgTime = msg.timestamp ? new Date(Number(msg.timestamp)) : new Date();
   var timeText = isNaN(msgTime.getTime()) ? '' : msgTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  var senderName = msg.sender || msg.user || msg.username || msg.name || 'Visitor';
-  var messageContent = msg.content || msg.text || msg.message || msg.msg || msg.body || '';
-  sender.innerHTML = '<b>' + escapeChatHTML(senderName) + ':</b>' +
+  sender.innerHTML = '<b>' + escapeChatHTML(msg.sender || 'Visitor') + ':</b>' +
                      (timeText ? ' <span style="font-size:.62rem;color:var(--text-muted);margin-left:5px;">' + escapeChatHTML(timeText) + '</span>' : '');
   row.appendChild(sender);
 
-  if ((msg.type === 'audio' || msg.audioUrl) && (msg.content || msg.audioUrl)) {
+  if (msg.type === 'audio' && msg.content) {
     var audio = document.createElement('audio');
     audio.controls = true;
     audio.preload = 'metadata';
-    audio.src = msg.audioUrl || msg.content;
+    audio.src = msg.content;
     audio.style.cssText = 'width:min(280px,100%);height:38px;margin-top:5px;';
     row.appendChild(audio);
 
@@ -1788,8 +1769,7 @@ function renderOneChatMessage(id, msg) {
     row.appendChild(voiceLabel);
   } else {
     var text = document.createElement('span');
-    text.textContent = messageContent;
-    text.style.cssText = 'display:block;margin-top:3px;color:#ffffff;white-space:pre-wrap;word-break:break-word;';
+    text.innerHTML = ' ' + escapeChatHTML(msg.content);
     row.appendChild(text);
   }
 
@@ -2161,7 +2141,7 @@ async function startVoiceNoteRecording() {
     } else if (err && err.name === 'NotReadableError') {
       alert("🎤 Microphone کسی دوسری app نے استعمال کیا ہوا ہے۔ دوسری recording/call app بند کریں اور دوبارہ کوشش کریں۔");
     } else {
-      alert("🎤 Microphone access failed: " + (err && err.name ? err.name : "Error") + " - " + (err && err.message ? err.message : "Unknown error"));
+      alert("🎤 Microphone start نہیں ہو سکا۔ Chrome میں Netlify link direct کھول کر دوبارہ کوشش کریں۔");
     }
   }
 }
@@ -2175,10 +2155,26 @@ function handleMicButtonClick(e) {
 }
 
 function setupHoldToRecordMic() {
-  // Mic is controlled only by handleMicButtonClick().
-  // Do not attach duplicate touch/mouse/pointer listeners here.
+  var btn = document.getElementById('micRecordBtn');
+  if (!btn) return;
+  btn.type = 'button';
+  btn.disabled = false;
+  btn.style.pointerEvents = 'auto';
+  btn.onclick = function(e){ handleMicButtonClick(e); };
+  btn.onpointerup = function(e){
+    if (e && e.pointerType === 'touch') {
+      e.preventDefault();
+      lastMicPointerTime = Date.now();
+      handleMicButtonClick(e);
+    }
+  };
+  /* IMPORTANT: do NOT prevent Android's synthetic click after touch.
+     The previous touchend preventDefault could make the mic appear dead on phones. */
+  btn.dataset.voiceNoteReady = '1';
+  btn.title = location.protocol === 'file:'
+    ? 'Voice Note: Netlify HTTPS link یا localhost استعمال کریں'
+    : '🎤 Record Voice Note';
 }
-
 
 function renderLiveScoreDashboard() {
   var title = document.getElementById('popupMatchTitle');
@@ -2212,25 +2208,11 @@ function renderLiveScoreDashboard() {
 }
 
 function openGetLiveScoreModal() {
-  document.getElementById('getLiveScoreModal').style.display = 'flex';
   renderLiveScoreDashboard();
-  if (db) {
-    db.ref('liveMatchState').once('value').then(function(snapshot) {
-      var state = snapshot.val();
-      if (state) { latestFirebaseLiveScore = state; applyRemoteLiveState(state); }
-      renderLiveScoreDashboard();
-    }).catch(function(err) { console.warn('Live score refresh failed:', err); });
-  }
+  document.getElementById('getLiveScoreModal').style.display = 'flex';
 }
 function closeGetLiveScoreModal() { document.getElementById('getLiveScoreModal').style.display = 'none'; }
-function refreshLiveScoreModalData() {
-  if (!db) { renderLiveScoreDashboard(); return; }
-  db.ref('liveMatchState').once('value').then(function(snapshot) {
-    var state = snapshot.val();
-    if (state) { latestFirebaseLiveScore = state; applyRemoteLiveState(state); }
-    renderLiveScoreDashboard();
-  }).catch(function(){ renderLiveScoreDashboard(); });
-}
+function refreshLiveScoreModalData() { renderLiveScoreDashboard(); }
 
 function unlockScorerMode() {
 if (document.getElementById('scorerPasswordInput').value === scorerPassword || document.getElementById('scorerPasswordInput').value === adminPassword) {
