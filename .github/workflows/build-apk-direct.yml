@@ -70,7 +70,8 @@ jobs:
               package
           )
 
-          if "." not in package:
+          parts = [p for p in package.split(".") if p]
+          if len(parts) < 2 or any(not re.match(r'^[a-z][a-z0-9_]*$', p) for p in parts):
               package = "com.htmlapk.builder"
 
           version_name = first(
@@ -361,13 +362,6 @@ jobs:
               xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
-
-              <androidx.webkit.WebViewAssetLoader
-                  android:id="@+id/dummy"
-                  android:layout_width="0dp"
-                  android:layout_height="0dp"
-                  android:visibility="gone" />
-
               <WebView
                   android:id="@+id/webview"
                   android:layout_width="match_parent"
@@ -474,18 +468,20 @@ jobs:
               private static final int FILE_REQUEST = 9001;
               private static final int PERMISSION_REQUEST = 9002;
 
-              private final WebViewAssetLoader assetLoader =
-                  new WebViewAssetLoader.Builder()
-                      .addPathHandler(
-                          "/assets/",
-                          new WebViewAssetLoader.AssetsPathHandler(this)
-                      )
-                      .build();
+              private WebViewAssetLoader assetLoader;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
+
+                  assetLoader =
+                      new WebViewAssetLoader.Builder()
+                          .addPathHandler(
+                              "/assets/",
+                              new WebViewAssetLoader.AssetsPathHandler(this)
+                          )
+                          .build();
 
                   webView = findViewById(R.id.webview);
                   splash = findViewById(R.id.splash);
@@ -743,6 +739,20 @@ jobs:
             exit 1
           fi
 
+
+
+          echo "VERIFYING APK:"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "ERROR: apksigner not found"
+            exit 1
+          fi
+          "$APKSIGNER" verify --verbose "$APK"
+
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          if [ -n "$AAPT" ]; then
+            "$AAPT" dump badging "$APK" | head -n 8
+          fi
           cp "$APK" output/app-debug.apk
 
           echo "APK READY:"
