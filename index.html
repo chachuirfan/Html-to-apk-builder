@@ -2554,5 +2554,1222 @@ currentUserName = guestName;
 
 </script>
 
+<script>
+
+/* =========================================================
+   FINAL REALTIME FIX
+   LIVE SCORE + CHAT + USERNAME + VOICE NOTE
+   ========================================================= */
+
+var latestFirebaseLiveScore = null;
+
+
+/* =========================
+   SAFE CHAT TEXT
+   ========================= */
+
+function escapeChatHTML(value) {
+return String(value || "")
+.replace(/&/g, "&amp;")
+.replace(/</g, "&lt;")
+.replace(/>/g, "&gt;")
+.replace(/"/g, "&quot;")
+.replace(/'/g, "&#039;");
+}
+
+
+/* =========================
+   LIVE SCORE SEND TO FIREBASE
+   ========================= */
+
+syncScoreToFirebase = function() {
+
+if (typeof db === "undefined" || !db) {
+console.warn("Firebase database unavailable.");
+return;
+}
+
+/* Score صرف Live ON ہونے پر Firebase جائے */
+if (!isLiveBroadcasting) {
+return;
+}
+
+try {
+
+var striker =
+currentBattingPlayers[currentStrikerIndex] || null;
+
+var nonStriker =
+currentBattingPlayers[currentNonStrikerIndex] || null;
+
+var bowler = getCurrentBowler();
+
+var liveData = {
+
+teamA: teamAName,
+teamB: teamBName,
+
+runs: runs,
+wickets: wickets,
+balls: balls,
+
+overs:
+Math.floor(balls / 6) +
+"." +
+(balls % 6),
+
+maxOvers: maxOvers,
+
+innings: currentInnings,
+
+striker:
+striker
+? striker.name
+: "",
+
+nonStriker:
+nonStriker
+? nonStriker.name
+: "",
+
+bowler:
+bowler
+? bowler.name
+: "",
+
+/* Full player details */
+batters: currentBattingPlayers || [],
+bowlers: currentBowlingPlayers || [],
+
+isLive: true,
+
+updatedAt:
+firebase.database.ServerValue.TIMESTAMP
+
+};
+
+db.ref("liveScore")
+.set(liveData)
+.then(function() {
+
+console.log(
+"LIVE SCORE SENT:",
+liveData
+);
+
+})
+.catch(function(error) {
+
+console.error(
+"LIVE SCORE FIREBASE ERROR:",
+error
+);
+
+});
+
+} catch(error) {
+
+console.error(
+"LIVE SCORE SYNC ERROR:",
+error
+);
+
+}
+
+};
+
+
+/* =========================
+   RECEIVE LIVE SCORE
+   ========================= */
+
+function setupLiveScoreFirebaseListenerFinal() {
+
+if (typeof db === "undefined" || !db) {
+console.warn(
+"Firebase unavailable for Live Score listener."
+);
+return;
+}
+
+db.ref("liveScore")
+.on(
+"value",
+
+function(snapshot) {
+
+var data = snapshot.val();
+
+if (!data) {
+return;
+}
+
+latestFirebaseLiveScore = data;
+
+renderFirebaseLiveScoreFinal(data);
+
+},
+
+function(error) {
+
+console.error(
+"LIVE SCORE LISTENER ERROR:",
+error
+);
+
+}
+
+);
+
+}
+
+
+/* =========================
+   SHOW FIREBASE LIVE SCORE
+   ========================= */
+
+function renderFirebaseLiveScoreFinal(data) {
+
+if (!data) return;
+
+var title =
+document.getElementById(
+"popupMatchTitle"
+);
+
+if (title) {
+
+title.textContent =
+(data.teamA || "Team A") +
+" VS " +
+(data.teamB || "Team B");
+
+}
+
+
+var scoreRuns =
+document.getElementById(
+"popupRuns"
+);
+
+if (scoreRuns) {
+
+scoreRuns.textContent =
+data.runs !== undefined
+? data.runs
+: 0;
+
+}
+
+
+var scoreWickets =
+document.getElementById(
+"popupWickets"
+);
+
+if (scoreWickets) {
+
+scoreWickets.textContent =
+data.wickets !== undefined
+? data.wickets
+: 0;
+
+}
+
+
+var innings =
+document.getElementById(
+"popupInnings"
+);
+
+if (innings) {
+
+innings.textContent =
+"Innings " +
+(data.innings || 1);
+
+}
+
+
+var overs =
+document.getElementById(
+"popupOvers"
+);
+
+if (overs) {
+
+overs.textContent =
+data.overs || "0.0";
+
+}
+
+
+var striker =
+document.getElementById(
+"popupStriker"
+);
+
+if (striker) {
+
+striker.textContent =
+data.striker || "-";
+
+}
+
+
+var nonStriker =
+document.getElementById(
+"popupNonStriker"
+);
+
+if (nonStriker) {
+
+nonStriker.textContent =
+data.nonStriker || "-";
+
+}
+
+
+var bowler =
+document.getElementById(
+"popupBowler"
+);
+
+if (bowler) {
+
+bowler.textContent =
+data.bowler || "-";
+
+}
+
+
+/* BATTERS DETAIL */
+
+var battersBox =
+document.getElementById(
+"popupBattersDetails"
+);
+
+if (battersBox) {
+
+battersBox.innerHTML = "";
+
+var batters =
+data.batters || [];
+
+batters.forEach(function(player) {
+
+var row =
+document.createElement("div");
+
+row.className =
+"popup-stat-row";
+
+var playerName =
+escapeChatHTML(
+player.name || "-"
+);
+
+row.innerHTML =
+
+"<b>" +
+playerName +
+"</b>" +
+
+"<span>" +
+
+(player.runs || 0) +
+
+" (" +
+
+(player.balls || 0) +
+
+") 4s:" +
+
+(player.fours || 0) +
+
+" 6s:" +
+
+(player.sixes || 0) +
+
+(player.out
+? " OUT"
+: "") +
+
+"</span>";
+
+battersBox.appendChild(row);
+
+});
+
+}
+
+
+/* BOWLERS DETAIL */
+
+var bowlersBox =
+document.getElementById(
+"popupBowlersDetails"
+);
+
+if (bowlersBox) {
+
+bowlersBox.innerHTML = "";
+
+var bowlers =
+data.bowlers || [];
+
+bowlers.forEach(function(player) {
+
+var row =
+document.createElement("div");
+
+row.className =
+"popup-stat-row";
+
+var playerName =
+escapeChatHTML(
+player.name || "-"
+);
+
+var bowlerOvers = "0.0";
+
+if (
+player.balls !== undefined
+) {
+
+bowlerOvers =
+
+Math.floor(
+(player.balls || 0) / 6
+)
+
++
+
+"."
+
++
+
+(
+(player.balls || 0) % 6
+);
+
+}
+else if (player.overs) {
+
+bowlerOvers =
+player.overs;
+
+}
+
+row.innerHTML =
+
+"<b>" +
+playerName +
+"</b>" +
+
+"<span>" +
+
+bowlerOvers +
+
+" - " +
+
+(player.runs || 0) +
+
+" - " +
+
+(player.wickets || 0) +
+
+"</span>";
+
+bowlersBox.appendChild(row);
+
+});
+
+}
+
+}
+
+
+/* =========================
+   OPEN LIVE SCORE
+   ========================= */
+
+openGetLiveScoreModal = function() {
+
+var modal =
+document.getElementById(
+"getLiveScoreModal"
+);
+
+if (modal) {
+
+modal.style.display =
+"flex";
+
+}
+
+if (latestFirebaseLiveScore) {
+
+renderFirebaseLiveScoreFinal(
+latestFirebaseLiveScore
+);
+
+}
+else {
+
+updatePopupLiveScore();
+
+}
+
+};
+
+
+/* =========================
+   REFRESH LIVE SCORE
+   ========================= */
+
+refreshLiveScoreModalData =
+function() {
+
+if (latestFirebaseLiveScore) {
+
+renderFirebaseLiveScoreFinal(
+latestFirebaseLiveScore
+);
+
+}
+else {
+
+updatePopupLiveScore();
+
+}
+
+};
+
+
+/* =========================
+   SCORER LIVE ON / OFF
+   ========================= */
+
+toggleScorerLiveBroadcast =
+function() {
+
+isLiveBroadcasting =
+!isLiveBroadcasting;
+
+var btn =
+document.getElementById(
+"scorerLiveToggleBtn"
+);
+
+if (isLiveBroadcasting) {
+
+if (btn) {
+
+btn.textContent =
+"🔴 Live (ON)";
+
+btn.className =
+"btn btn-danger";
+
+}
+
+syncScoreToFirebase();
+
+}
+else {
+
+if (btn) {
+
+btn.textContent =
+"🟢 Go Live (OFF)";
+
+btn.className =
+"btn btn-start";
+
+}
+
+if (
+typeof db !== "undefined" &&
+db
+) {
+
+db.ref(
+"liveScore/isLive"
+)
+.set(false);
+
+}
+
+}
+
+};
+
+
+/* =========================
+   ADMIN LIVE ON / OFF
+   ========================= */
+
+toggleAdminLiveBroadcast =
+function() {
+
+isLiveBroadcasting =
+!isLiveBroadcasting;
+
+var btn =
+document.getElementById(
+"adminLiveToggleBtn"
+);
+
+if (isLiveBroadcasting) {
+
+if (btn) {
+
+btn.textContent =
+"🔴 Live (ON)";
+
+btn.className =
+"btn btn-danger";
+
+}
+
+syncScoreToFirebase();
+
+}
+else {
+
+if (btn) {
+
+btn.textContent =
+"🟢 Live (OFF)";
+
+btn.className =
+"btn btn-start";
+
+}
+
+if (
+typeof db !== "undefined" &&
+db
+) {
+
+db.ref(
+"liveScore/isLive"
+)
+.set(false);
+
+}
+
+}
+
+};
+
+
+/* =========================
+   CHAT REALTIME LISTENER
+   ========================= */
+
+function setupFinalChatListener() {
+
+if (
+typeof db === "undefined" ||
+!db
+) {
+
+return;
+
+}
+
+
+/* Remove old listener first */
+
+db.ref(
+"liveChatMessages"
+)
+.off();
+
+
+db.ref(
+"liveChatMessages"
+)
+.limitToLast(100)
+.on(
+
+"value",
+
+function(snapshot) {
+
+var box =
+document.getElementById(
+"chatMessagesBox"
+);
+
+if (!box) return;
+
+box.innerHTML = "";
+
+
+snapshot.forEach(
+function(child) {
+
+var message =
+child.val() || {};
+
+
+var bubble =
+document.createElement(
+"div"
+);
+
+bubble.className =
+"chat-message-bubble";
+
+bubble.dataset.msgId =
+child.key;
+
+
+/*
+Supports:
+user
+sender
+username
+
+So old + new messages
+both work.
+*/
+
+var username =
+
+message.user ||
+
+message.sender ||
+
+message.username ||
+
+"Guest";
+
+
+var nameLine =
+document.createElement(
+"div"
+);
+
+nameLine.innerHTML =
+
+"<b>" +
+
+escapeChatHTML(
+username
+)
+
++
+
+":</b>";
+
+
+bubble.appendChild(
+nameLine
+);
+
+
+/* NORMAL TEXT */
+
+if (
+message.text &&
+message.text !==
+"🎤 Voice Note"
+) {
+
+var textLine =
+document.createElement(
+"div"
+);
+
+textLine.style.marginTop =
+"3px";
+
+textLine.textContent =
+message.text;
+
+bubble.appendChild(
+textLine
+);
+
+}
+
+
+/* VOICE NOTE */
+
+if (message.audioUrl) {
+
+var voiceTitle =
+document.createElement(
+"div"
+);
+
+voiceTitle.textContent =
+"🎤 Voice Note";
+
+voiceTitle.style.marginTop =
+"5px";
+
+voiceTitle.style.marginBottom =
+"5px";
+
+bubble.appendChild(
+voiceTitle
+);
+
+
+var audio =
+document.createElement(
+"audio"
+);
+
+audio.controls = true;
+
+audio.preload =
+"metadata";
+
+audio.src =
+message.audioUrl;
+
+audio.style.width =
+"100%";
+
+audio.style.maxWidth =
+"300px";
+
+
+bubble.appendChild(
+audio
+);
+
+}
+
+
+box.appendChild(
+bubble
+);
+
+});
+
+
+box.scrollTop =
+box.scrollHeight;
+
+},
+
+function(error) {
+
+console.error(
+"CHAT LISTENER ERROR:",
+error
+);
+
+}
+
+);
+
+}
+
+
+/* =========================
+   NORMAL CHAT SEND
+   ========================= */
+
+sendChatMessage =
+function() {
+
+var input =
+document.getElementById(
+"chatInputMessage"
+);
+
+if (!input) return;
+
+var messageText =
+input.value.trim();
+
+if (!messageText) return;
+
+
+var username =
+
+currentUserName ||
+
+localStorage.getItem(
+"guestChatUsername"
+) ||
+
+"Guest";
+
+
+var message = {
+
+user: username,
+
+sender: username,
+
+text: messageText,
+
+timestamp:
+Date.now()
+
+};
+
+
+if (
+typeof db !== "undefined" &&
+db
+) {
+
+db.ref(
+"liveChatMessages"
+)
+.push(message)
+
+.then(function() {
+
+input.value = "";
+
+})
+
+.catch(function(error) {
+
+console.error(error);
+
+alert(
+"Message not sent: " +
+error.message
+);
+
+});
+
+}
+
+};
+
+
+/* =========================
+   VOICE RECORDING
+   ========================= */
+
+startVoiceRecording =
+function() {
+
+if (
+!navigator.mediaDevices ||
+!navigator.mediaDevices.getUserMedia
+) {
+
+alert(
+"Microphone is not supported."
+);
+
+return;
+
+}
+
+
+navigator.mediaDevices
+.getUserMedia({
+audio: true
+})
+
+.then(function(stream) {
+
+
+var chunks = [];
+
+
+window.voiceRecorder =
+new MediaRecorder(stream);
+
+
+window.voiceRecorder
+.ondataavailable =
+function(event) {
+
+if (
+event.data &&
+event.data.size > 0
+) {
+
+chunks.push(
+event.data
+);
+
+}
+
+};
+
+
+window.voiceRecorder
+.onstop =
+function() {
+
+
+var blob =
+new Blob(
+chunks,
+{
+type:
+"audio/webm"
+}
+);
+
+
+stream
+.getTracks()
+.forEach(
+function(track) {
+
+track.stop();
+
+}
+);
+
+
+var username =
+
+currentUserName ||
+
+localStorage.getItem(
+"guestChatUsername"
+) ||
+
+"Guest";
+
+
+if (
+typeof db !== "undefined" &&
+db &&
+storage
+) {
+
+
+var fileName =
+
+"voice_" +
+
+Date.now() +
+
+".webm";
+
+
+var storageRef =
+
+storage.ref(
+
+"chatVoice/" +
+
+fileName
+
+);
+
+
+storageRef
+.put(blob)
+
+.then(function(snapshot) {
+
+return snapshot.ref
+.getDownloadURL();
+
+})
+
+.then(function(url) {
+
+
+return db.ref(
+"liveChatMessages"
+)
+.push({
+
+user: username,
+
+sender: username,
+
+text:
+"🎤 Voice Note",
+
+audioUrl:
+url,
+
+timestamp:
+Date.now()
+
+});
+
+
+})
+
+.then(function() {
+
+console.log(
+"VOICE NOTE SENT"
+);
+
+})
+
+.catch(function(error) {
+
+console.error(
+"VOICE UPLOAD ERROR:",
+error
+);
+
+alert(
+"Voice upload failed: " +
+error.message
+);
+
+});
+
+
+}
+else {
+
+alert(
+"Voice note requires Firebase Storage."
+);
+
+}
+
+};
+
+
+window.voiceRecorder
+.start();
+
+
+var mic =
+document.getElementById(
+"micRecordBtn"
+);
+
+if (mic) {
+
+mic.classList.add(
+"mic-recording"
+);
+
+}
+
+
+var status =
+document.getElementById(
+"voiceRecordStatus"
+);
+
+if (status) {
+
+status.style.display =
+"inline";
+
+}
+
+
+})
+.catch(function(error) {
+
+console.error(
+"MICROPHONE ERROR:",
+error
+);
+
+alert(
+"Microphone access failed."
+);
+
+});
+
+};
+
+
+/* =========================
+   VOICE STOP
+   ========================= */
+
+stopVoiceRecording =
+function() {
+
+if (
+window.voiceRecorder &&
+window.voiceRecorder.state ===
+"recording"
+) {
+
+window.voiceRecorder.stop();
+
+}
+
+
+var mic =
+document.getElementById(
+"micRecordBtn"
+);
+
+if (mic) {
+
+mic.classList.remove(
+"mic-recording"
+);
+
+}
+
+
+var status =
+document.getElementById(
+"voiceRecordStatus"
+);
+
+if (status) {
+
+status.style.display =
+"none";
+
+}
+
+};
+
+
+/* =========================
+   FINAL STARTUP
+   ========================= */
+
+document.addEventListener(
+"DOMContentLoaded",
+function() {
+
+setupFinalChatListener();
+
+setupFinalLiveScoreListener();
+
+
+var savedGuestName =
+
+localStorage.getItem(
+"guestChatUsername"
+);
+
+
+if (
+savedGuestName &&
+!currentUserName
+) {
+
+currentUserName =
+savedGuestName;
+
+}
+
+}
+);
+
+</script>
+  
 </body>
 </html>
