@@ -518,6 +518,8 @@ animation:voiceMicPulse 1s ease-in-out infinite;
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 
 <script>
 (function(){
@@ -783,7 +785,7 @@ animation:voiceMicPulse 1s ease-in-out infinite;
 
 <div class="card" style="border:2px solid var(--accent-gold);">
 <label style="color:var(--accent-gold);">⚡ Current Bowler:</label>
-<select id="currentBowlerSelect" onchange="renderBowlerStatsTable(); syncScoreToFirebase()"></select>
+<select id="currentBowlerSelect" onchange="renderBowlerStatsTable(); if(currentUserRole==='Admin'||isScorerUnlocked)syncScoreToFirebase()"></select>
 </div>
 
 <div class="card">
@@ -834,6 +836,7 @@ animation:voiceMicPulse 1s ease-in-out infinite;
 </div>
 <div class="popup-detail-section"><h4>🏏 Batters Detail</h4><div id="popupBattersDetails"></div></div>
 <div class="popup-detail-section"><h4>🎳 Bowlers Detail</h4><div id="popupBowlersDetails"></div></div>
+<button class="btn btn-saved" onclick="openLiveMatchSummary()">📋 View Live Match Summary</button>
 <button class="btn btn-start" style="margin-top: 15px;" onclick="refreshLiveScoreModalData()">🔄 Refresh Live Details</button>
 </div>
 </div>
@@ -865,8 +868,7 @@ animation:voiceMicPulse 1s ease-in-out infinite;
 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
 <label>New Admin Password:</label>
 <input type="password" id="newAdminPassInput" placeholder="New Admin Password">
-<label>New Scorer Password:</label>
-<input type="password" id="newScorerPassInput" placeholder="New Scorer Password">
+<p>Scorer password: 3443</p>
 <button class="btn btn-admin" style="margin-top:10px;" onclick="saveNewPasswords()">💾 Save Passwords</button>
 </div>
 </div>
@@ -1007,8 +1009,11 @@ var lastMicPointerTime = 0;
 var currentUserRole = "Guest";
 var currentUserName = "";
 var adminPassword = localStorage.getItem('adminPassword') || "4334";
-var scorerPassword = localStorage.getItem('scorerPassword') || "433486";
+var scorerPassword = '3443';
 var isScorerUnlocked = false;
+var scorerSessionToken = '';
+var latestScorerSessionToken = '';
+var publicMatchArchive = [];
 
 var runs = 0, wickets = 0, balls = 0;
 var maxOvers = 2, totalWicketsAllowed = 5;
@@ -1100,9 +1105,7 @@ function closeChangePasswordModal() { document.getElementById('changePasswordMod
 
 function saveNewPasswords() {
 var newAdmin = document.getElementById('newAdminPassInput').value.trim();
-var newScorer = document.getElementById('newScorerPassInput').value.trim();
 if (newAdmin) { adminPassword = newAdmin; localStorage.setItem('adminPassword', newAdmin); }
-if (newScorer) { scorerPassword = newScorer; localStorage.setItem('scorerPassword', newScorer); }
 alert("Passwords updated successfully! 🔑");
 closeChangePasswordModal();
 }
@@ -1127,11 +1130,14 @@ syncScoreToFirebase();
 }
 
 function toggleScorerLiveBroadcast() {
+if(!isScorerUnlocked||!scorerSessionToken||scorerSessionToken!==latestScorerSessionToken)return alert('Scorer session is inactive. Log in again.');
+verifyScorerSession().then(function(valid){if(!valid){revokeScorerSession();alert('Scorer session moved to another phone.');return;}
 isLiveBroadcasting = !isLiveBroadcasting;
 var btn = document.getElementById('scorerLiveToggleBtn');
 btn.className = isLiveBroadcasting ? "btn btn-danger" : "btn btn-start";
 btn.innerHTML = isLiveBroadcasting ? "🔴 Stop Live" : "🟢 Go Live (ON)";
 syncScoreToFirebase();
+}).catch(function(){alert('Connection unavailable. Try again.');});
 }
 
 function registerUserInline() {
@@ -1237,6 +1243,7 @@ function syncScoreToFirebase() {
     console.warn("Firebase Database is not initialized.");
     return;
   }
+  if(currentUserRole!=='Admin' && (!isScorerUnlocked || !scorerSessionToken || scorerSessionToken!==latestScorerSessionToken))return;
   var state = {
     isLive: !!isLiveBroadcasting,
     matchStartedAt: matchStartedAt || null,
@@ -1263,18 +1270,31 @@ function syncScoreToFirebase() {
     currentOverEvents: currentOverEvents || [],
     completedOvers: completedOvers || [],
     inningsHistory: inningsHistory || [],
+    scorerSessionToken:currentUserRole==='Admin'?latestScorerSessionToken:scorerSessionToken,
+    matchArchive:publicMatchArchive.slice(0,30),
+    finalMatchRecord:currentMatchFinished?currentMatchRecord:null,
     updatedAt: firebase.database.ServerValue.TIMESTAMP
   };
-  var updates = {};
-  updates['liveMatchState'] = state;
-  updates['liveScore'] = state;
-  db.ref().update(updates).catch(function(err) {
+  var ref=db.ref('liveMatchState');
+  var write=currentUserRole==='Admin'?ref.set(state):ref.transaction(function(old){
+    if(!old || old.scorerSessionToken!==scorerSessionToken)return;
+    return state;
+  },undefined,false).then(function(result){
+    if(!result.committed){revokeScorerSession();throw new Error('Scorer session changed');}
+  });
+  write.catch(function(err) {
     console.error("Live score Firebase sync failed:", err);
   });
 }
 
 function applyRemoteLiveState(state) {
   if (!state) return;
+  latestScorerSessionToken=state.scorerSessionToken||'';
+  if(isScorerUnlocked && scorerSessionToken && latestScorerSessionToken!==scorerSessionToken){
+    revokeScorerSession();alert('Scorer logged in on another phone. Scoring is disabled here.');
+  }
+  publicMatchArchive=Array.isArray(state.matchArchive)?state.matchArchive:[];
+  if(document.getElementById('allMatchesSummaryModal').style.display==='flex')renderAllMatchesSummaryList();
   if (currentUserRole === "Admin" || isScorerUnlocked) return;
 
   teamAName = state.teamAName || "Team A";
@@ -1300,6 +1320,7 @@ function applyRemoteLiveState(state) {
   inningsHistory = Array.isArray(state.inningsHistory) ? state.inningsHistory : [];
   matchStartedAt = state.matchStartedAt || null;
   currentMatchFinished = !!state.currentMatchFinished;
+  currentMatchRecord=state.finalMatchRecord||null;
   isLiveBroadcasting = !!state.isLive;
 
   var ta = document.getElementById('teamA');
@@ -1343,6 +1364,7 @@ function applyRemoteLiveState(state) {
   }
 
   updateLiveUI();
+  if(document.getElementById('getLiveScoreModal').style.display==='flex')renderLiveScoreDashboard();
 
   var pt = document.getElementById('popupMatchTitle');
   if (pt) pt.innerText = teamAName + " VS " + teamBName;
@@ -1359,28 +1381,14 @@ function applyRemoteLiveState(state) {
   }
 }
 
-var latestFirebaseLiveScore = null;
 function setupFirebaseLiveScoreListener() {
   if (!db || window.__liveScoreListenerReady) return;
   window.__liveScoreListenerReady = true;
-
-  function receiveLiveState(state) {
-    if (!state) return;
-    latestFirebaseLiveScore = state;
-    try { applyRemoteLiveState(state); }
-    catch(err) { console.error("Live score state error:", err); }
-    var modal = document.getElementById('getLiveScoreModal');
-    if (modal && modal.style.display === 'flex') renderLiveScoreDashboard();
-  }
-
   db.ref('liveMatchState').on('value', function(snapshot) {
-    receiveLiveState(snapshot.val());
+    try { applyRemoteLiveState(snapshot.val()); }
+    catch(err) { console.error("Live score state error:", err); }
   }, function(err) {
     console.error("Firebase live score read failed:", err);
-  });
-
-  db.ref('liveScore').on('value', function(snapshot) {
-    if (!latestFirebaseLiveScore) receiveLiveState(snapshot.val());
   });
 }
 
@@ -1491,7 +1499,11 @@ updateLiveUI();
 function openWicketModal() { if (currentMatchFinished) return; document.getElementById('wicketModal').style.display = 'flex'; }
 function closeWicketModal() { document.getElementById('wicketModal').style.display = 'none'; }
 
-function processWicket() {
+async function processWicket() {
+if(currentUserRole!=='Admin'){
+try{if(!(await verifyScorerSession())){revokeScorerSession();closeWicketModal();return alert('Scorer session moved to another phone.');}}
+catch(e){closeWicketModal();return alert('Connection unavailable.');}
+}
 if (currentMatchFinished) { closeWicketModal(); return; }
 if (balls >= (Number(maxOvers) || 2) * 6) { closeWicketModal(); checkInningsCompletion(); return; }
 var wicketType = document.getElementById('wicketType').value;
@@ -1523,9 +1535,14 @@ modalDropdown.innerHTML = '';
 currentBowlingPlayers.forEach(b => { modalDropdown.innerHTML += '<option value="' + b + '">' + b + '</option>'; });
 document.getElementById('bowlerSelectModal').style.display = 'flex';
 }
-function confirmModalBowler() {
+async function confirmModalBowler() {
+if(currentUserRole!=='Admin'){
+try{if(!(await verifyScorerSession())){revokeScorerSession();return alert('Scorer session moved to another phone.');}}
+catch(e){return alert('Connection unavailable.');}
+}
 document.getElementById('currentBowlerSelect').value = document.getElementById('modalBowlerDropdown').value;
 document.getElementById('bowlerSelectModal').style.display = 'none';
+syncScoreToFirebase();
 }
 
 function checkInningsCompletion() {
@@ -1556,6 +1573,7 @@ if (currentInnings === 1 && !isSuperOver) {
   completedOvers = []; currentOverEvents = [];
   document.getElementById('currentInningsLabel').innerText = "Innings 2 (" + teamBName + " - Target: " + (firstInningsScore + 1) + ")";
   populateBowlerDropdown(); updateLiveUI();
+  syncScoreToFirebase();
   alert("Innings 1 Completed! Target is " + (firstInningsScore + 1));
 } else {
   if (isSuperOver && currentInnings === 1) {
@@ -1567,9 +1585,10 @@ if (currentInnings === 1 && !isSuperOver) {
     battersStats = {}; currentBattingPlayers.forEach(p => { battersStats[p] = { runs:0, balls:0, fours:0, sixes:0, out:false, status:'Not Out' }; });
     bowlersStats = {}; currentBowlingPlayers.forEach(b => { bowlersStats[b] = { balls:0, runsConceded:0, wicketsTaken:0 }; });
     completedOvers=[]; currentOverEvents=[]; document.getElementById('currentInningsLabel').innerText="Super Over - Innings 2 ("+teamBName+")";
-    populateBowlerDropdown(); updateLiveUI(); return;
+    firstInningsScore=runs;
+    populateBowlerDropdown(); updateLiveUI(); syncScoreToFirebase(); return;
   }
-  if (!isSuperOver && runs === firstInningsScore) { document.getElementById('superOverModal').style.display = 'flex'; return; }
+  if (!isSuperOver && runs === firstInningsScore) { syncScoreToFirebase(); document.getElementById('superOverModal').style.display = 'flex'; return; }
   inningsHistory.push(completedInnings);
   var winnerText = runs > firstInningsScore ? (teamBName + " Won!") : (teamAName + " Won!");
   finishAndSaveMatch(winnerText);
@@ -1595,6 +1614,7 @@ bowlersStats = {}; currentBowlingPlayers.forEach(b => { bowlersStats[b] = { ball
 document.getElementById('currentInningsLabel').innerText = "Super Over";
 populateBowlerDropdown();
 updateLiveUI();
+syncScoreToFirebase();
 alert("Super Over Started!");
 }
 
@@ -1660,7 +1680,9 @@ html += '</table></div>'; return html;
 function buildFullMatchSummary(record) {
 var html='<div class="match-summary-full"><div class="summary-card-title">🏏 FULL MATCH SUMMARY</div>';
 html+='<div class="summary-meta"><b>'+escapeHTML(record.title)+'</b><br>📅 '+escapeHTML(record.date)+'<br>⏰ '+escapeHTML(record.time)+'<br>🏆 '+escapeHTML(record.result)+'</div>';
-(record.innings||[]).forEach(inn=>{ html+=makeInningsSummaryHTML(inn); });
+var sorted=(record.innings||[]).slice();
+if(record.winnerTeam)sorted.sort(function(a,b){return (b.team===record.winnerTeam)-(a.team===record.winnerTeam);});
+sorted.forEach(inn=>{ html+=makeInningsSummaryHTML(inn); });
 if(!record.innings || !record.innings.length) html+='<div class="summary-section">This is an older saved match and does not contain ball-by-ball player statistics.</div>';
 html+='</div>'; return html;
 }
@@ -1672,9 +1694,18 @@ var finalInnings={innings:currentInnings,team:currentInnings===1?teamAName:teamB
 batters:JSON.parse(JSON.stringify(battersStats)),bowlers:JSON.parse(JSON.stringify(bowlersStats)),overs:JSON.parse(JSON.stringify(completedOvers))};
 if (!inningsHistory.length || inningsHistory[inningsHistory.length-1].innings!==finalInnings.innings || inningsHistory[inningsHistory.length-1].runs!==finalInnings.runs) inningsHistory.push(finalInnings);
 var now=new Date();
-currentMatchRecord={title:teamAName+' VS '+teamBName,score:teamBName+' '+runs+'/'+wickets,date:now.toLocaleDateString(),time:now.toLocaleTimeString(),result:resultSummary,format:(isSuperOver?'Super Over':'T'+document.getElementById('totalOvers').value),innings:JSON.parse(JSON.stringify(inningsHistory)),savedAt:now.toISOString()};
+var winningTeam=resultSummary.indexOf(teamBName+' Won!')===0?teamBName:teamAName;
+var margin=winningTeam===teamBName?(currentBattingPlayers.length-1-wickets)+' wickets':(firstInningsScore-runs)+' runs';
+var winnerInnings=inningsHistory.find(function(inn){return inn.team===winningTeam;});
+var wicketsRemaining=Math.max(0,(winningTeam===teamAName?teamAInputPlayers:teamBInputPlayers).length-1-(winnerInnings?winnerInnings.wickets:0));
+var resultLine=winningTeam===teamAName
+  ?winningTeam+' won by '+margin+' and '+wicketsRemaining+' wickets remaining.'
+  :winningTeam+' won by '+margin+' ('+Math.max(0,runs-firstInningsScore)+' runs ahead).';
+currentMatchRecord={title:teamAName+' VS '+teamBName,score:teamBName+' '+runs+'/'+wickets,date:now.toLocaleDateString(),time:now.toLocaleTimeString(),result:resultLine,winnerTeam:winningTeam,format:(isSuperOver?'Super Over':'T'+document.getElementById('totalOvers').value),innings:JSON.parse(JSON.stringify(inningsHistory)),savedAt:now.toISOString()};
 saveMatchToHistoryFinal(currentMatchRecord);
-showMatchResultPopup("🎉 CONGRATULATIONS! 🎉", '<div style="text-align:center;font-weight:bold;font-size:1rem">'+escapeHTML(resultSummary)+'</div><p style="text-align:center;margin-bottom:0">📋 مکمل Match Summary خودکار Saved میں محفوظ ہو گئی ہے۔</p>');
+publicMatchArchive.unshift(currentMatchRecord);publicMatchArchive=publicMatchArchive.slice(0,30);
+syncScoreToFirebase();
+showMatchResultPopup("🎉 CONGRATULATIONS! 🎉", '<div style="text-align:center;font-weight:bold;font-size:1rem">'+escapeHTML(resultLine)+'</div><p style="text-align:center;margin-bottom:0">📋 مکمل Match Summary خودکار Saved میں محفوظ ہو گئی ہے۔</p>');
 }
 
 function saveMatchToHistoryFinal(record) {
@@ -1705,12 +1736,76 @@ function openFullSummaryModal(record){
 var old=document.getElementById('fullSummaryModal');
 if(!old){
 old=document.createElement('div');old.className='modal';old.id='fullSummaryModal';
-old.innerHTML='<div class="modal-body" style="border:2px solid var(--accent-green);max-width:480px"><button class="close-btn" onclick="closeFullSummaryModal()">✖ Close</button><div id="fullSummaryContent"></div><div class="summary-share-row"><button class="whatsapp-btn btn" style="margin-top:0" onclick="shareMatchOnWhatsApp()">💬 WhatsApp</button><button class="btn btn-saved" style="margin-top:0" onclick="closeFullSummaryModal();openSavedMatches()">📁 Saved</button></div></div>';
+old.innerHTML='<div class="modal-body" style="border:2px solid var(--accent-green);max-width:480px"><button class="close-btn" onclick="closeFullSummaryModal()">✖ Close</button><div style="margin-top:50px"><button class="btn btn-start" onclick="saveSummaryImage()">🖼️ Save A4 Image to Phone</button><button class="btn btn-saved" onclick="saveSummaryPDF()">📄 Download A4 PDF</button></div><div id="fullSummaryContent"></div><div class="summary-share-row"><button class="whatsapp-btn btn" style="margin-top:0" onclick="shareMatchOnWhatsApp()">💬 WhatsApp</button><button class="btn btn-saved" style="margin-top:0" onclick="closeFullSummaryModal();openSavedMatches()">📁 Saved</button></div></div>';
 document.body.appendChild(old);
 }
 document.getElementById('fullSummaryContent').innerHTML=buildFullMatchSummary(record);old.style.display='flex';
 }
 function closeFullSummaryModal(){var x=document.getElementById('fullSummaryModal');if(x)x.style.display='none';}
+
+function openLiveMatchSummary(){
+  if(currentMatchFinished && currentMatchRecord){openFullSummaryModal(currentMatchRecord);return;}
+  if(!matchStartedAt || !currentBattingPlayers.length)return alert('No live match yet.');
+  var overs=JSON.parse(JSON.stringify(completedOvers));
+  if(currentOverEvents.length)overs.push({over:Math.floor(balls/6)+1,bowler:currentOverEvents[0].bowler||'',
+    runs:currentOverEvents.reduce(function(a,e){return a+(e.runs||0);},0),
+    wickets:currentOverEvents.filter(function(e){return e.type==='wicket';}).length,
+    events:JSON.parse(JSON.stringify(currentOverEvents))});
+  var innings=JSON.parse(JSON.stringify(inningsHistory));
+  innings.push({team:currentInnings===1?teamAName:teamBName,runs:runs,wickets:wickets,balls:balls,
+    batters:JSON.parse(JSON.stringify(battersStats)),bowlers:JSON.parse(JSON.stringify(bowlersStats)),overs:overs});
+  var now=new Date();openFullSummaryModal({title:teamAName+' VS '+teamBName,date:now.toLocaleDateString(),
+    time:now.toLocaleTimeString(),result:'Match live',innings:innings});
+}
+async function captureSummaryCanvas(){
+  if(typeof html2canvas!=='function')throw new Error('Image library unavailable');
+  var node=document.getElementById('fullSummaryContent').cloneNode(true),wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-10000px;top:0;width:794px;padding:28px;box-sizing:border-box;background:#0f172a;color:white';
+  wrap.appendChild(node);document.body.appendChild(wrap);
+  try{
+    var top=wrap.getBoundingClientRect().top;
+    var boundaries=Array.from(wrap.querySelectorAll('tr,.summary-section')).map(function(el){return Math.round((el.getBoundingClientRect().top-top)*2);});
+    var capture=await html2canvas(wrap,{backgroundColor:'#0f172a',scale:2,width:794,height:wrap.scrollHeight,
+      windowWidth:900,scrollX:0,scrollY:0,useCORS:true});
+    capture._rowBoundaries=boundaries;return capture;
+  }
+  finally{wrap.remove();}
+}
+function downloadSummaryBlob(blob,name){
+  if(!blob)throw new Error('File creation failed');
+  var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},60000);
+}
+async function saveSummaryImage(){
+  try{
+    var source=await captureSummaryCanvas(),out=document.createElement('canvas');
+    out.width=2480;out.height=3508;var ctx=out.getContext('2d');ctx.fillStyle='#0f172a';ctx.fillRect(0,0,out.width,out.height);
+    var fit=Math.min((out.width-100)/source.width,(out.height-100)/source.height);
+    ctx.drawImage(source,(out.width-source.width*fit)/2,50,source.width*fit,source.height*fit);
+    var blob=await new Promise(function(resolve){out.toBlob(resolve,'image/png');});
+    downloadSummaryBlob(blob,'Cricket_Match_A4_'+Date.now()+'.png');
+  }catch(e){console.error(e);alert('Could not save A4 image. Check connection and Downloads permission.');}
+}
+async function saveSummaryPDF(){
+  try{
+    if(!window.jspdf)throw new Error('PDF library unavailable');
+    var source=await captureSummaryCanvas(),pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var pageHeight=Math.floor(source.width*297/210),page=document.createElement('canvas');
+    page.width=source.width;page.height=pageHeight;var context=page.getContext('2d');
+    for(var y=0;y<source.height;){
+      var end=Math.min(y+pageHeight,source.height);
+      if(end<source.height){
+        var safe=(source._rowBoundaries||[]).filter(function(pos){return pos>y+pageHeight*.75 && pos<=end-4;});
+        if(safe.length)end=safe[safe.length-1];
+      }
+      if(y)pdf.addPage();context.fillStyle='#0f172a';context.fillRect(0,0,page.width,page.height);
+      context.drawImage(source,0,y,source.width,end-y,0,0,source.width,end-y);
+      pdf.addImage(page.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297);
+      y=end;
+    }
+    pdf.save('Cricket_Match_A4_'+Date.now()+'.pdf');
+  }catch(e){console.error(e);alert('Could not make PDF. Check internet connection.');}
+}
 
 function renderBattersTable() {
 var html = '<table style="width:100%; font-size:0.75rem; border-collapse:collapse; text-align:left;">';
@@ -1732,7 +1827,7 @@ html+='</table>';document.getElementById('oversTableContainer').innerHTML=html;
 
 function sendChatMessageToFirebase(sender, content, lang, type) {
 if (!db) return;
-return db.ref('liveChatMessages').push({ sender: sender, user: sender, content: content, text: content, lang: lang, type: type, timestamp: Date.now() });
+db.ref('liveChatMessages').push({ sender: sender, content: content, lang: lang, type: type, timestamp: Date.now() });
 }
 
 setupFirebaseLiveScoreListener();
@@ -1768,17 +1863,15 @@ function renderOneChatMessage(id, msg) {
   var sender = document.createElement('div');
   var msgTime = msg.timestamp ? new Date(Number(msg.timestamp)) : new Date();
   var timeText = isNaN(msgTime.getTime()) ? '' : msgTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  var senderName = msg.sender || msg.user || msg.username || msg.name || 'Visitor';
-  var messageContent = msg.content || msg.text || msg.message || msg.msg || msg.body || '';
-  sender.innerHTML = '<b>' + escapeChatHTML(senderName) + ':</b>' +
+  sender.innerHTML = '<b>' + escapeChatHTML(msg.sender || 'Visitor') + ':</b>' +
                      (timeText ? ' <span style="font-size:.62rem;color:var(--text-muted);margin-left:5px;">' + escapeChatHTML(timeText) + '</span>' : '');
   row.appendChild(sender);
 
-  if ((msg.type === 'audio' || msg.audioUrl) && (msg.content || msg.audioUrl)) {
+  if (msg.type === 'audio' && msg.content) {
     var audio = document.createElement('audio');
     audio.controls = true;
     audio.preload = 'metadata';
-    audio.src = msg.audioUrl || msg.content;
+    audio.src = msg.content;
     audio.style.cssText = 'width:min(280px,100%);height:38px;margin-top:5px;';
     row.appendChild(audio);
 
@@ -1788,8 +1881,7 @@ function renderOneChatMessage(id, msg) {
     row.appendChild(voiceLabel);
   } else {
     var text = document.createElement('span');
-    text.textContent = messageContent;
-    text.style.cssText = 'display:block;margin-top:3px;color:#ffffff;white-space:pre-wrap;word-break:break-word;';
+    text.innerHTML = ' ' + escapeChatHTML(msg.content);
     row.appendChild(text);
   }
 
@@ -2161,7 +2253,7 @@ async function startVoiceNoteRecording() {
     } else if (err && err.name === 'NotReadableError') {
       alert("🎤 Microphone کسی دوسری app نے استعمال کیا ہوا ہے۔ دوسری recording/call app بند کریں اور دوبارہ کوشش کریں۔");
     } else {
-      alert("🎤 Microphone access failed: " + (err && err.name ? err.name : "Error") + " - " + (err && err.message ? err.message : "Unknown error"));
+      alert("🎤 Microphone start نہیں ہو سکا۔ Chrome میں Netlify link direct کھول کر دوبارہ کوشش کریں۔");
     }
   }
 }
@@ -2175,10 +2267,26 @@ function handleMicButtonClick(e) {
 }
 
 function setupHoldToRecordMic() {
-  // Mic is controlled only by handleMicButtonClick().
-  // Do not attach duplicate touch/mouse/pointer listeners here.
+  var btn = document.getElementById('micRecordBtn');
+  if (!btn) return;
+  btn.type = 'button';
+  btn.disabled = false;
+  btn.style.pointerEvents = 'auto';
+  btn.onclick = function(e){ handleMicButtonClick(e); };
+  btn.onpointerup = function(e){
+    if (e && e.pointerType === 'touch') {
+      e.preventDefault();
+      lastMicPointerTime = Date.now();
+      handleMicButtonClick(e);
+    }
+  };
+  /* IMPORTANT: do NOT prevent Android's synthetic click after touch.
+     The previous touchend preventDefault could make the mic appear dead on phones. */
+  btn.dataset.voiceNoteReady = '1';
+  btn.title = location.protocol === 'file:'
+    ? 'Voice Note: Netlify HTTPS link یا localhost استعمال کریں'
+    : '🎤 Record Voice Note';
 }
-
 
 function renderLiveScoreDashboard() {
   var title = document.getElementById('popupMatchTitle');
@@ -2212,43 +2320,57 @@ function renderLiveScoreDashboard() {
 }
 
 function openGetLiveScoreModal() {
-  document.getElementById('getLiveScoreModal').style.display = 'flex';
   renderLiveScoreDashboard();
-  if (db) {
-    db.ref('liveMatchState').once('value').then(function(snapshot) {
-      var state = snapshot.val();
-      if (state) { latestFirebaseLiveScore = state; applyRemoteLiveState(state); }
-      renderLiveScoreDashboard();
-    }).catch(function(err) { console.warn('Live score refresh failed:', err); });
-  }
+  document.getElementById('getLiveScoreModal').style.display = 'flex';
 }
 function closeGetLiveScoreModal() { document.getElementById('getLiveScoreModal').style.display = 'none'; }
 function refreshLiveScoreModalData() {
-  if (!db) { renderLiveScoreDashboard(); return; }
-  db.ref('liveMatchState').once('value').then(function(snapshot) {
-    var state = snapshot.val();
-    if (state) { latestFirebaseLiveScore = state; applyRemoteLiveState(state); }
-    renderLiveScoreDashboard();
-  }).catch(function(){ renderLiveScoreDashboard(); });
+if(db && currentUserRole!=='Admin' && !isScorerUnlocked)
+  db.ref('liveMatchState').once('value').then(function(s){applyRemoteLiveState(s.val());renderLiveScoreDashboard();})
+    .catch(function(){alert('Live score could not refresh. Check connection.');});
+else renderLiveScoreDashboard();
 }
 
-function unlockScorerMode() {
-if (document.getElementById('scorerPasswordInput').value === scorerPassword || document.getElementById('scorerPasswordInput').value === adminPassword) {
-isScorerUnlocked = true;
-document.getElementById('scorerLoginForm').style.display = 'none';
-document.getElementById('scorerStatusPanel').style.display = 'block';
-alert("Scorer Unlocked! 🟢");
-} else { alert("Incorrect Password!"); }
+function revokeScorerSession(){
+isScorerUnlocked=false;scorerSessionToken='';
+document.getElementById('scorerLoginForm').style.display='block';
+document.getElementById('scorerStatusPanel').style.display='none';
 }
-function lockScorerMode() { isScorerUnlocked = false; document.getElementById('scorerLoginForm').style.display = 'block'; document.getElementById('scorerStatusPanel').style.display = 'none'; }
+function verifyScorerSession(){
+if(!db||!scorerSessionToken)return Promise.resolve(false);
+return db.ref('liveMatchState').once('value').then(function(s){return !!s.val()&&s.val().scorerSessionToken===scorerSessionToken;});
+}
+async function claimScorerSession(){
+if(!db){alert('Firebase connection required for scorer login.');return false;}
+var token=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+try{
+  var result=await db.ref('liveMatchState').transaction(function(state){
+    state=state||{};state.scorerSessionToken=token;return state;
+  },undefined,false);
+  if(!result.committed||!result.snapshot.val()||result.snapshot.val().scorerSessionToken!==token)return false;
+  scorerSessionToken=token;latestScorerSessionToken=token;isScorerUnlocked=true;
+  document.getElementById('scorerLoginForm').style.display='none';
+  document.getElementById('scorerStatusPanel').style.display='block';
+  return true;
+}catch(e){console.error('Scorer login failed:',e);alert('Scorer login failed. Check Firebase connection and database rules.');return false;}
+}
+async function unlockScorerMode(){
+if(document.getElementById('scorerPasswordInput').value!==scorerPassword)return alert('Incorrect Password!');
+if(await claimScorerSession())alert('Scorer Unlocked! 🟢');
+}
+function lockScorerMode(){
+var token=scorerSessionToken;revokeScorerSession();
+if(db&&token)db.ref('liveMatchState').transaction(function(state){
+  if(!state||state.scorerSessionToken!==token)return;
+  state.scorerSessionToken=null;return state;
+},undefined,false).catch(function(e){console.warn('Scorer logout:',e);});
+}
 
 function loginAdminInline() {
 if (document.getElementById('inlineAdminPass').value === adminPassword) {
 currentUserRole = "Admin";
 document.getElementById('adminLoginForm').style.display = 'none';
 document.getElementById('adminControlPanel').style.display = 'block';
-var mp = document.getElementById('masterScorerPasswordPanel');
-if (mp) mp.style.display = 'block';
 if (typeof refreshChatAdminButtons === "function") refreshChatAdminButtons();
 alert("Admin Logged In! 👑");
 } else { alert("Incorrect Admin Password!"); }
@@ -2263,30 +2385,20 @@ if (typeof refreshChatAdminButtons === "function") refreshChatAdminButtons();
 }
 
 function masterChangeScorerPassword() {
-if (currentUserRole !== "Admin") {
-alert("صرف Master Admin کو یہ اختیار حاصل ہے!");
-return;
-}
-var input = document.getElementById("masterNewScorerPassword");
-var p = input ? input.value.trim() : "";
-if (!p) {
-alert("نیا Scorer Password لکھیں!");
-return;
-}
-scorerPassword = p;
-localStorage.setItem("scorerPassword", p);
-if (input) input.value = "";
-alert("Scorer Password کامیابی سے تبدیل ہو گیا! 🔐");
+alert('Scorer password is fixed to 3443.');
 }
 
-function checkScorerAuthBeforeAction(actionType, param1) {
-if (!isScorerUnlocked && currentUserRole !== "Admin") {
-var pass = prompt("🔒 Enter Scorer Password:");
-if (pass === scorerPassword || pass === adminPassword) isScorerUnlocked = true;
-else { alert("Access Denied!"); return; }
+async function checkScorerAuthBeforeAction(actionType, param1) {
+if(currentUserRole!=='Admin'){
+  if(!isScorerUnlocked){
+    var pass=prompt('🔒 Enter Scorer Password:');
+    if(pass!==scorerPassword||!(await claimScorerSession())){alert('Access Denied!');return;}
+  }
+  try{if(!(await verifyScorerSession())){revokeScorerSession();alert('Scorer session moved to another phone.');return;}}
+  catch(e){alert('Connection unavailable. Scoring paused.');return;}
 }
 if (actionType === 'start') startMatch();
-else if (actionType === 'rotate') rotateStrike();
+else if (actionType === 'rotate') {rotateStrike();syncScoreToFirebase();}
 else if (actionType === 'run') addRuns(param1);
 else if (actionType === 'extra') addExtra(param1);
 else if (actionType === 'wicket') openWicketModal();
@@ -2307,11 +2419,22 @@ function shareSavedMatch(idx){var saved=JSON.parse(localStorage.getItem('savedMa
 function closeSaved() { document.getElementById('savedModal').style.display = 'none'; }
 
 function openAllMatchesSummaryTab() {
-var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");
-var container=document.getElementById('allMatchesSummaryListContainer');
-container.innerHTML=saved.length===0?'<p style="text-align:center;">No matches.</p>':saved.map((m,i)=>'<div class="tv-match-card"><div style="color:var(--accent-gold);font-weight:bold;">'+escapeHTML(m.title||'Match')+'</div><div>'+escapeHTML(m.result||m.summary||'')+'</div><div style="font-size:.72rem;margin:5px 0">📅 '+escapeHTML(m.date||'')+' ⏰ '+escapeHTML(m.time||'')+'</div><button class="btn btn-saved" onclick="viewSavedMatch('+i+')">📋 VIEW FULL SUMMARY</button></div>').join('');
+renderAllMatchesSummaryList();
 document.getElementById('allMatchesSummaryModal').style.display='flex';
 }
+function renderAllMatchesSummaryList(){
+var saved=JSON.parse(localStorage.getItem('savedMatchesHistory')||"[]");
+var container=document.getElementById('allMatchesSummaryListContainer');
+var all=publicMatchArchive.slice();
+saved.forEach(function(record){if(!all.some(function(m){return m.savedAt&&m.savedAt===record.savedAt;}))all.push(record);});
+window.__publicMatchesShown=all;
+var html='';
+if(isLiveBroadcasting&&matchStartedAt&&!currentMatchFinished)
+ html+='<div class="tv-match-card" style="border:2px solid #10b981"><b style="color:#10b981">🔴 LIVE: '+escapeHTML(teamAName)+' VS '+escapeHTML(teamBName)+'</b><div>'+runs+'/'+wickets+' ('+formatOvers(balls)+' overs)</div><button class="btn btn-start" onclick="openLiveMatchSummary()">📋 VIEW LIVE MATCH</button></div>';
+html+=all.map(function(m,i){return '<div class="tv-match-card"><div style="color:var(--accent-gold);font-weight:bold;">'+escapeHTML(m.title||'Match')+'</div><div>'+escapeHTML(m.result||m.summary||'')+'</div><div style="font-size:.72rem;margin:5px 0">📅 '+escapeHTML(m.date||'')+' ⏰ '+escapeHTML(m.time||'')+'</div><button class="btn btn-saved" onclick="openPublicSummary('+i+')">📋 VIEW FULL SUMMARY</button></div>';}).join('');
+container.innerHTML=html||'<p style="text-align:center;">No matches.</p>';
+}
+function openPublicSummary(i){var m=(window.__publicMatchesShown||[])[i];if(m){currentMatchRecord=m;openFullSummaryModal(m);}}
 function closeAllMatchesSummaryModal() { document.getElementById('allMatchesSummaryModal').style.display = 'none'; }
 
 function openPlayerStatsModal() { document.getElementById('playerStatsModal').style.display = 'flex'; }
@@ -2323,13 +2446,6 @@ function closeTeamLeaderboardModal() { document.getElementById('teamLeaderboardM
 function switchMainTab(tabName) {}
 function checkForAppUpdate() { alert("You are using updated version"); }
 </script>
-
-<div id="masterScorerPasswordPanel" style="display:none; margin:10px 0; padding:12px; border-radius:10px; background:var(--input-bg); border:1px solid var(--accent-gold);">
-  <div style="font-weight:800; color:var(--accent-gold); margin-bottom:8px;">👑 Master Admin — Scorer Password Control</div>
-  <input id="masterNewScorerPassword" type="password" placeholder="نیا Scorer Password" style="width:100%; margin-bottom:7px;">
-  <button type="button" class="btn btn-admin" style="width:100%;" onclick="masterChangeScorerPassword()">🔐 Change Scorer Password</button>
-</div>
-
 
 <script>
 /* ===== OPTIONAL SINGLE CAPTAIN VS POSTER JS - ADDITIVE ONLY ===== */
